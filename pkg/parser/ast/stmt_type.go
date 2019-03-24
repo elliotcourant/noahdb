@@ -1,4 +1,4 @@
-package pg_query
+package ast
 
 type StmtType int
 

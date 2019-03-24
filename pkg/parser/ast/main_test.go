@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-package pg_query
+package ast
 
 import (
 	"github.com/readystock/golog"

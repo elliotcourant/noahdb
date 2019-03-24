@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/parsenodes.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /*
  * RoleSpec - a role name or one of a few special values.

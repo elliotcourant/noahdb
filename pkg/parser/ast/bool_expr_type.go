@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/primnodes.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /*
  * BoolExpr - expression node for the basic Boolean operators AND, OR, NOT

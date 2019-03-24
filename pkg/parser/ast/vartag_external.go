@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/postgres.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /*
  * Type tag for the various sorts of "TOAST pointer" datums.  The peculiar

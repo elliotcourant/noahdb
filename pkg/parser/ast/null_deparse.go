@@ -1,6 +1,6 @@
 // Auto-generated - DO NOT EDIT
 
-package pg_query
+package ast
 
 func (node Null) Deparse(ctx Context) (*string, error) {
 	result := "NULL"

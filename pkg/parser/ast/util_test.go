@@ -14,14 +14,14 @@
  * permissions and limitations under the License.
  */
 
-package pg_query
+package ast
 
 import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/readystock/ast_go/parser"
 	"github.com/readystock/golog"
-	"github.com/readystock/pg_query_go/parser"
 	"github.com/stretchr/testify/assert"
 	"runtime/debug"
 	"testing"

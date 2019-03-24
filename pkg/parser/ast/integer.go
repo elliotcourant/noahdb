@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/value.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 import "encoding/json"
 

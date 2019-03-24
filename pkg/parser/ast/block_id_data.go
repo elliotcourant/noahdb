@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/storage/block.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 import "encoding/json"
 

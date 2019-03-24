@@ -1,6 +1,6 @@
 // Auto-generated - DO NOT EDIT
 
-package pg_query
+package ast
 
 func (node CompositeTypeStmt) Fingerprint(ctx FingerprintContext, parentNode Node, parentFieldName string) {
 	ctx.WriteString("CompositeTypeStmt")

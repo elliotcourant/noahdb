@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/parsenodes.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /* Sort ordering options for ORDER BY and CREATE INDEX */
 type SortByDir uint

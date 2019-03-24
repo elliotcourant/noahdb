@@ -1,6 +1,6 @@
 // Auto-generated - DO NOT EDIT
 
-package pg_query
+package ast
 
 func (node List) Deparse(ctx Context) (*string, error) {
 	panic("use DeparseList for lists")

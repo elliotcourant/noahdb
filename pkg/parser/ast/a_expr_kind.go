@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/parsenodes.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /*
  * A_Expr - infix, prefix, and postfix expressions

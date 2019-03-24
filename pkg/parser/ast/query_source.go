@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/parsenodes.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /* Possible sources of a Query */
 type QuerySource uint

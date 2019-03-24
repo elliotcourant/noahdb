@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/primnodes.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /* What to do at commit time for temporary relations */
 type OnCommitAction uint

@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/nodes/lockoptions.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /*
  * This enum represents the different strengths of FOR UPDATE/SHARE clauses.

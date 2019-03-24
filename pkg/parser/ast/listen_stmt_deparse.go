@@ -1,6 +1,6 @@
 // Auto-generated - DO NOT EDIT
 
-package pg_query
+package ast
 
 func (node ListenStmt) Deparse(ctx Context) (*string, error) {
 	panic("Not Implemented")

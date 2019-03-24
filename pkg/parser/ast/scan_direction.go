@@ -1,6 +1,6 @@
 // Auto-generated from postgres/src/include/access/sdir.h - DO NOT EDIT
 
-package pg_query
+package ast
 
 /*
  * ScanDirection was an int8 for no apparent reason. I kept the original
