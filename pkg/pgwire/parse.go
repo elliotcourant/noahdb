@@ -23,6 +23,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/sql"
 	"github.com/elliotcourant/noahdb/pkg/sql/types"
+	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/pkg/errors"
 	"github.com/readystock/golog"
 	"reflect"
@@ -66,7 +67,7 @@ func (c *conn) handleParse(buf *pgwirebase.ReadBuffer) error {
 	info.InitializeDataTypes(npgx.NameOIDs)
 	// Prepare the mapping of SQL placeholder names to types. Pre-populate it with
 	// the type hints received from the client, if any.
-	sqlTypeHints := make(plan.PlaceholderTypes)
+	sqlTypeHints := make(queryutil.PlaceholderTypes)
 	for i, t := range inTypeHints {
 		if t == 0 {
 			continue
@@ -87,11 +88,9 @@ func (c *conn) handleParse(buf *pgwirebase.ReadBuffer) error {
 		return c.stmtBuf.Push(sql.SendError{Err: err})
 	}
 
-	j, _ := p.MarshalJSON()
-	// golog.Debugf("[%s] Tree: %s", c.conn.RemoteAddr().String(), string(j))
 	if len(p.Statements) > 0 {
 		if stmt, ok := p.Statements[0].(ast.RawStmt).Stmt.(ast.Stmt); !ok {
-			return c.stmtBuf.Push(sql.SendError{Err: fmt.Errorf("error, cannot currently handle statements of type: %s, json: %s", reflect.TypeOf(p.Statements[0].(nodes.RawStmt).Stmt).Name(), string(j))})
+			return c.stmtBuf.Push(sql.SendError{Err: fmt.Errorf("error, cannot currently handle statements of type: %s, json: %s", reflect.TypeOf(p.Statements[0].(ast.RawStmt).Stmt).Name(), string(j))})
 		} else {
 			// If the number of arguments so far is 0, we want to check with our own function
 			// to double check.
