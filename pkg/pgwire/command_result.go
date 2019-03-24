@@ -2,14 +2,14 @@ package pgwire
 
 import (
 	"fmt"
-	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/pgwire/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/sessiondata"
+	"github.com/elliotcourant/noahdb/pkg/sql"
+	"github.com/elliotcourant/noahdb/pkg/sql/types"
 	"github.com/pkg/errors"
 	"github.com/readystock/golog"
-	"github.com/readystock/noah/db/sql/types"
 )
 
 type completionMsgType int

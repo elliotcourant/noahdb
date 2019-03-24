@@ -21,12 +21,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/sql"
+	"github.com/elliotcourant/noahdb/pkg/sql/types"
 	"github.com/readystock/golog"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
-	// log "github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"strconv"
@@ -162,9 +163,6 @@ func newConn(netConn net.Conn, sArgs sql.SessionArgs) *conn {
 		msgBuilder:  newWriteBuffer(),
 		rd:          *bufio.NewReader(netConn),
 		pginfo:      types.NewConnInfo(),
-		log: logrus.WithFields(logrus.Fields{
-			"Addr": netConn.RemoteAddr(),
-		}),
 	}
 	c.writerState.fi.buf = &c.writerState.buf
 	c.writerState.fi.lastFlushed = -1
