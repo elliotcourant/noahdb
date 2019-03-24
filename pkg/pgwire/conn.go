@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/sessiondata"
 	"github.com/elliotcourant/noahdb/pkg/sql"
 	"github.com/elliotcourant/noahdb/pkg/sql/types"
@@ -134,7 +135,7 @@ func serveConn(
 	sArgs sql.SessionArgs,
 	sqlServer *sql.Server,
 	insecure bool,
-	ctx core.Context,
+	ctx core.Colony,
 ) error {
 	sArgs.RemoteAddr = netConn.RemoteAddr()
 
@@ -196,7 +197,7 @@ func (c *conn) GetErr() error {
 // sqlServer is used to create the command processor. As a special facility for
 // tests, sqlServer can be nil, in which case the command processor and the
 // write-side of the connection will not be created.
-func (c *conn) serveImpl(sqlServer *sql.Server, ctx core.Context) error {
+func (c *conn) serveImpl(sqlServer *sql.Server, ctx core.Colony) error {
 	defer func() { _ = c.conn.Close() }()
 
 	// NOTE: We're going to write a few messages to the connection in this method,

@@ -19,19 +19,16 @@ package pgwire
 import (
 	"context"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/pgwire/pgerror"
+	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/sql"
+	"github.com/elliotcourant/noahdb/pkg/util/syncutil"
+	"github.com/pkg/errors"
 	"github.com/readystock/golog"
 	"github.com/readystock/noah/db/core"
 	"io"
 	"net"
 	"time"
-
-	"github.com/pkg/errors"
-
-	"github.com/readystock/noah/db/base"
-	"github.com/readystock/noah/db/sql"
-	"github.com/readystock/noah/db/sql/pgwire/pgerror"
-	"github.com/readystock/noah/db/sql/pgwire/pgwirebase"
-	"github.com/readystock/noah/db/util/syncutil"
 )
 
 const (
@@ -70,7 +67,7 @@ type cancelChanMap map[chan struct{}]context.CancelFunc
 
 // Server implements the server side of the PostgreSQL wire protocol.
 type Server struct {
-	cfg *base.Config
+	// cfg *base.Config
 	// execCfg    *sql.ExecutorConfig
 	SQLServer *sql.Server
 
@@ -340,8 +337,8 @@ func parseOptions(data []byte) (sql.SessionArgs, error) {
 			return sql.SessionArgs{}, errors.Errorf("error reading option value: %s", err)
 		}
 		switch key {
-		// case "database":
-		// 	args.Database = value
+		case "database":
+			args.Database = value
 		case "user":
 			args.User = value
 		case "application_name":

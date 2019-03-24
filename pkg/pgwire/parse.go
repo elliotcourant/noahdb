@@ -17,6 +17,7 @@
 package pgwire
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/pgwire/pgerror"
@@ -90,6 +91,7 @@ func (c *conn) handleParse(buf *pgwirebase.ReadBuffer) error {
 
 	if len(p.Statements) > 0 {
 		if stmt, ok := p.Statements[0].(ast.RawStmt).Stmt.(ast.Stmt); !ok {
+			j, _ := json.Marshal(stmt)
 			return c.stmtBuf.Push(sql.SendError{Err: fmt.Errorf("error, cannot currently handle statements of type: %s, json: %s", reflect.TypeOf(p.Statements[0].(ast.RawStmt).Stmt).Name(), string(j))})
 		} else {
 			// If the number of arguments so far is 0, we want to check with our own function

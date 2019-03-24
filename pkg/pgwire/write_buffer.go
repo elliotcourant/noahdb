@@ -21,6 +21,7 @@ import (
 	"encoding/binary"
 	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/sql/types"
+	"github.com/elliotcourant/noahdb/pkg/util"
 	"io"
 )
 
