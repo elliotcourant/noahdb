@@ -7,6 +7,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgwire/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/sql/types"
+	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/elliotcourant/noahdb/pkg/util/syncutil"
 	"github.com/pkg/errors"
 	// "github.com/readystock/noah/db/sql/plan"
@@ -183,7 +184,7 @@ type PrepareStmt struct {
 	// Stmt can be nil, in which case executing it should produce an "empty query
 	// response" message.
 	// Stmt      tree.Statement
-	TypeHints plan.PlaceholderTypes
+	TypeHints queryutil.PlaceholderTypes
 	// RawTypeHints is the representation of type hints exactly as specified by
 	// the client.
 	RawTypeHints []types.OID

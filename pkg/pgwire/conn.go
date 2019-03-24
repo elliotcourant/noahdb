@@ -21,6 +21,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/sessiondata"
 	"github.com/elliotcourant/noahdb/pkg/sql"
 	"github.com/elliotcourant/noahdb/pkg/sql/types"
 	"github.com/readystock/golog"
@@ -368,7 +370,7 @@ func (c *conn) handleSimpleQuery(
 
 	startParse := timeutil.Now()
 	golog.Infof("[%s] Query: `%s`", c.conn.RemoteAddr().String(), query)
-	p, err := pg_query.Parse(query)
+	p, err := ast.Parse(query)
 	endParse := time.Now().UTC()
 	if err != nil {
 		golog.Errorf("[%s] %s", c.conn.RemoteAddr().String(), err.Error())
@@ -378,8 +380,8 @@ func (c *conn) handleSimpleQuery(
 	j, _ := p.MarshalJSON()
 	// golog.Debugf("[%s] Tree: %s", c.conn.RemoteAddr().String(), string(j))
 
-	if stmt, ok := p.Statements[0].(nodes.RawStmt).Stmt.(nodes.Stmt); !ok {
-		return c.stmtBuf.Push(sql.SendError{Err: errors.Errorf("error, cannot currently handle statements of type: %s, json: %s", reflect.TypeOf(p.Statements[0].(nodes.RawStmt).Stmt).Name(), string(j))})
+	if stmt, ok := p.Statements[0].(ast.RawStmt).Stmt.(ast.Stmt); !ok {
+		return c.stmtBuf.Push(sql.SendError{Err: errors.Errorf("error, cannot currently handle statements of type: %s, json: %s", reflect.TypeOf(p.Statements[0].(ast.RawStmt).Stmt).Name(), string(j))})
 	} else {
 		return c.stmtBuf.Push(sql.ExecStmt{
 			Stmt:         stmt,
@@ -636,7 +638,7 @@ func convertToErrWithPGCode(err error) error {
 	// }
 }
 
-func cookTag(tagStr string, buf []byte, stmt nodes.Stmt, rowsAffected int) []byte {
+func cookTag(tagStr string, buf []byte, stmt ast.Stmt, rowsAffected int) []byte {
 	if tagStr == "INSERT" {
 		// From the postgres docs (49.5. Message Formats):
 		// `INSERT oid rows`... oid is the object ID of the inserted row if
@@ -646,18 +648,18 @@ func cookTag(tagStr string, buf []byte, stmt nodes.Stmt, rowsAffected int) []byt
 	tag := append(buf, tagStr...)
 
 	switch stmt.StatementType() {
-	case nodes.RowsAffected:
+	case ast.RowsAffected:
 		tag = append(tag, ' ')
 		tag = strconv.AppendInt(tag, int64(rowsAffected), 10)
-	case nodes.Rows:
+	case ast.Rows:
 		tag = append(tag, ' ')
 		tag = strconv.AppendUint(tag, uint64(rowsAffected), 10)
-	case nodes.Ack, nodes.DDL:
+	case ast.Ack, ast.DDL:
 		if tagStr == "SELECT" {
 			tag = append(tag, ' ')
 			tag = strconv.AppendInt(tag, int64(rowsAffected), 10)
 		}
-	case nodes.CopyIn:
+	case ast.CopyIn:
 		// Nothing to do. The CommandComplete message has been sent elsewhere.
 		panic(fmt.Sprintf("CopyIn statements should have been handled elsewhere " +
 			"and not produce results"))

@@ -18,15 +18,11 @@ package pgwire
 
 import (
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/sessiondata"
+	"github.com/elliotcourant/noahdb/pkg/sql/types"
 	"github.com/lib/pq/oid"
 	"github.com/pkg/errors"
-	"github.com/readystock/noah/db/sql/lex"
-	"github.com/readystock/noah/db/sql/pgwire/pgwirebase"
-	"github.com/readystock/noah/db/sql/sessiondata"
-	"github.com/readystock/noah/db/sql/types"
-	"github.com/readystock/noah/db/util/duration"
-	"github.com/readystock/noah/db/util/timeofday"
-	"github.com/readystock/noah/db/util/timeutil"
 	"math"
 	"math/big"
 	"strconv"
