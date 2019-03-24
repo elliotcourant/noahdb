@@ -226,7 +226,21 @@ func (r *commandResult) SetNoDataRowDescription() {
 	r.conn.bufferNoDataMsg()
 }
 
-// SetPrepStmtOutput is part of the DescribeResult interface.
+// // SetPrepStmtOutput is part of the DescribeResult interface.
+// func (r *commandResult) SetPrepStmtOutput(ctx context.Context, cols sqlbase.ResultColumns) {
+//     r.conn.writerState.fi.registerCmd(r.pos)
+//     _ /* err */ = r.conn.writeRowDescription(ctx, cols, nil /* formatCodes */, &r.conn.writerState.buf)
+// }
+//
+// // SetPortalOutput is part of the DescribeResult interface.
+// func (r *commandResult) SetPortalOutput(
+//     ctx context.Context, cols sqlbase.ResultColumns, formatCodes []pgwirebase.FormatCode,
+// ) {
+//     r.conn.writerState.fi.registerCmd(r.pos)
+//     _ /* err */ = r.conn.writeRowDescription(ctx, cols, formatCodes, &r.conn.writerState.buf)
+// }
+
+// // SetPrepStmtOutput is part of the DescribeResult interface.
 // func (r *commandResult) SetPrepStmtOutput(ctx context.Context, cols sqlbase.ResultColumns) {
 //     r.conn.writerState.fi.registerCmd(r.pos)
 //     _ /* err */ = r.conn.writeRowDescription(ctx, cols, nil /* formatCodes */, &r.conn.writerState.buf)
