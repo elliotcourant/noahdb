@@ -20,13 +20,12 @@ func (node RangeVar) Deparse(ctx Context) (string, error) {
 	}
 
 	if node.Alias != nil {
-		if str, err := deparseNode(*node.Alias, Context_None); err != nil {
-			return nil, err
+		if str, err := (*node.Alias).Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

@@ -4,14 +4,13 @@ package ast
 
 import (
 	"fmt"
-	"github.com/juju/errors"
 	"strings"
 )
 
 func (node TransactionStmt) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 	if kind, ok := transactionCmds[node.Kind]; !ok {
-		return nil, errors.Errorf("couldn't deparse transaction kind: %d", node.Kind)
+		return "", fmt.Errorf("couldn't deparse transaction kind: %d", node.Kind)
 	} else {
 		out = append(out, kind)
 	}
@@ -28,6 +27,5 @@ func (node TransactionStmt) Deparse(ctx Context) (string, error) {
 		}
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

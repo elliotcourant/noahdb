@@ -9,11 +9,10 @@ func (node List) Deparse(ctx Context) (string, error) {
 func (list List) DeparseList(ctx Context) ([]string, error) {
 	out := make([]string, len(list.Items))
 	for i, node := range list.Items {
-
 		if str, err := node.Deparse(ctx); err != nil {
 			return nil, err
 		} else {
-			out[i] = *str
+			out[i] = str
 		}
 	}
 	return out, nil

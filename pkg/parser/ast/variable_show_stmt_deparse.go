@@ -3,12 +3,9 @@
 package ast
 
 import (
-	"strings"
+	"fmt"
 )
 
 func (node VariableShowStmt) Deparse(ctx Context) (string, error) {
-	out := []string{"SHOW"}
-	out = append(out, *node.Name)
-	result := strings.Join(out, " ")
-	return &result, nil
+	return fmt.Sprintf("SHOW %s", *node.Name), nil
 }

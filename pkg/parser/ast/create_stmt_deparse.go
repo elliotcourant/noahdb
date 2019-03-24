@@ -19,18 +19,18 @@ func (node CreateStmt) Deparse(ctx Context) (string, error) {
 		out = append(out, "IF NOT EXISTS")
 	}
 
-	if str, err := deparseNode(*node.Relation, Context_None); err != nil {
-		return nil, err
+	if str, err := (*node.Relation).Deparse(Context_None); err != nil {
+		return "", err
 	} else {
-		out = append(out, *str)
+		out = append(out, str)
 	}
 
 	elts := make([]string, len(node.TableElts.Items))
 	for i, elt := range node.TableElts.Items {
-		if str, err := deparseNode(elt, Context_None); err != nil {
-			return nil, err
+		if str, err := elt.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			elts[i] = *str
+			elts[i] = str
 		}
 	}
 	out = append(out, fmt.Sprintf("(%s)", strings.Join(elts, ", ")))
@@ -40,9 +40,9 @@ func (node CreateStmt) Deparse(ctx Context) (string, error) {
 		relations := make([]string, len(node.InhRelations.Items))
 		for i, relation := range node.InhRelations.Items {
 			if str, err := relation.Deparse(Context_None); err != nil {
-				return nil, err
+				return "", err
 			} else {
-				relations[i] = *str
+				relations[i] = str
 			}
 		}
 		out = append(out, fmt.Sprintf("(%s)", strings.Join(relations, ", ")))
@@ -52,8 +52,7 @@ func (node CreateStmt) Deparse(ctx Context) (string, error) {
 		out = append(out, fmt.Sprintf(`TABLESPACE "%s"`, *node.Tablespacename))
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }
 
 func (node CreateStmt) relPersistence() *string {

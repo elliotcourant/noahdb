@@ -12,6 +12,5 @@ func (node DropdbStmt) Deparse(ctx Context) (string, error) {
 		out = append(out, "IF EXISTS")
 	}
 	out = append(out, *node.Dbname)
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

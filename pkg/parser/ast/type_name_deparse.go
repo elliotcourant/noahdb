@@ -4,21 +4,20 @@ package ast
 
 import (
 	"fmt"
-	"github.com/juju/errors"
 	"reflect"
 	"strings"
 )
 
 func (node TypeName) Deparse(ctx Context) (string, error) {
 	if node.Names.Items == nil || len(node.Names.Items) == 0 {
-		return nil, errors.New("cannot have no names on type name")
+		return "", fmt.Errorf("cannot have no names on type name")
 	}
 	names := make([]string, len(node.Names.Items))
 	for i, name := range node.Names.Items {
-		if str, err := deparseNode(name, Context_TypeName); err != nil {
-			return nil, err
+		if str, err := name.Deparse(Context_TypeName); err != nil {
+			return "", err
 		} else {
-			names[i] = *str
+			names[i] = str
 		}
 	}
 
@@ -36,106 +35,86 @@ func (node TypeName) Deparse(ctx Context) (string, error) {
 	if node.Typmods.Items != nil && len(node.Typmods.Items) > 0 {
 		arguments := make([]string, len(node.Typmods.Items))
 		for i, arg := range node.Typmods.Items {
-			if str, err := deparseNode(arg, Context_None); err != nil {
-				return nil, err
+			if str, err := arg.Deparse(Context_None); err != nil {
+				return "", err
 			} else {
-				arguments[i] = *str
+				arguments[i] = str
 			}
 		}
 		args = strings.Join(arguments, ", ")
 	}
 
 	if str, err := node.deparseTypeNameCase(names, args); err != nil {
-		return nil, err
+		return "", err
 	} else {
-		out = append(out, *str)
+		out = append(out, str)
 	}
 
 	if node.ArrayBounds.Items != nil || len(node.ArrayBounds.Items) > 0 {
 		out[len(out)-1] = fmt.Sprintf("%s[]", out[len(out)-1])
 	}
 
-	result := strings.Join(out, ", ")
-	return &result, nil
+	return strings.Join(out, ", "), nil
 }
 
-func (node TypeName) deparseIntervalType() (*string, error) {
+func (node TypeName) deparseIntervalType() (string, error) {
 	out := []string{"interval"}
 
 	if node.Typmods.Items != nil && len(node.Typmods.Items) > 0 {
-		return nil, nil
+		return "", nil
 		// In the ruby version of this code this was here to
 		// handle `interval hour to second(5)` but i've not
 		// ever seen that syntax and will come back to it
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }
 
-func (node TypeName) deparseTypeNameCase(names []string, arguments string) (*string, error) {
+func (node TypeName) deparseTypeNameCase(names []string, arguments string) (string, error) {
 	if names[0] != "pg_catalog" {
-		result := strings.Join(names, ".")
-		return &result, nil
+		return strings.Join(names, "."), nil
 	}
 
 	switch names[len(names)-1] {
 	case "bpchar":
 		if len(arguments) == 0 {
-			result := "char"
-			return &result, nil
+			return "char", nil
 		} else {
-			result := fmt.Sprintf("char(%s)", arguments)
-			return &result, nil
+			return fmt.Sprintf("char(%s)", arguments), nil
 		}
 	case "varchar":
 		if len(arguments) == 0 {
-			result := "varchar"
-			return &result, nil
+			return "varchar", nil
 		} else {
-			result := fmt.Sprintf("varchar(%s)", arguments)
-			return &result, nil
+			return fmt.Sprintf("varchar(%s)", arguments), nil
 		}
 	case "numeric":
 		if len(arguments) == 0 {
-			result := "numeric"
-			return &result, nil
+			return "numeric", nil
 		} else {
-			result := fmt.Sprintf("numeric(%s)", arguments)
-			return &result, nil
+			return fmt.Sprintf("numeric(%s)", arguments), nil
 		}
 	case "bool":
-		result := "boolean"
-		return &result, nil
+		return "boolean", nil
 	case "int2":
-		result := "smallint"
-		return &result, nil
+		return "smallint", nil
 	case "int4":
-		result := "int"
-		return &result, nil
+		return "int", nil
 	case "int8":
-		result := "bigint"
-		return &result, nil
+		return "bigint", nil
 	case "real", "float4":
-		result := "real"
-		return &result, nil
+		return "real", nil
 	case "float8":
-		result := "double"
-		return &result, nil
+		return "double", nil
 	case "time":
-		result := "time"
-		return &result, nil
+		return "time", nil
 	case "timezt":
-		result := "time with time zone"
-		return &result, nil
+		return "time with time zone", nil
 	case "timestamp":
-		result := "timestamp"
-		return &result, nil
+		return "timestamp", nil
 	case "timestamptz":
-		result := "timestamp with time zone"
-		return &result, nil
+		return "timestamp with time zone", nil
 	default:
-		return nil, errors.Errorf("cannot deparse type: %s", names[len(names)-1])
+		return "", fmt.Errorf("cannot deparse type: %s", names[len(names)-1])
 	}
-	return nil, nil
 }

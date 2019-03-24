@@ -14,10 +14,9 @@ func (node VariableSetStmt) Deparse(ctx Context) (string, error) {
 	out = append(out, *node.Name)
 	out = append(out, "TO")
 	if args, err := deparseNodeList(node.Args.Items, Context_None); err != nil {
-		return nil, err
+		return "", err
 	} else {
 		out = append(out, args...)
 	}
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

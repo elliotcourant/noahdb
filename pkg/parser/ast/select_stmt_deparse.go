@@ -10,10 +10,10 @@ import (
 func (node SelectStmt) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 	if node.Op == SETOP_UNION {
-		if str, err := deparseNode(node.Larg, Context_None); err != nil {
-			return nil, err
+		if str, err := node.Larg.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 
 		out = append(out, "UNION")
@@ -21,21 +21,20 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 			out = append(out, "ALL")
 		}
 
-		if str, err := deparseNode(node.Rarg, Context_None); err != nil {
-			return nil, err
+		if str, err := node.Rarg.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 
-		result := strings.Join(out, " ")
-		return &result, nil
+		return strings.Join(out, " "), nil
 	}
 
 	if node.WithClause != nil {
-		if str, err := deparseNode(node.WithClause, Context_None); err != nil {
-			return nil, err
+		if str, err := node.WithClause.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 	}
 
@@ -47,10 +46,10 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 		}
 		fields := make([]string, len(node.TargetList.Items))
 		for i, field := range node.TargetList.Items {
-			if str, err := deparseNode(field, Context_Select); err != nil {
-				return nil, err
+			if str, err := field.Deparse(Context_Select); err != nil {
+				return "", err
 			} else {
-				fields[i] = *str
+				fields[i] = str
 			}
 		}
 		out = append(out, strings.Join(fields, ", "))
@@ -60,10 +59,10 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 		out = append(out, "FROM")
 		froms := make([]string, len(node.FromClause.Items))
 		for i, from := range node.FromClause.Items {
-			if str, err := deparseNode(from, Context_Select); err != nil {
-				return nil, err
+			if str, err := from.Deparse(Context_Select); err != nil {
+				return "", err
 			} else {
-				froms[i] = *str
+				froms[i] = str
 			}
 		}
 		out = append(out, strings.Join(froms, ", "))
@@ -71,10 +70,10 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 
 	if node.WhereClause != nil {
 		out = append(out, "WHERE")
-		if str, err := deparseNode(node.WhereClause, Context_None); err != nil {
-			return nil, err
+		if str, err := node.WhereClause.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 	}
 
@@ -85,9 +84,9 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 			values := make([]string, len(valueList))
 			for i, value := range valueList {
 				if str, err := value.Deparse(Context_None); err != nil {
-					return nil, err
+					return "", err
 				} else {
-					values[i] = *str
+					values[i] = str
 				}
 			}
 			allValues[v] = fmt.Sprintf("(%s)", strings.Join(values, ", "))
@@ -99,20 +98,20 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 		out = append(out, "GROUP BY")
 		groups := make([]string, len(node.GroupClause.Items))
 		for i, group := range node.GroupClause.Items {
-			if str, err := deparseNode(group, Context_None); err != nil {
-				return nil, err
+			if str, err := group.Deparse(Context_None); err != nil {
+				return "", err
 			} else {
-				groups[i] = *str
+				groups[i] = str
 			}
 		}
 		out = append(out, strings.Join(groups, ", "))
 	}
 
 	if node.HavingClause != nil {
-		if str, err := deparseNode(node.HavingClause, Context_None); err != nil {
-			return nil, err
+		if str, err := node.HavingClause.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 	}
 
@@ -122,9 +121,9 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 		sort := make([]string, len(node.SortClause.Items))
 		for i, item := range node.SortClause.Items {
 			if str, err := item.Deparse(Context_None); err != nil {
-				return nil, err
+				return "", err
 			} else {
-				sort[i] = *str
+				sort[i] = str
 			}
 		}
 
@@ -133,32 +132,31 @@ func (node SelectStmt) Deparse(ctx Context) (string, error) {
 
 	if node.LimitCount != nil {
 		out = append(out, "LIMIT")
-		if str, err := deparseNode(node.LimitCount, Context_None); err != nil {
-			return nil, err
+		if str, err := node.LimitCount.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 	}
 
 	if node.LimitOffset != nil {
 		out = append(out, "OFFSET")
-		if str, err := deparseNode(node.LimitOffset, Context_None); err != nil {
-			return nil, err
+		if str, err := node.LimitOffset.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 	}
 
 	if node.LockingClause.Items != nil && len(node.LockingClause.Items) > 0 {
 		for _, lock := range node.LockingClause.Items {
-			if str, err := deparseNode(lock, Context_None); err != nil {
-				return nil, err
+			if str, err := lock.Deparse(Context_None); err != nil {
+				return "", err
 			} else {
-				out = append(out, *str)
+				out = append(out, str)
 			}
 		}
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

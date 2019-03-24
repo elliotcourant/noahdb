@@ -39,7 +39,7 @@ func (node DropStmt) Deparse(ctx Context) (string, error) {
 		case List:
 			list := obj.(List)
 			if objs, err := list.DeparseList(Context_None); err != nil {
-				return nil, err
+				return "", err
 			} else {
 				switch node.RemoveType {
 				case OBJECT_CAST:
@@ -50,9 +50,9 @@ func (node DropStmt) Deparse(ctx Context) (string, error) {
 			}
 		default:
 			if str, err := obj.Deparse(Context_None); err != nil {
-				return nil, err
+				return "", err
 			} else {
-				objects[i] = *str
+				objects[i] = str
 			}
 		}
 	}
@@ -66,6 +66,5 @@ func (node DropStmt) Deparse(ctx Context) (string, error) {
 		// By default the drop will restrict, so there is no need to have this in there.
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

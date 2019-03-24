@@ -34,14 +34,13 @@ func (node CreateForeignServerStmt) Deparse(ctx Context) (string, error) {
 		options := make([]string, len(node.Options.Items))
 		for i, option := range node.Options.Items {
 			if str, err := option.Deparse(Context_None); err != nil {
-				return nil, err
+				return "", err
 			} else {
-				options[i] = *str
+				options[i] = str
 			}
 		}
 		out = append(out, fmt.Sprintf("(%s)", strings.Join(options, ", ")))
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

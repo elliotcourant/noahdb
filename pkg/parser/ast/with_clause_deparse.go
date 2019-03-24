@@ -14,18 +14,17 @@ func (node WithClause) Deparse(ctx Context) (string, error) {
 	}
 
 	if node.Ctes.Items == nil || len(node.Ctes.Items) == 0 {
-		return nil, errors.New("cannot have with clause without ctes")
+		return "", errors.New("cannot have with clause without ctes")
 	}
 
 	ctes := make([]string, len(node.Ctes.Items))
 	for i, cte := range node.Ctes.Items {
-		if str, err := deparseNode(cte, Context_None); err != nil {
-			return nil, err
+		if str, err := cte.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			ctes[i] = *str
+			ctes[i] = str
 		}
 	}
 	out = append(out, strings.Join(ctes, ", "))
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

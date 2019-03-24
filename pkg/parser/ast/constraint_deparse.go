@@ -35,20 +35,20 @@ func (node Constraint) Deparse(ctx Context) (string, error) {
 	}
 
 	if node.RawExpr != nil {
-		if expr, err := deparseNode(node.RawExpr, Context_None); err != nil {
-			return nil, err
+		if expr, err := node.RawExpr.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
 			if aexpr, ok := node.RawExpr.(A_Expr); ok && aexpr.Kind == AEXPR_OP {
-				out = append(out, fmt.Sprintf("(%s)", *expr))
+				out = append(out, fmt.Sprintf("(%s)", expr))
 			} else {
-				out = append(out, *expr)
+				out = append(out, expr)
 			}
 		}
 	}
 
 	if node.Keys.Items != nil && len(node.Keys.Items) > 0 {
 		if list, err := deparseNodeList(node.Keys.Items, Context_None); err != nil {
-			return nil, err
+			return "", err
 		} else {
 			out = append(out, fmt.Sprintf("(%s)", strings.Join(list, ", ")))
 		}
@@ -56,7 +56,7 @@ func (node Constraint) Deparse(ctx Context) (string, error) {
 
 	if node.FkAttrs.Items != nil && len(node.FkAttrs.Items) > 0 {
 		if list, err := deparseNodeList(node.FkAttrs.Items, Context_None); err != nil {
-			return nil, err
+			return "", err
 		} else {
 			out = append(out, fmt.Sprintf("(%s)", strings.Join(list, ", ")))
 		}
@@ -64,12 +64,12 @@ func (node Constraint) Deparse(ctx Context) (string, error) {
 
 	if node.Pktable != nil {
 		if list, err := deparseNodeList(node.PkAttrs.Items, Context_None); err != nil {
-			return nil, err
+			return "", err
 		} else {
-			if pk, err := deparseNode(node.Pktable, Context_None); err != nil {
-				return nil, err
+			if pk, err := node.Pktable.Deparse(Context_None); err != nil {
+				return "", err
 			} else {
-				out = append(out, fmt.Sprintf("REFERENCES %s (%s)", *pk, strings.Join(list, ", ")))
+				out = append(out, fmt.Sprintf("REFERENCES %s (%s)", pk, strings.Join(list, ", ")))
 			}
 
 			switch node.FkDelAction {
@@ -91,6 +91,5 @@ func (node Constraint) Deparse(ctx Context) (string, error) {
 	if node.Indexname != nil {
 		out = append(out, fmt.Sprintf("USING INDEX %s", *node.Indexname))
 	}
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }

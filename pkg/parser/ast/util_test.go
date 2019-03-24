@@ -20,7 +20,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/readystock/ast_go/parser"
 	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
 	"runtime/debug"
@@ -80,7 +79,7 @@ func parse(input string, log bool) (t *parsetreeList, errr error) {
 			errr = r.(error)
 		}
 	}()
-	jsonTree, err := parser.ParseToJSON(input)
+	jsonTree, err := parseToJSON(input)
 	if err != nil {
 		return nil, err
 	}
@@ -118,21 +117,17 @@ func DoTest(t *testing.T, test DeparseTest) {
 			t.FailNow()
 		}
 	}
-	if recompiled == nil {
-		golog.Debugf("RESULT | nil\n")
 
-	} else {
-		golog.Debugf("RESULT | %s\n", *recompiled)
-	}
+	golog.Debugf("RESULT | %s\n", recompiled)
 
-	_, err = parse(*recompiled, false)
+	_, err = parse(recompiled, false)
 	if err != nil {
 		t.Errorf("failed to parse recompiled query: %s", err)
 		t.FailNow()
 	}
 
 	if test.Expected != "" {
-		assert.Equal(t, test.Expected, *recompiled, "compiled query did not match expected query")
+		assert.Equal(t, test.Expected, recompiled, "compiled query did not match expected query")
 	} else {
 		assert.NotNil(t, recompiled, "compiled query is nil")
 	}

@@ -7,6 +7,5 @@ import (
 )
 
 func (node Integer) Deparse(ctx Context) (string, error) {
-	result := strconv.FormatInt(node.Ival, 10)
-	return &result, nil
+	return strconv.FormatInt(node.Ival, 10), nil
 }

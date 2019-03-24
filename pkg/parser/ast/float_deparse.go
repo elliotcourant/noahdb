@@ -3,5 +3,5 @@
 package ast
 
 func (node Float) Deparse(ctx Context) (string, error) {
-	return &node.Str, nil
+	return node.Str, nil
 }

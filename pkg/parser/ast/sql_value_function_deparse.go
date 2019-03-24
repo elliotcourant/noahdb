@@ -9,13 +9,11 @@ import (
 func (node SQLValueFunction) Deparse(ctx Context) (string, error) {
 	switch node.Op {
 	case SVFOP_CURRENT_TIMESTAMP:
-		result := "CURRENT_TIMESTAMP"
-		return &result, nil
+		return "CURRENT_TIMESTAMP", nil
 	case SVFOP_CURRENT_USER:
-		result := "CURRENT_USER"
-		return &result, nil
+		return "CURRENT_USER", nil
 	default:
-		panic(fmt.Sprintf("cannot deparse SQLValueFunction %d at this time", node.Op))
+		panic(fmt.Sprintf("cannot deparse SQLValueFunction %s at this time", node.Op.String()))
 	}
-	return nil, nil
+	return "", nil
 }

@@ -7,6 +7,5 @@ import (
 )
 
 func (node ParamRef) Deparse(ctx Context) (string, error) {
-	result := fmt.Sprintf("$%d", node.Number)
-	return &result, nil
+	return fmt.Sprintf("$%d", node.Number), nil
 }

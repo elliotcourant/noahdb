@@ -12,13 +12,13 @@ func (node JoinExpr) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 
 	if node.Larg == nil {
-		return nil, errors.New("larg of join cannot be null")
+		return "", errors.New("larg of join cannot be null")
 	}
 
-	if str, err := deparseNode(node.Larg, Context_None); err != nil {
-		return nil, err
+	if str, err := node.Larg.Deparse(Context_None); err != nil {
+		return "", err
 	} else {
-		out = append(out, *str)
+		out = append(out, str)
 	}
 
 	switch node.Jointype {
@@ -35,41 +35,40 @@ func (node JoinExpr) Deparse(ctx Context) (string, error) {
 	case JOIN_RIGHT:
 		out = append(out, "RIGHT")
 	default:
-		return nil, errors.Errorf("cannot handle join type (%d)", node.Jointype)
+		return "", errors.Errorf("cannot handle join type (%d)", node.Jointype)
 	}
 	out = append(out, "JOIN")
 
 	if node.Rarg == nil {
-		return nil, errors.New("rarg of join cannot be null")
+		return "", errors.New("rarg of join cannot be null")
 	}
 
-	if str, err := deparseNode(node.Rarg, Context_None); err != nil {
-		return nil, err
+	if str, err := node.Rarg.Deparse(Context_None); err != nil {
+		return "", err
 	} else {
-		out = append(out, *str)
+		out = append(out, str)
 	}
 
 	if node.Quals != nil {
 		out = append(out, "ON")
-		if str, err := deparseNode(node.Quals, Context_None); err != nil {
-			return nil, err
+		if str, err := node.Quals.Deparse(Context_None); err != nil {
+			return "", err
 		} else {
-			out = append(out, *str)
+			out = append(out, str)
 		}
 	}
 
 	if node.UsingClause.Items != nil && len(node.UsingClause.Items) > 0 {
 		clauses := make([]string, len(node.UsingClause.Items))
 		for i, field := range node.UsingClause.Items {
-			if str, err := deparseNode(field, Context_Select); err != nil {
-				return nil, err
+			if str, err := field.Deparse(Context_Select); err != nil {
+				return "", err
 			} else {
-				clauses[i] = *str
+				clauses[i] = str
 			}
 		}
 		out = append(out, fmt.Sprintf("USING (%s)", strings.Join(clauses, ", ")))
 	}
 
-	result := strings.Join(out, " ")
-	return &result, nil
+	return strings.Join(out, " "), nil
 }
