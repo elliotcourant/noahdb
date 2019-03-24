@@ -2,7 +2,7 @@ package ast
 
 import (
 	"encoding/json"
-	"github.com/elliotcourant/noahdb/pkg/parser/ast/pgparser"
+	"github.com/elliotcourant/noahdb/pkg/ast/pgparser"
 	"runtime/debug"
 )
 
@@ -12,7 +12,7 @@ func parseToJSON(input string) (result string, err error) {
 }
 
 // Parse the given SQL statement into an AST (native Go structs)
-func ParseAST(input string) (tree SyntaxTree, err error) {
+func Parse(input string) (tree SyntaxTree, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			debug.PrintStack()
