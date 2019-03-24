@@ -17,17 +17,14 @@
 package pgwire
 
 import (
+	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/pgwire/pgerror"
+	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/sql"
+	"github.com/elliotcourant/noahdb/pkg/sql/types"
 	"github.com/pkg/errors"
 	"github.com/readystock/golog"
-	"github.com/readystock/noah/db/sql"
-	"github.com/readystock/noah/db/sql/driver/npgx"
-	"github.com/readystock/noah/db/sql/pgwire/pgerror"
-	"github.com/readystock/noah/db/sql/pgwire/pgwirebase"
-	"github.com/readystock/noah/db/sql/plan"
-	"github.com/readystock/noah/db/sql/types"
-	"github.com/readystock/noah/db/util/queryutil"
-	"github.com/readystock/pg_query_go"
-	nodes "github.com/readystock/pg_query_go/nodes"
 	"reflect"
 	"strconv"
 	"time"
@@ -83,7 +80,7 @@ func (c *conn) handleParse(buf *pgwirebase.ReadBuffer) error {
 	}
 
 	golog.Infof("[%s] Query: `%s`", c.conn.RemoteAddr().String(), query)
-	p, err := pg_query.Parse(query)
+	p, err := ast.Parse(query)
 	endParse := time.Now().UTC()
 	if err != nil {
 		golog.Errorf("[%s] %s", c.conn.RemoteAddr().String(), err.Error())
@@ -93,8 +90,8 @@ func (c *conn) handleParse(buf *pgwirebase.ReadBuffer) error {
 	j, _ := p.MarshalJSON()
 	// golog.Debugf("[%s] Tree: %s", c.conn.RemoteAddr().String(), string(j))
 	if len(p.Statements) > 0 {
-		if stmt, ok := p.Statements[0].(nodes.RawStmt).Stmt.(nodes.Stmt); !ok {
-			return c.stmtBuf.Push(sql.SendError{Err: errors.Errorf("error, cannot currently handle statements of type: %s, json: %s", reflect.TypeOf(p.Statements[0].(nodes.RawStmt).Stmt).Name(), string(j))})
+		if stmt, ok := p.Statements[0].(ast.RawStmt).Stmt.(ast.Stmt); !ok {
+			return c.stmtBuf.Push(sql.SendError{Err: fmt.Errorf("error, cannot currently handle statements of type: %s, json: %s", reflect.TypeOf(p.Statements[0].(nodes.RawStmt).Stmt).Name(), string(j))})
 		} else {
 			// If the number of arguments so far is 0, we want to check with our own function
 			// to double check.

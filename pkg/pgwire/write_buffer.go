@@ -19,9 +19,8 @@ package pgwire
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/readystock/noah/db/sql/pgwire/pgwirebase"
-	"github.com/readystock/noah/db/sql/types"
-	"github.com/readystock/noah/db/util"
+	"github.com/elliotcourant/noahdb/pkg/pgwire/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/sql/types"
 	"io"
 )
 
