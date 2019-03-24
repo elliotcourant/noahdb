@@ -2,6 +2,6 @@
 
 package ast
 
-func (node VacuumStmt) Deparse(ctx Context) (*string, error) {
+func (node VacuumStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (node InsertStmt) Deparse(ctx Context) (*string, error) {
+func (node InsertStmt) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 	if node.WithClause != nil {
 		if str, err := deparseNode(node.WithClause, Context_None); err != nil {

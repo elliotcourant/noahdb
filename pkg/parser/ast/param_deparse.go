@@ -2,6 +2,6 @@
 
 package ast
 
-func (node Param) Deparse(ctx Context) (*string, error) {
+func (node Param) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

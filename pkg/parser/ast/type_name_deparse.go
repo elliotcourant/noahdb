@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (node TypeName) Deparse(ctx Context) (*string, error) {
+func (node TypeName) Deparse(ctx Context) (string, error) {
 	if node.Names.Items == nil || len(node.Names.Items) == 0 {
 		return nil, errors.New("cannot have no names on type name")
 	}

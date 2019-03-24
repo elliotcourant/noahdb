@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (node TransactionStmt) Deparse(ctx Context) (*string, error) {
+func (node TransactionStmt) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 	if kind, ok := transactionCmds[node.Kind]; !ok {
 		return nil, errors.Errorf("couldn't deparse transaction kind: %d", node.Kind)

@@ -7,7 +7,7 @@ import (
 	"github.com/juju/errors"
 )
 
-func (node TypeCast) Deparse(ctx Context) (*string, error) {
+func (node TypeCast) Deparse(ctx Context) (string, error) {
 	if node.TypeName == nil {
 		return nil, errors.New("typename cannot be null in typecast")
 	}

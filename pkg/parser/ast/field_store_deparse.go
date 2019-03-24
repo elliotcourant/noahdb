@@ -2,6 +2,6 @@
 
 package ast
 
-func (node FieldStore) Deparse(ctx Context) (*string, error) {
+func (node FieldStore) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

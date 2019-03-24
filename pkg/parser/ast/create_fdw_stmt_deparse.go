@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CreateFdwStmt) Deparse(ctx Context) (*string, error) {
+func (node CreateFdwStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

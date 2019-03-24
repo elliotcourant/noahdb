@@ -2,6 +2,6 @@
 
 package ast
 
-func (node Float) Deparse(ctx Context) (*string, error) {
+func (node Float) Deparse(ctx Context) (string, error) {
 	return &node.Str, nil
 }

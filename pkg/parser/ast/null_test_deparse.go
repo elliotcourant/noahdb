@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node NullTest) Deparse(ctx Context) (*string, error) {
+func (node NullTest) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 	if node.Arg == nil {
 		return nil, errors.New("argument cannot be null for null test (ironically)")

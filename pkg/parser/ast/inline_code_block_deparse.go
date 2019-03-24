@@ -2,6 +2,6 @@
 
 package ast
 
-func (node InlineCodeBlock) Deparse(ctx Context) (*string, error) {
+func (node InlineCodeBlock) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CreatePolicyStmt) Deparse(ctx Context) (*string, error) {
+func (node CreatePolicyStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

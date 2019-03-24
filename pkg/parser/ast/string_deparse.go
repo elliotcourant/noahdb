@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node String) Deparse(ctx Context) (*string, error) {
+func (node String) Deparse(ctx Context) (string, error) {
 	switch ctx {
 	case Context_AConst:
 		result := fmt.Sprintf("'%s'", strings.Replace(node.Str, "'", "''", -1))

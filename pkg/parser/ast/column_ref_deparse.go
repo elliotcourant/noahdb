@@ -7,18 +7,17 @@ import (
 	"strings"
 )
 
-func (node ColumnRef) Deparse(ctx Context) (*string, error) {
+func (node ColumnRef) Deparse(ctx Context) (string, error) {
 	if node.Fields.Items == nil || len(node.Fields.Items) == 0 {
-		return nil, errors.New("columnref cannot have 0 fields")
+		return "", errors.New("columnref cannot have 0 fields")
 	}
 	out := make([]string, len(node.Fields.Items))
 	for i, field := range node.Fields.Items {
 		if str, err := field.Deparse(ctx); err != nil {
-			return nil, err
+			return "", err
 		} else {
-			out[i] = *str
+			out[i] = str
 		}
 	}
-	result := strings.Join(out, ".")
-	return &result, nil
+	return strings.Join(out, "."), nil
 }

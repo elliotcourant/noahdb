@@ -2,6 +2,6 @@
 
 package ast
 
-func (node DeclareCursorStmt) Deparse(ctx Context) (*string, error) {
+func (node DeclareCursorStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

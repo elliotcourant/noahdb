@@ -2,6 +2,6 @@
 
 package ast
 
-func (node ArrayCoerceExpr) Deparse(ctx Context) (*string, error) {
+func (node ArrayCoerceExpr) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

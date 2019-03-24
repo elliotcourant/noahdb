@@ -16,7 +16,7 @@ var (
 	}
 )
 
-func (node SortBy) Deparse(ctx Context) (*string, error) {
+func (node SortBy) Deparse(ctx Context) (string, error) {
 	out := []string{""}
 
 	if str, err := node.Node.Deparse(Context_None); err != nil {

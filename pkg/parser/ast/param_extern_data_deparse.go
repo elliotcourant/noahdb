@@ -2,6 +2,6 @@
 
 package ast
 
-func (node ParamExternData) Deparse(ctx Context) (*string, error) {
+func (node ParamExternData) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

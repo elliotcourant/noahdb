@@ -2,6 +2,6 @@
 
 package ast
 
-func (node ReindexStmt) Deparse(ctx Context) (*string, error) {
+func (node ReindexStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

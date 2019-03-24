@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterDomainStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterDomainStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

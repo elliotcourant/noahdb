@@ -2,6 +2,6 @@
 
 package ast
 
-func (node A_Const) Deparse(ctx Context) (*string, error) {
-	return deparseNode(node.Val, Context_AConst)
+func (node A_Const) Deparse(ctx Context) (string, error) {
+	return node.Val.Deparse(Context_AConst)
 }

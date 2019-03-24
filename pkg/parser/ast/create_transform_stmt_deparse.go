@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CreateTransformStmt) Deparse(ctx Context) (*string, error) {
+func (node CreateTransformStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

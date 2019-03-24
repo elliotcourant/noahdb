@@ -2,6 +2,6 @@
 
 package ast
 
-func (node DropSubscriptionStmt) Deparse(ctx Context) (*string, error) {
+func (node DropSubscriptionStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

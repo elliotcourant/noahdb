@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (node DropdbStmt) Deparse(ctx Context) (*string, error) {
+func (node DropdbStmt) Deparse(ctx Context) (string, error) {
 	out := []string{"DROP DATABASE"}
 	if node.MissingOk {
 		out = append(out, "IF EXISTS")

@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CompositeTypeStmt) Deparse(ctx Context) (*string, error) {
+func (node CompositeTypeStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

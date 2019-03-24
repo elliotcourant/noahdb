@@ -2,6 +2,6 @@
 
 package ast
 
-func (node MinMaxExpr) Deparse(ctx Context) (*string, error) {
+func (node MinMaxExpr) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

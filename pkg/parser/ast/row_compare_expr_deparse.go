@@ -2,6 +2,6 @@
 
 package ast
 
-func (node RowCompareExpr) Deparse(ctx Context) (*string, error) {
+func (node RowCompareExpr) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

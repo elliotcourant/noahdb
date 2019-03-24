@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node CreateStmt) Deparse(ctx Context) (*string, error) {
+func (node CreateStmt) Deparse(ctx Context) (string, error) {
 	out := []string{"CREATE"}
 	if persistence := node.relPersistence(); persistence != nil {
 		out = append(out, *persistence)

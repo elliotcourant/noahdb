@@ -2,6 +2,6 @@
 
 package ast
 
-func (node TruncateStmt) Deparse(ctx Context) (*string, error) {
+func (node TruncateStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

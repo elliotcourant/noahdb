@@ -2,6 +2,6 @@
 
 package ast
 
-func (node FetchStmt) Deparse(ctx Context) (*string, error) {
+func (node FetchStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

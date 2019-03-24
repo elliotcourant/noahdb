@@ -2,6 +2,6 @@
 
 package ast
 
-func (node TableSampleClause) Deparse(ctx Context) (*string, error) {
+func (node TableSampleClause) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

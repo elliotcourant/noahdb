@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CoerceViaIO) Deparse(ctx Context) (*string, error) {
+func (node CoerceViaIO) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

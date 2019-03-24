@@ -2,6 +2,6 @@
 
 package ast
 
-func (node XmlSerialize) Deparse(ctx Context) (*string, error) {
+func (node XmlSerialize) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

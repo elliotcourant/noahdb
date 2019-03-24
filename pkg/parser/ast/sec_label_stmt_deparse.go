@@ -2,6 +2,6 @@
 
 package ast
 
-func (node SecLabelStmt) Deparse(ctx Context) (*string, error) {
+func (node SecLabelStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

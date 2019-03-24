@@ -2,6 +2,6 @@
 
 package ast
 
-func (node RangeSubselect) Deparse(ctx Context) (*string, error) {
+func (node RangeSubselect) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

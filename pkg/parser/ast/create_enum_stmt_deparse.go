@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CreateEnumStmt) Deparse(ctx Context) (*string, error) {
+func (node CreateEnumStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

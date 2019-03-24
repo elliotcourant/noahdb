@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CoerceToDomainValue) Deparse(ctx Context) (*string, error) {
+func (node CoerceToDomainValue) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

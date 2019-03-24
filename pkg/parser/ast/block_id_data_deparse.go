@@ -2,6 +2,6 @@
 
 package ast
 
-func (node BlockIdData) Deparse(ctx Context) (*string, error) {
+func (node BlockIdData) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

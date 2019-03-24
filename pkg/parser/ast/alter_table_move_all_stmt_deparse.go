@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterTableMoveAllStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterTableMoveAllStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterDatabaseSetStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterDatabaseSetStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

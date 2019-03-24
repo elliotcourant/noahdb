@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterCollationStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterCollationStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func (node SQLValueFunction) Deparse(ctx Context) (*string, error) {
+func (node SQLValueFunction) Deparse(ctx Context) (string, error) {
 	switch node.Op {
 	case SVFOP_CURRENT_TIMESTAMP:
 		result := "CURRENT_TIMESTAMP"

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (node JoinExpr) Deparse(ctx Context) (*string, error) {
+func (node JoinExpr) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 
 	if node.Larg == nil {

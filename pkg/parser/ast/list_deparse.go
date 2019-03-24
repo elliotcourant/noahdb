@@ -2,7 +2,7 @@
 
 package ast
 
-func (node List) Deparse(ctx Context) (*string, error) {
+func (node List) Deparse(ctx Context) (string, error) {
 	panic("use DeparseList for lists")
 }
 

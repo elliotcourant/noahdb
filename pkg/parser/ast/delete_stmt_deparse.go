@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (node DeleteStmt) Deparse(ctx Context) (*string, error) {
+func (node DeleteStmt) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 	if node.WithClause != nil {
 		if str, err := node.WithClause.Deparse(Context_None); err != nil {

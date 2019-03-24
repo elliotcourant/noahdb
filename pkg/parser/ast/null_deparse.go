@@ -2,7 +2,7 @@
 
 package ast
 
-func (node Null) Deparse(ctx Context) (*string, error) {
+func (node Null) Deparse(ctx Context) (string, error) {
 	result := "NULL"
 	return &result, nil
 }

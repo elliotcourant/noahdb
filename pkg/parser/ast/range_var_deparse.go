@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node RangeVar) Deparse(ctx Context) (*string, error) {
+func (node RangeVar) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 	if !node.Inh {
 		out = append(out, "ONLY")

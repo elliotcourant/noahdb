@@ -2,6 +2,6 @@
 
 package ast
 
-func (node ImportForeignSchemaStmt) Deparse(ctx Context) (*string, error) {
+func (node ImportForeignSchemaStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

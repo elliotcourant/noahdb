@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterOpFamilyStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterOpFamilyStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

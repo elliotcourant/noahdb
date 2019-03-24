@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterUserMappingStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterUserMappingStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

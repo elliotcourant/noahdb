@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node CreateForeignServerStmt) Deparse(ctx Context) (*string, error) {
+func (node CreateForeignServerStmt) Deparse(ctx Context) (string, error) {
 	out := []string{"CREATE SERVER", ""}
 
 	if node.Servername == nil {

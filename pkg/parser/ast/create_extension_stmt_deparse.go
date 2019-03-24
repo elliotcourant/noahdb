@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CreateExtensionStmt) Deparse(ctx Context) (*string, error) {
+func (node CreateExtensionStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

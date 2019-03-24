@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node FuncCall) Deparse(ctx Context) (*string, error) {
+func (node FuncCall) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 
 	args := make([]string, len(node.Args.Items))

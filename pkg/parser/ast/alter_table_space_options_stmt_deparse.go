@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterTableSpaceOptionsStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterTableSpaceOptionsStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

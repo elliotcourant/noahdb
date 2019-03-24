@@ -2,6 +2,6 @@
 
 package ast
 
-func (node PartitionSpec) Deparse(ctx Context) (*string, error) {
+func (node PartitionSpec) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

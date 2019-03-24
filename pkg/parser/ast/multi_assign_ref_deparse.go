@@ -2,6 +2,6 @@
 
 package ast
 
-func (node MultiAssignRef) Deparse(ctx Context) (*string, error) {
+func (node MultiAssignRef) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node SubLink) Deparse(ctx Context) (*string, error) {
+func (node SubLink) Deparse(ctx Context) (string, error) {
 	switch node.SubLinkType {
 	case EXPR_SUBLINK:
 		if subSelect, err := node.Subselect.Deparse(Context_None); err != nil {

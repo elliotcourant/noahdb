@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterOwnerStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterOwnerStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

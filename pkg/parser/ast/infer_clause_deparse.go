@@ -2,6 +2,6 @@
 
 package ast
 
-func (node InferClause) Deparse(ctx Context) (*string, error) {
+func (node InferClause) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

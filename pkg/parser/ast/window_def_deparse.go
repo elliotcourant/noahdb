@@ -2,6 +2,6 @@
 
 package ast
 
-func (node WindowDef) Deparse(ctx Context) (*string, error) {
+func (node WindowDef) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

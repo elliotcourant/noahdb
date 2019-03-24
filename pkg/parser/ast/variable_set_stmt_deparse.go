@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (node VariableSetStmt) Deparse(ctx Context) (*string, error) {
+func (node VariableSetStmt) Deparse(ctx Context) (string, error) {
 	out := []string{"SET"}
 	if node.IsLocal {
 		out = append(out, "LOCAL")

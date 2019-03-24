@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node ObjectWithArgs) Deparse(ctx Context) (*string, error) {
+func (node ObjectWithArgs) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 
 	objName := make([]string, len(node.Objname.Items))

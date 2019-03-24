@@ -2,6 +2,6 @@
 
 package ast
 
-func (node GroupingSet) Deparse(ctx Context) (*string, error) {
+func (node GroupingSet) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

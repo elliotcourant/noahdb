@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CollateExpr) Deparse(ctx Context) (*string, error) {
+func (node CollateExpr) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

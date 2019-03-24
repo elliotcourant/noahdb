@@ -2,6 +2,6 @@
 
 package ast
 
-func (node TriggerTransition) Deparse(ctx Context) (*string, error) {
+func (node TriggerTransition) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

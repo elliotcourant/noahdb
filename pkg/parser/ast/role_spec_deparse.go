@@ -2,6 +2,6 @@
 
 package ast
 
-func (node RoleSpec) Deparse(ctx Context) (*string, error) {
+func (node RoleSpec) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

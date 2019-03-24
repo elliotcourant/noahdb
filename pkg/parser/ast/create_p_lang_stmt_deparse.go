@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CreatePLangStmt) Deparse(ctx Context) (*string, error) {
+func (node CreatePLangStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

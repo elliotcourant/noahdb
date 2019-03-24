@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CaseTestExpr) Deparse(ctx Context) (*string, error) {
+func (node CaseTestExpr) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

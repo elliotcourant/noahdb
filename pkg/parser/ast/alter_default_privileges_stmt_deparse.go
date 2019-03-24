@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterDefaultPrivilegesStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterDefaultPrivilegesStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

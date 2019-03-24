@@ -2,6 +2,6 @@
 
 package ast
 
-func (node Aggref) Deparse(ctx Context) (*string, error) {
+func (node Aggref) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func (node DefElem) Deparse(ctx Context) (*string, error) {
+func (node DefElem) Deparse(ctx Context) (string, error) {
 	if arg, err := node.Arg.Deparse(Context_AConst); err != nil {
 		return nil, err
 	} else {

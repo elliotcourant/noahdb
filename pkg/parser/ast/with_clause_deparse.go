@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node WithClause) Deparse(ctx Context) (*string, error) {
+func (node WithClause) Deparse(ctx Context) (string, error) {
 	out := []string{"WITH"}
 	if node.Recursive {
 		out = append(out, "RECURSIVE")

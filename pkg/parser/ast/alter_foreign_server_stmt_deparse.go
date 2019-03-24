@@ -2,6 +2,6 @@
 
 package ast
 
-func (node AlterForeignServerStmt) Deparse(ctx Context) (*string, error) {
+func (node AlterForeignServerStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node ResTarget) Deparse(ctx Context) (*string, error) {
+func (node ResTarget) Deparse(ctx Context) (string, error) {
 	switch ctx {
 	case Context_None:
 		return node.Name, nil

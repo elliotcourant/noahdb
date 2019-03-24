@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (node UpdateStmt) Deparse(ctx Context) (*string, error) {
+func (node UpdateStmt) Deparse(ctx Context) (string, error) {
 	out := make([]string, 0)
 
 	if node.WithClause != nil {

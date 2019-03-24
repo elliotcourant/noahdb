@@ -2,6 +2,6 @@
 
 package ast
 
-func (node RangeTblFunction) Deparse(ctx Context) (*string, error) {
+func (node RangeTblFunction) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

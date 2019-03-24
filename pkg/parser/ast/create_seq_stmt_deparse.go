@@ -2,6 +2,6 @@
 
 package ast
 
-func (node CreateSeqStmt) Deparse(ctx Context) (*string, error) {
+func (node CreateSeqStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

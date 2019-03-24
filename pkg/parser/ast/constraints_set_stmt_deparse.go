@@ -2,6 +2,6 @@
 
 package ast
 
-func (node ConstraintsSetStmt) Deparse(ctx Context) (*string, error) {
+func (node ConstraintsSetStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

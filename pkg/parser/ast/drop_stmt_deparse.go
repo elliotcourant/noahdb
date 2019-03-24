@@ -20,7 +20,7 @@ var (
 	}
 )
 
-func (node DropStmt) Deparse(ctx Context) (*string, error) {
+func (node DropStmt) Deparse(ctx Context) (string, error) {
 	out := []string{"DROP", ""}
 
 	if removeType, ok := dropStmtRemoveTypes[node.RemoveType]; !ok {

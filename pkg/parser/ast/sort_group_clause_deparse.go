@@ -2,6 +2,6 @@
 
 package ast
 
-func (node SortGroupClause) Deparse(ctx Context) (*string, error) {
+func (node SortGroupClause) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

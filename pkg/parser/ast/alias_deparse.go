@@ -7,16 +7,15 @@ import (
 	"strings"
 )
 
-func (node Alias) Deparse(ctx Context) (*string, error) {
+func (node Alias) Deparse(ctx Context) (string, error) {
 	if node.Colnames.Items != nil && len(node.Colnames.Items) > 0 {
 		if colnames, err := deparseNodeList(node.Colnames.Items, Context_None); err != nil {
-			return nil, err
+			return "", err
 		} else {
 			cols := strings.Join(colnames, ", ")
-			result := fmt.Sprintf(`%s (%s)`, *node.Aliasname, cols)
-			return &result, nil
+			return fmt.Sprintf(`%s (%s)`, *node.Aliasname, cols), nil
 		}
 	} else {
-		return node.Aliasname, nil
+		return *node.Aliasname, nil
 	}
 }

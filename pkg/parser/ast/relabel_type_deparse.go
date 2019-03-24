@@ -2,6 +2,6 @@
 
 package ast
 
-func (node RelabelType) Deparse(ctx Context) (*string, error) {
+func (node RelabelType) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }

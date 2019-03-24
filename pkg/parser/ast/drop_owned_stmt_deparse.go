@@ -2,6 +2,6 @@
 
 package ast
 
-func (node DropOwnedStmt) Deparse(ctx Context) (*string, error) {
+func (node DropOwnedStmt) Deparse(ctx Context) (string, error) {
 	panic("Not Implemented")
 }
