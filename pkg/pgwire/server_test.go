@@ -7,6 +7,7 @@ import (
 	_ "github.com/lib/pq"
 	"net"
 	"testing"
+	"time"
 )
 
 type config struct {
@@ -25,11 +26,11 @@ func (conf config) Port() int {
 func (conf config) LibPqConnectionString() string {
 	return fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		conf.Address(), conf.Port(), "postgres", "password", "postgres")
+		conf.Address(), conf.Port(), "noah", "password", "postgres")
 }
 
 func NewConfig() config {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := net.Listen("tcp", "127.0.0.1:5433")
 	if err != nil {
 		panic(err)
 	}
@@ -53,10 +54,14 @@ func TestLibPqStartup(t *testing.T) {
 			panic(err)
 		}
 	}()
+	time.Sleep(1 * time.Second)
 	db, err := sql.Open("postgres", conf.LibPqConnectionString())
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
-	db.Ping()
+
+	if _, err := db.Query(`SELECT 1;`); err != nil {
+		panic(err)
+	}
 }
