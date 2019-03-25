@@ -3,7 +3,7 @@ package queryutil
 import (
 	"bytes"
 	"fmt"
-	"github.com/elliotcourant/noahdb/pkg/pgwire/pgerror"
+	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/elliotcourant/noahdb/pkg/sql/types"
 	"github.com/elliotcourant/noahdb/pkg/util"
 	"sort"
