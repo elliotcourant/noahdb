@@ -2,7 +2,10 @@ package pgwire
 
 import (
 	"fmt"
-	"github.com/elliotcourant/noahdb/pkg/pgwire/pgproto"
+	"github.com/elliotcourant/noahdb/pkg/commands"
+	"github.com/elliotcourant/noahdb/pkg/pgproto"
+	"github.com/elliotcourant/noahdb/pkg/sql"
+	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
 	"github.com/readystock/golog"
 	"io"
 	"net"
@@ -22,8 +25,6 @@ func NewServer(config ServerConfig) error {
 	}
 	defer ln.Close()
 
-	golog.Verbosef("listening for connections on: %s:%d", config.Address(), config.Port())
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -37,7 +38,7 @@ func NewServer(config ServerConfig) error {
 				golog.Errorf("failed setting up wire: %s", err.Error())
 			}
 
-			golog.Verbosef("handling connection from: %s", conn.RemoteAddr().String())
+			// golog.Verbosef("handling connection from: %s", conn.RemoteAddr().String())
 			if err := wire.Serve(); err != nil {
 				golog.Errorf("failed serving connection: %s", err.Error())
 			}
@@ -49,9 +50,11 @@ type wireServer struct {
 	reader  io.Reader
 	writer  io.Writer
 	backend *pgproto.Backend
+
+	stmtBuf stmtbuf.StatementBuffer
 }
 
-func newWire(conn net.Conn) (*wireServer, error) {
+func newWire(conn io.ReadWriter) (*wireServer, error) {
 	backend, err := pgproto.NewBackend(conn, conn)
 	if err != nil {
 		return nil, err
@@ -60,6 +63,7 @@ func newWire(conn net.Conn) (*wireServer, error) {
 		reader:  conn,
 		writer:  conn,
 		backend: backend,
+		stmtBuf: stmtbuf.NewStatementBuffer(),
 	}, nil
 }
 
@@ -69,7 +73,7 @@ func (wire *wireServer) Serve() error {
 	if err != nil {
 		return wire.Errorf(err.Error())
 	}
-	golog.Infof("received startup message: %+v", startupMsg)
+	// golog.Infof("received startup message: %+v", startupMsg)
 
 	if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
 		return wire.Errorf("user authentication required")
@@ -90,11 +94,11 @@ func (wire *wireServer) Serve() error {
 			return wire.Errorf(err.Error())
 		}
 
-		authResponse, ok := response.(*pgproto.PasswordMessage)
+		_, ok := response.(*pgproto.PasswordMessage)
 		if !ok {
 			return wire.Errorf("authentication failed")
 		}
-		golog.Verbosef("received password authentication for user [%s]", authResponse.Password)
+		// golog.Verbosef("received password authentication for user [%s]", authResponse.Password)
 
 		if err := wire.backend.Send(&pgproto.Authentication{
 			Type: pgproto.AuthTypeOk,
@@ -118,6 +122,14 @@ func (wire *wireServer) Serve() error {
 		return wire.Errorf("could not handle protocol version [%d]", startupMsg.ProtocolVersion)
 	}
 
+	terminateChannel := make(chan bool)
+
+	go func() {
+		if err := sql.Run(wire, terminateChannel); err != nil {
+			golog.Errorf(err.Error())
+		}
+	}()
+
 	for {
 		message, err := wire.backend.Receive()
 		if err != nil {
@@ -126,33 +138,39 @@ func (wire *wireServer) Serve() error {
 
 		switch msg := message.(type) {
 		case *pgproto.Query:
-			if err := wire.backend.Send(&pgproto.CommandComplete{
-				CommandTag: "SELECT 1",
-			}); err != nil {
-				return wire.Errorf(err.Error())
+			if err := wire.handleSimpleQuery(msg); err != nil {
+				return wire.StatementBuffer().Push(commands.SendError{
+					Err: err,
+				})
 			}
 		case *pgproto.Execute:
 		case *pgproto.Parse:
 			if err := wire.handleParse(msg); err != nil {
-				return wire.Errorf(err.Error())
+				return wire.StatementBuffer().Push(commands.SendError{
+					Err: err,
+				})
 			}
 		case *pgproto.Describe:
 		case *pgproto.Bind:
 		case *pgproto.Close:
 		case *pgproto.Terminate:
+			terminateChannel <- true
+			return nil
 		case *pgproto.Sync:
 		case *pgproto.Flush:
 		case *pgproto.CopyData:
 		default:
 			return wire.Errorf("could not handle message type [%s]", reflect.TypeOf(message).Elem().Name())
 		}
-
-		if err := wire.backend.Send(&pgproto.ReadyForQuery{
-			TxStatus: 'I',
-		}); err != nil {
-			return wire.Errorf(err.Error())
-		}
 	}
+}
+
+func (wire *wireServer) Backend() *pgproto.Backend {
+	return wire.backend
+}
+
+func (wire *wireServer) StatementBuffer() stmtbuf.StatementBuffer {
+	return wire.stmtBuf
 }
 
 func (wire *wireServer) Errorf(message string, args ...interface{}) error {

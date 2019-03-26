@@ -3,19 +3,23 @@ package stmtbuf
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/util/syncutil"
+	"io"
 	"sync"
 )
 
 type Command interface {
+	Command()
 }
 
 type StatementBuffer interface {
 	Push(Command) error
+	AdvanceOne()
+	CurrentCommand() (Command, CmdPos, error)
 }
 
 // CmdPos represents the index of a command relative to the start of a
 // connection. The first command received on a connection has position 0.
-type cmdPos int64
+type CmdPos int64
 
 // StmtBuf maintains a list of commands that a SQL client has sent for execution
 // over a network connection. The commands are SQL queries to be executed,
@@ -69,14 +73,21 @@ type stmtBuf struct {
 
 	// startPos indicates the index of the first command currently in data
 	// relative to the start of the connection.
-	startPos cmdPos
+	startPos CmdPos
 	// curPos is the current position of the cursor going through the commands.
 	// At any time, curPos indicates the position of the command to be returned
 	// by curCmd().
-	curPos cmdPos
+	curPos CmdPos
 	// lastPos indicates the position of the last command that was pushed into
 	// the buffer.
-	lastPos cmdPos
+	lastPos CmdPos
+}
+
+func NewStatementBuffer() StatementBuffer {
+	var buf stmtBuf
+	buf.lastPos = -1
+	buf.cond = sync.NewCond(&buf.Mutex)
+	return &buf
 }
 
 // Push adds a Command to the end of the buffer. If a curCmd() call was blocked
@@ -94,4 +105,62 @@ func (buf *stmtBuf) Push(cmd Command) error { // ctx context.Context,
 
 	buf.cond.Signal()
 	return nil
+}
+
+// curCmd returns the Command currently indicated by the cursor. Besides the
+// Command itself, the command's position is also returned; the position can be
+// used to later rewind() to this Command.
+//
+// If the cursor is positioned over an empty slot, the call blocks until the
+// next Command is pushed into the buffer.
+//
+// If the buffer has previously been Close()d, or is closed while this is
+// blocked, io.EOF is returned.
+func (buf *stmtBuf) CurrentCommand() (Command, CmdPos, error) {
+	buf.Lock()
+	defer buf.Unlock()
+	for {
+		if buf.closed {
+			return nil, 0, io.EOF
+		}
+		curPos := buf.curPos
+		cmdIdx, err := buf.translatePosLocked(curPos)
+		if err != nil {
+			return nil, 0, err
+		}
+		if cmdIdx < len(buf.data) {
+			return buf.data[cmdIdx], curPos, nil
+		}
+		if cmdIdx != len(buf.data) {
+			return nil, 0, fmt.Errorf(
+				"can only wait for next command; corrupt cursor: %d", curPos)
+		}
+		// Wait for the next Command to arrive to the buffer.
+		buf.readerBlocked = true
+		buf.cond.Wait()
+		buf.readerBlocked = false
+	}
+}
+
+// advanceOne advances the cursor one Command over. The command over which the
+// cursor will be positioned when this returns may not be in the buffer yet.
+func (buf *stmtBuf) AdvanceOne() {
+	buf.Lock()
+	buf.curPos++
+	buf.Unlock()
+}
+
+// translatePosLocked translates an absolute position of a command (counting
+// from the connection start) to the index of the respective command in the
+// buffer (so, it returns an index relative to the start of the buffer).
+//
+// Attempting to translate a position that's below buf.startPos returns an
+// error.
+func (buf *stmtBuf) translatePosLocked(pos CmdPos) (int, error) {
+	if pos < buf.startPos {
+		return 0, fmt.Errorf(
+			"position %d no longer in buffer (buffer starting at %d)",
+			pos, buf.startPos)
+	}
+	return int(pos - buf.startPos), nil
 }

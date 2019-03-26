@@ -1,4 +1,4 @@
-.PHONY: default strings
+.PHONY: default strings protos
 
 default: strings
 
@@ -11,3 +11,10 @@ strings:
 	@stringer -type StmtType pkg/parser/ast/stmt_type.go
 	@stringer -type SubLinkType pkg/parser/ast/sub_link_type.go
 	@stringer -type SQLValueFunctionOp pkg/parser/ast/sql_value_function_op.go
+
+
+STORE_DIRECTORY = ./pkg/store
+
+protos:
+	protoc -I=$(STORE_DIRECTORY) --go_out=$(STORE_DIRECTORY) $(STORE_DIRECTORY)/action.proto
+	protoc -I=$(STORE_DIRECTORY) --go_out=$(STORE_DIRECTORY) $(STORE_DIRECTORY)/sequence.proto

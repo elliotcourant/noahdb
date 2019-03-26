@@ -19,11 +19,19 @@ package queryutil
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/sql/types"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/readystock/golinq"
 	"reflect"
 	"strconv"
 )
+
+// PlaceholderTypes relates placeholder names to their resolved type.
+type PlaceholderTypes map[string]types.T
+
+// QueryArguments relates placeholder names to their provided query argument.
+//
+// A nil value represents a NULL argument.
+type QueryArguments map[string]types.Value
 
 func GetArguments(stmt interface{}) []int {
 	args := make([]int, 0)

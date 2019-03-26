@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/sql/types"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
 	"testing"

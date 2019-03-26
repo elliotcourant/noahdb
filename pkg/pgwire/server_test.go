@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	_ "github.com/lib/pq"
+	"github.com/readystock/golog"
+	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
 	"time"
@@ -55,13 +57,31 @@ func TestLibPqStartup(t *testing.T) {
 		}
 	}()
 	time.Sleep(1 * time.Second)
-	db, err := sql.Open("postgres", conf.LibPqConnectionString())
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
+	for i := 0; i < 5; i++ {
+		func() {
+			db, err := sql.Open("postgres", conf.LibPqConnectionString())
+			if err != nil {
+				panic(err)
+			}
+			defer db.Close()
 
-	if _, err := db.Query(`SELECT 1;`); err != nil {
-		panic(err)
+			if row, err := db.Query(`SELECT 1;`); err != nil {
+				panic(err)
+			} else {
+				row.Next()
+				intVal := 0
+				row.Scan(&intVal)
+				assert.Equal(t, 1, intVal)
+				row.Close()
+			}
+
+			start := time.Now()
+			if row, err := db.Query(`SELECT 1;`); err != nil {
+				panic(err)
+			} else {
+				row.Close()
+			}
+			golog.Infof("query time: %s", time.Since(start))
+		}()
 	}
 }

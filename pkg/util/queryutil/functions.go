@@ -19,7 +19,7 @@ package queryutil
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/sql/types"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/readystock/golinq"
 	"reflect"
 	"strconv"
