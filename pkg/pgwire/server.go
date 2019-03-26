@@ -124,7 +124,7 @@ func (wire *wireServer) Serve() error {
 			return wire.Errorf(err.Error())
 		}
 
-		switch message.(type) {
+		switch msg := message.(type) {
 		case *pgproto.Query:
 			if err := wire.backend.Send(&pgproto.CommandComplete{
 				CommandTag: "SELECT 1",
@@ -133,6 +133,9 @@ func (wire *wireServer) Serve() error {
 			}
 		case *pgproto.Execute:
 		case *pgproto.Parse:
+			if err := wire.handleParse(msg); err != nil {
+				return wire.Errorf(err.Error())
+			}
 		case *pgproto.Describe:
 		case *pgproto.Bind:
 		case *pgproto.Close:

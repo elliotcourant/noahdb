@@ -7,12 +7,12 @@ import (
 	"github.com/readystock/golog"
 )
 
-func (wire *wireServer) handleParse(name, query string, parameterOids []uint32) error {
-	parseTree, err := ast.Parse(query)
+func (wire *wireServer) handleParse(parseMessage *pgproto.Parse) error {
+	parseTree, err := ast.Parse(parseMessage.Query)
 	if err != nil {
 		return err
 	}
 	j, _ := json.Marshal(parseTree)
-	golog.Verbosef("received query: %s | %s", query, string(j))
+	golog.Verbosef("received query: %s | %s", parseMessage.Query, string(j))
 	return wire.backend.Send(&pgproto.ParseComplete{})
 }
