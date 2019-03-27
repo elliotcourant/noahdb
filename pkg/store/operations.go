@@ -171,3 +171,7 @@ func (store *Store) Exec(query string) (sql.Result, error) {
 	r := store.raft.Apply(b, raftTimeout)
 	return nil, r.Error()
 }
+
+func (store *Store) Query(query string) (*sql.Rows, error) {
+	return store.sqlstore.Query(query)
+}

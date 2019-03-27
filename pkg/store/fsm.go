@@ -2,7 +2,6 @@ package store
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"github.com/dgraph-io/badger"
@@ -64,10 +63,7 @@ func (f *fsm) Restore(rc io.ReadCloser) error {
 	if err != nil {
 		return err
 	}
-	f.sqlstore, err = sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		return err
-	}
+
 	for _, entry := range logEntries {
 		logEntry := raft.Log{}
 		if err := proto.Unmarshal(entry.Value, &logEntry); err != nil {

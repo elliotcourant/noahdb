@@ -143,6 +143,8 @@ func CreateStore(directory string, listen string, joinAddr string) (*Store, erro
 			return nil, fmt.Errorf("recover raft: %s", err)
 		}
 	}
+	sqlstore, _ = sql.Open("sqlite3", ":memory:")
+	store.sqlstore = sqlstore
 	ra, err := raft.NewRaft(config, (*fsm)(&store), &log, &stable, snapshots, transport)
 	if err != nil {
 		return nil, fmt.Errorf("new raft: %s", err)
