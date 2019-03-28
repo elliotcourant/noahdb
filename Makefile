@@ -13,7 +13,11 @@ strings:
 	@stringer -type TransactionStmtKind -output pkg/ast/transaction_stmt_kind.string.go pkg/ast/transaction_stmt_kind.go
 
 STORE_DIRECTORY = ./pkg/store
+CORE_DIRECTORY = ./pkg/core
+PGERROR_DIRECTORY = ./pkg/pgerror
 
 protos:
-	protoc -I=$(STORE_DIRECTORY) --go_out=$(STORE_DIRECTORY) $(STORE_DIRECTORY)/action.proto
-	protoc -I=$(STORE_DIRECTORY) --go_out=$(STORE_DIRECTORY) $(STORE_DIRECTORY)/sequence.proto
+	protoc -I=$(STORE_DIRECTORY) --go_out=plugins=grpc:$(STORE_DIRECTORY) $(STORE_DIRECTORY)/fsm.proto
+	protoc -I=$(STORE_DIRECTORY) --go_out=plugins=grpc:$(STORE_DIRECTORY) $(STORE_DIRECTORY)/raft.proto
+	protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/shard.proto
+	protoc -I=$(PGERROR_DIRECTORY) --go_out=$(PGERROR_DIRECTORY) $(PGERROR_DIRECTORY)/errors.proto

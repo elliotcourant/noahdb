@@ -1,9 +1,5 @@
 package core
 
-type Shard struct {
-	ShardID uint64
-}
-
 type shardContext struct {
 	*base
 }
