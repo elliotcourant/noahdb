@@ -107,13 +107,11 @@ func (buf *stmtBuf) Push(cmd Command) error { // ctx context.Context,
 	return nil
 }
 
-// curCmd returns the Command currently indicated by the cursor. Besides the
+// CurrentCommand returns the Command currently indicated by the cursor. Besides the
 // Command itself, the command's position is also returned; the position can be
 // used to later rewind() to this Command.
-//
 // If the cursor is positioned over an empty slot, the call blocks until the
 // next Command is pushed into the buffer.
-//
 // If the buffer has previously been Close()d, or is closed while this is
 // blocked, io.EOF is returned.
 func (buf *stmtBuf) CurrentCommand() (Command, CmdPos, error) {
@@ -142,7 +140,7 @@ func (buf *stmtBuf) CurrentCommand() (Command, CmdPos, error) {
 	}
 }
 
-// advanceOne advances the cursor one Command over. The command over which the
+// AdvanceOne advances the cursor one Command over. The command over which the
 // cursor will be positioned when this returns may not be in the buffer yet.
 func (buf *stmtBuf) AdvanceOne() {
 	buf.Lock()

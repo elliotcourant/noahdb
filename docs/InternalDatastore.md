@@ -38,3 +38,5 @@ topography.
 >   healthy      BOOL   NOT NULL
 > );
 > ```
+
+## Key-Value Store

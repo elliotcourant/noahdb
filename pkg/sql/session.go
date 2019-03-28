@@ -74,6 +74,6 @@ type PreparedStatement struct {
 	InTypes []types.OID
 
 	// TODO(andrei): The connExecutor doesn't use this. Delete it once the
-	// Executor is gone.
+	//  Executor is gone.
 	portalNames map[string]struct{}
 }

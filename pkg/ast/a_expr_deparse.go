@@ -4,7 +4,6 @@ package ast
 
 import (
 	"fmt"
-	"github.com/juju/errors"
 	"reflect"
 	"strings"
 )
@@ -22,7 +21,7 @@ func (node A_Expr) Deparse(ctx Context) (string, error) {
 	case AEXPR_NULLIF:
 		return node.deparseAExprNullIf(ctx)
 	default:
-		return "", errors.Errorf("could not parse AExpr of kind: %d, not implemented", node.Kind)
+		return "", fmt.Errorf("could not parse AExpr of kind: %d, not implemented", node.Kind)
 	}
 }
 
@@ -32,7 +31,7 @@ func (node A_Expr) deparseAexpr(ctx Context) (string, error) {
 		switch n := node.Lexpr.(type) {
 		case List:
 			if n.Items == nil || len(n.Items) == 0 {
-				return "", errors.New("lexpr list cannot be empty")
+				return "", fmt.Errorf("lexpr list cannot be empty")
 			}
 			if str, err := n.Items[0].Deparse(ctx); err != nil {
 				return "", err
@@ -57,7 +56,7 @@ func (node A_Expr) deparseAexpr(ctx Context) (string, error) {
 	}
 
 	if node.Name.Items == nil || len(node.Name.Items) == 0 {
-		return "", errors.New("error, expression name cannot be null")
+		return "", fmt.Errorf("error, expression name cannot be null")
 	}
 
 	if name, err := node.Name.Items[0].Deparse(Context_Operator); err != nil {
@@ -75,7 +74,7 @@ func (node A_Expr) deparseAexprIn(ctx Context) (string, error) {
 	out := make([]string, 0)
 
 	if node.Rexpr == nil {
-		return "", errors.New("rexpr of IN expression cannot be null")
+		return "", fmt.Errorf("rexpr of IN expression cannot be null")
 	}
 
 	// TODO (@elliotcourant) convert to handle list
@@ -86,7 +85,7 @@ func (node A_Expr) deparseAexprIn(ctx Context) (string, error) {
 	}
 
 	if node.Name.Items == nil || len(node.Name.Items) == 0 {
-		return "", errors.New("names of IN expression cannot be empty")
+		return "", fmt.Errorf("names of IN expression cannot be empty")
 	}
 
 	if strs, err := deparseNodeList(node.Name.Items, Context_Operator); err != nil {
@@ -100,7 +99,7 @@ func (node A_Expr) deparseAexprIn(ctx Context) (string, error) {
 		}
 
 		if node.Lexpr == nil {
-			return "", errors.New("lexpr of IN expression cannot be null")
+			return "", fmt.Errorf("lexpr of IN expression cannot be null")
 		}
 
 		if str, err := node.Lexpr.Deparse(Context_None); err != nil {

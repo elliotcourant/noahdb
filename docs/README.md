@@ -3,7 +3,7 @@
 noahdb is a distributed multi-tenant new-sql database.
 
 - General
-    - [Requirements](docs/Introduction.md#Requirements)
+    - [Requirements](/docs/README.md#requirements)
     - Installation
     - Build From Source
     - Configuration
@@ -24,8 +24,8 @@ noahdb is a distributed multi-tenant new-sql database.
         - Tenants On Each Shard
         - Tenants On Each Node
 - Internals
-    - [Parser](docs/Parser.md)
-    - [Internal Data-Store](docs/InternalDatastore.md)
+    - [Parser](/docs/Parser.md)
+    - [Internal Data-Store](/docs/InternalDatastore.md)
     
 # Requirements
 

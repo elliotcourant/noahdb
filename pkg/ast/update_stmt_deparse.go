@@ -3,7 +3,7 @@
 package ast
 
 import (
-	"github.com/juju/errors"
+	"fmt"
 	"strings"
 )
 
@@ -21,7 +21,7 @@ func (node UpdateStmt) Deparse(ctx Context) (string, error) {
 	out = append(out, "UPDATE")
 
 	if node.Relation == nil {
-		return "", errors.New("relation of update statement cannot be null")
+		return "", fmt.Errorf("relation of update statement cannot be null")
 	}
 
 	if str, err := (*node.Relation).Deparse(Context_None); err != nil {
@@ -31,7 +31,7 @@ func (node UpdateStmt) Deparse(ctx Context) (string, error) {
 	}
 
 	if node.TargetList.Items == nil || len(node.TargetList.Items) == 0 {
-		return "", errors.New("update statement cannot have no sets")
+		return "", fmt.Errorf("update statement cannot have no sets")
 	}
 
 	if node.TargetList.Items != nil && len(node.TargetList.Items) > 0 {
