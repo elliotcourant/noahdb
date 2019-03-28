@@ -1,22 +1,21 @@
 package static
 
 import (
-	"time"
+	"github.com/elliotcourant/statik/fs"
 )
 
-func init() {
-	time.Sleep(100 * time.Millisecond)
-	// statikFS, err := fs.New()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// file, err := statikFS.Open("internal_sql.sql")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// data := make([]byte, 0)
-	// _, err = file.Read(data)
-	// if err != nil {
-	// 	panic(err)
-	// }
+func GetEmbeddedFile(fileName string) ([]byte, error) {
+	fileSystem, err := fs.New()
+	if err != nil {
+		panic(err)
+	}
+	file, err := fileSystem.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	stats, _ := file.Stat()
+	size := stats.Size()
+	bytes := make([]byte, size)
+	_, _ = file.Read(bytes)
+	return bytes, nil
 }

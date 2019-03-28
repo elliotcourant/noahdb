@@ -97,7 +97,7 @@ func TestCreateStoreMultipleServers(t *testing.T) {
 }
 
 func TestCreateStoreSeveralServers(t *testing.T) {
-	serverCount := 12
+	serverCount := 6
 	startingPort := 7543
 	golog.Infof("starting %d server(s) for testing", serverCount)
 	tmpDirs := make([]string, serverCount)

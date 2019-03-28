@@ -22,7 +22,7 @@ func TestCreateMemoryDataStore(t *testing.T) {
 func TestCreateMemoryDataStoreWithSchema_FKTest(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
-	bytes, err := ioutil.ReadFile("internal_sql.sql")
+	bytes, err := ioutil.ReadFile("files/internal_sql.sql")
 	assert.NoError(t, err)
 	_, err = db.Exec(string(bytes))
 	assert.NoError(t, err)
@@ -33,7 +33,7 @@ func TestCreateMemoryDataStoreWithSchema_FKTest(t *testing.T) {
 func TestCreateMemoryDataStoreWithSchema_Transaction(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
-	bytes, err := ioutil.ReadFile("internal_sql.sql")
+	bytes, err := ioutil.ReadFile("files/internal_sql.sql")
 	assert.NoError(t, err)
 	_, err = db.Exec(string(bytes))
 	assert.NoError(t, err)

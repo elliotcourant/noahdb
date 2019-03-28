@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package core;
+
+message DataNode {
+    uint64 DataNodeID = 1;
+    string Address = 2;
+    int32 Port = 3;
+    bool Healthy = 4;
+}
