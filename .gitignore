@@ -1,3 +1,4 @@
 bin
 *.string.go
 *.pb.go
+statik.go

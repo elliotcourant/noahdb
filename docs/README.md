@@ -40,3 +40,5 @@ Protoc however, is a required tool if you want to do a clean build of noahdb.
     - Download: http://google.github.io/proto-lens/installing-protoc.html
     
 At the moment noahdb cannot be compiled on Windows, it must be compiled on Mac OS X or Linux.
+
+# Commands

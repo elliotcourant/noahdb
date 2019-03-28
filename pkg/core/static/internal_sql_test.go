@@ -1,4 +1,4 @@
-package core
+package static
 
 import (
 	"database/sql"
@@ -28,4 +28,26 @@ func TestCreateMemoryDataStoreWithSchema_FKTest(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = db.Exec("INSERT INTO tenants (tenant_id, shard_id) VALUES(1, 2);")
 	assert.Error(t, err)
+}
+
+func TestCreateMemoryDataStoreWithSchema_Transaction(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	assert.NoError(t, err)
+	bytes, err := ioutil.ReadFile("internal_sql.sql")
+	assert.NoError(t, err)
+	_, err = db.Exec(string(bytes))
+	assert.NoError(t, err)
+	tx, err := db.Begin()
+	assert.NoError(t, err)
+	_, err = tx.Exec("INSERT INTO shards (shard_id) VALUES(121);")
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
+	_, err = db.Exec("INSERT INTO tenants (tenant_id, shard_id) VALUES(1132, 8);")
+	assert.Error(t, err)
+	row, err := db.Query("SELECT shard_id FROM shards")
+	assert.NoError(t, err)
+	row.Next()
+	intVal := 0
+	row.Scan(&intVal)
+	assert.Equal(t, 121, intVal)
 }

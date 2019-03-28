@@ -10,7 +10,7 @@ type ExecuteStatement struct {
 	Statement ast.Stmt
 }
 
-// Implements the command interface
+// Command Implements the command interface
 func (ExecuteStatement) Command() {}
 
 type PrepareStatement struct {
@@ -25,23 +25,23 @@ type PrepareStatement struct {
 	Statement ast.Stmt
 }
 
-// Implements the command interface
+// Command Implements the command interface
 func (PrepareStatement) Command() {}
 
 type DescribeStatement struct {
 }
 
-// Implements the command interface
+// Command Implements the command interface
 func (DescribeStatement) Command() {}
 
 type BindStatement struct {
 }
 
-// Implements the command interface
+// Command Implements the command interface
 func (BindStatement) Command() {}
 
 type DeletePreparedStatement struct {
 }
 
-// Implements the command interface
+// Command Implements the command interface
 func (DeletePreparedStatement) Command() {}

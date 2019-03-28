@@ -4,5 +4,5 @@ type SendError struct {
 	Err error
 }
 
-// Implements the command interface
+// Command Implements the command interface
 func (SendError) Command() {}

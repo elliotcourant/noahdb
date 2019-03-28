@@ -3,5 +3,5 @@ package commands
 type Flush struct {
 }
 
-// Implements the command interface
+// Command Implements the command interface
 func (Flush) Command() {}
