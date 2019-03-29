@@ -4,7 +4,7 @@ STORE_DIRECTORY = ./pkg/store
 CORE_DIRECTORY = ./pkg/core
 PGERROR_DIRECTORY = ./pkg/pgerror
 
-default: test
+default: dependencies test
 
 dependencies: generated
 	go get -t -v ./...
