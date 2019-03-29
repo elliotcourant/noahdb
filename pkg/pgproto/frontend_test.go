@@ -1,7 +1,7 @@
 package pgproto_test
 
 import (
-	"github.com/readystock/noah/db/sql/pgwire/pgproto"
+	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"testing"
 
 	"github.com/pkg/errors"

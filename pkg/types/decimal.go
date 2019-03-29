@@ -3,8 +3,8 @@ package types
 import (
 	"fmt"
 	"github.com/cockroachdb/apd"
+	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/kataras/go-errors"
-	"github.com/readystock/noah/db/sql/pgwire/pgerror"
 )
 
 var (

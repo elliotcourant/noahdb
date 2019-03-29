@@ -4,7 +4,6 @@ go:
   - "1.11"
 
 os:
-  - osx
   - linux
 
 before_script:
