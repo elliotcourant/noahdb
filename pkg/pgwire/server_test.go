@@ -32,7 +32,7 @@ func (conf config) LibPqConnectionString() string {
 }
 
 func NewConfig() config {
-	ln, err := net.Listen("tcp", "127.0.0.1:5433")
+	ln, err := net.Listen("tcp", "127.0.0.1:")
 	if err != nil {
 		panic(err)
 	}
