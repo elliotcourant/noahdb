@@ -7,7 +7,7 @@ os:
   - osx
   - linux
 
-script:
+before_script:
   - go get -v -d google.golang.org/grpc
   - go get -v -d -t github.com/golang/protobuf/...
   - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
@@ -18,7 +18,7 @@ script:
   - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
   - make dependencies
 
-install:
+script:
   - make test
   - make coverage
 
