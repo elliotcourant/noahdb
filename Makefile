@@ -1,10 +1,19 @@
-.PHONY: default strings protos embedded
+.PHONY: default strings protos embedded test coverage generated
 
 STORE_DIRECTORY = ./pkg/store
 CORE_DIRECTORY = ./pkg/core
 PGERROR_DIRECTORY = ./pkg/pgerror
 
-default: strings
+default: test
+
+dependencies: generated
+	go get -t -v ./...
+
+test:
+	go test -v ./...
+
+coverage:
+	./coverage.sh
 
 strings:
 	@echo generating strings...

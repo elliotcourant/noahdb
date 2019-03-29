@@ -1,0 +1,24 @@
+language: go
+
+go:
+  - "1.11"
+  - tip
+
+matrix:
+  include:
+    - os: osx
+      install:
+        - make dependencies
+      script:
+        - make test
+        - make coverage
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
+    - os: linux
+      install:
+        - make dependencies
+      script:
+        - make test
+        - make coverage
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
