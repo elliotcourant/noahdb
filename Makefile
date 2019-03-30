@@ -32,6 +32,7 @@ protos:
 	@protoc -I=$(STORE_DIRECTORY) --go_out=plugins=grpc:$(STORE_DIRECTORY) $(STORE_DIRECTORY)/raft.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/shard.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/data_node.proto
+	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/tenant.proto
 	@protoc -I=$(PGERROR_DIRECTORY) --go_out=$(PGERROR_DIRECTORY) $(PGERROR_DIRECTORY)/errors.proto
 
 embedded:

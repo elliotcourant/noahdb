@@ -6,6 +6,8 @@ import (
 
 // Colony is a wrapper for all of the core data that noahdb needs to operate.
 type Colony interface {
+	Shards() ShardContext
+	Tenants() TenantContext
 	// Shards()
 	// Nodes()
 	// Tenants()
