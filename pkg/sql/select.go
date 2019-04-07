@@ -25,13 +25,19 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 
 func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
 	tables := queryutil.GetTables(stmt.tree)
+	// If there are no tables then we can simply recompile the query and send it to SQLite,
+	// this will make queries like CURRENT_TIMESTAMP or 1 very fast
 	if len(tables) == 0 {
+		query, err := stmt.tree.Deparse(ast.Context_None)
+		if err != nil {
+			return InitialPlan{}, true, err
+		}
 		return InitialPlan{
 			Target: PlanTarget_INTERNAL,
 			Types: map[PlanType]InitialPlanTask{
 				PlanType_READ: {
 					Type:  stmt.tree.StatementType(),
-					Query: "SELECT 1",
+					Query: query,
 				},
 			},
 		}, true, nil

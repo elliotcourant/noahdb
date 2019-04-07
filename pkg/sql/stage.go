@@ -31,8 +31,27 @@ func (s *session) stageQueryToResult(statement ast.Stmt, result *commands.Comman
 		}
 	}
 
-	if standardPlanner, ok := planner.(StandardQueryPlanner); ok {
+	// We want to try to address simple queries before we address standard ones, a simple query
+	// can absolutely be handled in a standard query plan, but we want to try to return results
+	// as fast as possible, so if a query is simple enough that it doesn't need to be sent to a
+	// data node and can be addressed directly from noah then we want to prioritize that.
+	if simplePlanner, ok := planner.(SimpleQueryPlanner); ok {
+		if plan, ok, err = simplePlanner.getSimpleQueryPlan(s); err != nil {
+			return err
+		} else if ok {
+			goto ExpandInitialPlan
+		}
+	}
 
+	// Check standard query plans.
+	// Standard query plans are plans that target data nodes in the cluster.
+	if standardPlanner, ok := planner.(StandardQueryPlanner); ok {
+		// If a standard query planner is available then try to build a plan.
+		if plan, ok, err = standardPlanner.getStandardQueryPlan(s); err != nil {
+			return err
+		} else if ok {
+			goto ExpandInitialPlan
+		}
 	}
 
 ExpandInitialPlan:
