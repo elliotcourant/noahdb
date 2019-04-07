@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/elliotcourant/noahdb/pkg/top"
 	"github.com/readystock/golog"
 	"github.com/spf13/cobra"
 	"os"
@@ -27,7 +28,7 @@ var (
 	startCmd = &cobra.Command{
 		Use: "start",
 		Run: func(cmd *cobra.Command, args []string) {
-
+			top.NoahMain(StoreDirectory, GrpcAddr, JoinAddr, PGWireAddr)
 		},
 	}
 )

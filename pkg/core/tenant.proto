@@ -3,6 +3,6 @@ syntax = "proto3";
 package core;
 
 message Tenant {
-	uint64 TenantID = 1;
-	uint64 ShardID = 2;
+    uint64 TenantID = 1;
+    uint64 ShardID = 2;
 }

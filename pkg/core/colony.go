@@ -2,12 +2,14 @@ package core
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/store"
+	"time"
 )
 
 // Colony is a wrapper for all of the core data that noahdb needs to operate.
 type Colony interface {
 	Shards() ShardContext
 	Tenants() TenantContext
+	DataNodes() DataNodeContext
 	// Shards()
 	// Nodes()
 	// Tenants()
@@ -27,7 +29,13 @@ func NewColony(dataDirectory, listenAddress, joinAddress, postgresAddress string
 		return nil, err
 	}
 
-	return &base{
+	colony := &base{
 		db: db,
-	}, nil
+	}
+
+	time.Sleep(6 * time.Second)
+
+	colony.Setup()
+
+	return colony, nil
 }
