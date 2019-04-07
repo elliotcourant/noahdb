@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
-	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/readystock/golog"
 	"io"
 	"reflect"
@@ -30,36 +29,38 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 				s.StatementBuffer().AdvanceOne()
 			}
 			result := commands.NewCommandResult(s)
+
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
-				val := types.Int4{}
-				val.Set(1)
-				bytes, _ := val.EncodeText(types.NewConnInfo(), nil)
-				err = s.Backend().Send(pgproto.BackendMessages{
-					&pgproto.RowDescription{
-						Fields: []pgproto.FieldDescription{
-							{
-								Name:                 "",
-								TableOID:             0,
-								TableAttributeNumber: 0,
-								DataTypeOID:          types.Int2OID,
-								DataTypeSize:         4,
-								TypeModifier:         0,
-								Format:               pgproto.TextFormat,
-							},
-						},
-					},
-					&pgproto.DataRow{
-						Values: [][]byte{
-							bytes,
-						},
-					},
-					&pgproto.CommandComplete{
-						CommandTag: "SELECT 1",
-					},
-				})
-				// err = session.Backend().Send()
-				// err = session.Backend().Send()
+				err = s.ExecuteStatement(cmd, result)
+				// val := types.Int4{}
+				// val.Set(1)
+				// bytes, _ := val.EncodeText(types.NewConnInfo(), nil)
+				// err = s.Backend().Send(pgproto.BackendMessages{
+				// 	&pgproto.RowDescription{
+				// 		Fields: []pgproto.FieldDescription{
+				// 			{
+				// 				Name:                 "",
+				// 				TableOID:             0,
+				// 				TableAttributeNumber: 0,
+				// 				DataTypeOID:          types.Int2OID,
+				// 				DataTypeSize:         4,
+				// 				TypeModifier:         0,
+				// 				Format:               pgproto.TextFormat,
+				// 			},
+				// 		},
+				// 	},
+				// 	&pgproto.DataRow{
+				// 		Values: [][]byte{
+				// 			bytes,
+				// 		},
+				// 	},
+				// 	&pgproto.CommandComplete{
+				// 		CommandTag: "SELECT 1",
+				// 	},
+				// })
+				// // err = session.Backend().Send()
+				// // err = session.Backend().Send()
 			case commands.ExecutePortal:
 			case commands.PrepareStatement:
 				err = s.ExecutePrepare(cmd, result)
@@ -81,7 +82,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			}
 
 			if err != nil {
-				if err := result.CloseWithErr(err); err != nil {
+				if err = result.CloseWithErr(err); err != nil {
 					return err
 				}
 			} else {
