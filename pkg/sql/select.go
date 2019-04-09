@@ -20,6 +20,7 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 	if len(tables) == 0 {
 		return InitialPlan{}, false, nil
 	}
+
 	return InitialPlan{}, false, nil
 }
 

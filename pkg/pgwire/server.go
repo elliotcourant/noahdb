@@ -3,6 +3,7 @@ package pgwire
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
+	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/sql"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
@@ -18,7 +19,7 @@ type ServerConfig interface {
 	Port() int
 }
 
-func NewServer(config ServerConfig) error {
+func NewServer(colony core.Colony, config ServerConfig) error {
 	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", config.Address(), config.Port()))
 	if err != nil {
 		return err
@@ -33,7 +34,7 @@ func NewServer(config ServerConfig) error {
 
 		go func() {
 			defer conn.Close()
-			wire, err := newWire(conn)
+			wire, err := newWire(colony, conn)
 			if err != nil {
 				golog.Errorf("failed setting up wire: %s", err.Error())
 			}
@@ -47,6 +48,8 @@ func NewServer(config ServerConfig) error {
 }
 
 type wireServer struct {
+	colony core.Colony
+
 	reader  io.Reader
 	writer  io.Writer
 	backend *pgproto.Backend
@@ -54,12 +57,13 @@ type wireServer struct {
 	stmtBuf stmtbuf.StatementBuffer
 }
 
-func newWire(conn io.ReadWriter) (*wireServer, error) {
+func newWire(colony core.Colony, conn io.ReadWriter) (*wireServer, error) {
 	backend, err := pgproto.NewBackend(conn, conn)
 	if err != nil {
 		return nil, err
 	}
 	return &wireServer{
+		colony:  colony,
 		reader:  conn,
 		writer:  conn,
 		backend: backend,

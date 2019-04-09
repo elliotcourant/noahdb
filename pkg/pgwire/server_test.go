@@ -3,11 +3,14 @@ package pgwire_test
 import (
 	"database/sql"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	_ "github.com/lib/pq"
 	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net"
+	"os"
 	"testing"
 	"time"
 )
@@ -49,10 +52,30 @@ func NewConfig() config {
 	}
 }
 
+func NewColony() (core.Colony, func()) {
+	tempdir, err := ioutil.TempDir("", "core-temp")
+	if err != nil {
+		panic(err)
+	}
+
+	colony, err := core.NewColony(tempdir, ":", "", ":")
+	if err != nil {
+		panic(err)
+	}
+
+	return colony, func() {
+		if err := os.RemoveAll(tempdir); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func TestLibPqStartup(t *testing.T) {
 	conf := NewConfig()
+	colony, cleanup := NewColony()
+	defer cleanup()
 	go func() {
-		if err := pgwire.NewServer(conf); err != nil {
+		if err := pgwire.NewServer(colony, conf); err != nil {
 			panic(err)
 		}
 	}()

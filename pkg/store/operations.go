@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/dgraph-io/badger"
 	"github.com/golang/protobuf/proto"
 	"github.com/readystock/golog"
@@ -169,6 +170,14 @@ func (store *Store) Exec(query string) (sql.Result, error) {
 		return nil, err
 	}
 	r := store.raft.Apply(b, raftTimeout)
+	if err := r.Error(); err != nil {
+		return nil, err
+	} else if resp, ok := r.Response().(CommandResponse); ok {
+		golog.Debugf("[%d] Delay Total [%s] Response [%s]", store.nodeId, time.Since(time.Unix(0, int64(resp.Timestamp))), time.Since(time.Unix(0, int64(resp.AppliedTimestamp))))
+		if !resp.IsSuccess {
+			return nil, fmt.Errorf(resp.ErrorMessage)
+		}
+	}
 	return nil, r.Error()
 }
 

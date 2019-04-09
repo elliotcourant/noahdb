@@ -2,6 +2,7 @@ package pgwire
 
 import (
 	"bytes"
+	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/readystock/golog"
 	"io"
 	"os"
@@ -14,8 +15,8 @@ func TestMain(m *testing.M) {
 	os.Exit(res)
 }
 
-func NewTestWire() (io.ReadWriter, *wireServer, error) {
+func NewTestWire(colony core.Colony) (io.ReadWriter, *wireServer, error) {
 	buf := bytes.NewBuffer(nil)
-	wire, err := newWire(buf)
+	wire, err := newWire(colony, buf)
 	return buf, wire, err
 }

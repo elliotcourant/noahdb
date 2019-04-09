@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package core;
+
+enum TableType {
+    Unknown = 0;
+    Tenant = 1;
+    Sharded = 2;
+    Global = 3;
+    Noah = 4;
+}
+
+message Table {
+    uint64 TableID = 1;
+    uint64 SchemaID = 2;
+    string TableName = 3;
+    TableType TableType = 4;
+}

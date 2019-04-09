@@ -53,7 +53,7 @@ func NoahMain(dataDirectory, listenAddress, joinAddress, postgresAddress string)
 
 	go func() {
 		defer tasks.Done()
-		if err = pgwire.NewServer(pgwireConfig{
+		if err = pgwire.NewServer(colony, pgwireConfig{
 			address: "127.0.0.1",
 			port:    5433,
 		}); err != nil {

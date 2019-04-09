@@ -4,4 +4,12 @@ package core;
 
 message Shard {
     uint64 ShardID = 1;
+    bool Ready = 2;
+}
+
+message DataNodeShard {
+    uint64 DataNodeShardID = 1;
+    uint64 DataNodeID = 2;
+    uint64 ShardID = 3;
+    bool ReadOnly = 4;
 }

@@ -1,5 +1,9 @@
 package core
 
+import (
+	"database/sql"
+)
+
 type dataNodeContext struct {
 	*base
 }
@@ -19,12 +23,21 @@ func (ctx *dataNodeContext) GetDataNodes() ([]DataNode, error) {
 	if err != nil {
 		return nil, err
 	}
+	return ctx.dataNodesFromRows(rows)
+}
+
+func (ctx *dataNodeContext) dataNodesFromRows(rows *sql.Rows) ([]DataNode, error) {
 	defer rows.Close()
 	nodes := make([]DataNode, 0)
 	for rows.Next() {
 		node := DataNode{}
-		rows.Scan(&node.DataNodeID, &node.Address, &node.Port, &node.Healthy)
+		if err := rows.Scan(&node.DataNodeID, &node.Address, &node.Port, &node.Healthy); err != nil {
+			return nil, err
+		}
 		nodes = append(nodes, node)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return nodes, nil
 }
