@@ -2,6 +2,7 @@ package sql
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/types"
@@ -11,6 +12,7 @@ import (
 
 type sessionContext interface {
 	Backend() *pgproto.Backend
+	Colony() core.Colony
 	StatementBuffer() stmtbuf.StatementBuffer
 }
 

@@ -177,6 +177,10 @@ func (wire *wireServer) StatementBuffer() stmtbuf.StatementBuffer {
 	return wire.stmtBuf
 }
 
+func (wire *wireServer) Colony() core.Colony {
+	return wire.colony
+}
+
 func (wire *wireServer) Errorf(message string, args ...interface{}) error {
 	errorMessage := &pgproto.ErrorResponse{
 		Severity: "FATAL",
