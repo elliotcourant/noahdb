@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package core;
+
+message Setting {
+    uint64 SettingID = 1;
+    string SettingKey = 2;
+
+}

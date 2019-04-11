@@ -10,6 +10,8 @@ type Colony interface {
 	Shards() ShardContext
 	Tenants() TenantContext
 	DataNodes() DataNodeContext
+	Tables() TableContext
+	Schema() SchemaContext
 	// Shards()
 	// Nodes()
 	// Tenants()

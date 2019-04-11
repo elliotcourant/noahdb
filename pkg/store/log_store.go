@@ -8,10 +8,6 @@ import (
 
 type logStore Store
 
-var (
-	logsPrefix = []byte("/_logs_/")
-)
-
 func (log *logStore) FirstIndex() (val uint64, err error) {
 	return log.index(false)
 }
@@ -83,7 +79,6 @@ func (log *logStore) DeleteRange(min, max uint64) error {
 		}
 		return nil
 	})
-	return nil
 }
 
 func getKeyForIndex(index uint64) []byte {

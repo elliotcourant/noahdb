@@ -184,3 +184,21 @@ func (store *Store) Exec(query string) (sql.Result, error) {
 func (store *Store) Query(query string) (*sql.Rows, error) {
 	return store.sqlstore.Query(query)
 }
+
+func (store *Store) Count(query string) (int64, error) {
+	rows, err := store.sqlstore.Query(query)
+	if err != nil {
+		return -1, err
+	}
+	for rows.Next() {
+		count := int64(0)
+		if err = rows.Scan(&count); err != nil {
+			return -1, err
+		}
+		return count, nil
+	}
+	if err = rows.Err(); err != nil {
+		return -1, err
+	}
+	return 0, err
+}

@@ -2,9 +2,17 @@ syntax = "proto3";
 
 package core;
 
+enum ShardState {
+    Unknown = 0;
+    New = 1;
+    Balancing = 2;
+    Stable = 3;
+    Unavailable = 4;
+}
+
 message Shard {
     uint64 ShardID = 1;
-    bool Ready = 2;
+    ShardState State = 2;
 }
 
 message DataNodeShard {

@@ -3,6 +3,9 @@
 STORE_DIRECTORY = ./pkg/store
 CORE_DIRECTORY = ./pkg/core
 PGERROR_DIRECTORY = ./pkg/pgerror
+BUILD_DIRECTORY = ./bin
+PACKAGE = github.com/readystock/noah
+EXECUTABLE_NAME = noah
 
 default: dependencies test
 
@@ -11,6 +14,15 @@ dependencies: generated
 
 test:
 	go test -v ./...
+
+setup_build_dir:
+	mkdir -p $(BUILD_DIRECTORY)
+
+build: dependencies setup_build_dir
+	go build -o $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME) $(PACKAGE)
+
+fresh: dependencies setup_build_dir
+	go build -a -x -v -o $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME) $(PACKAGE)
 
 coverage:
 	./coverage.sh
@@ -33,7 +45,11 @@ protos:
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/shard.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/data_node.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/tenant.proto
+	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/type.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/table.proto
+	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/setting.proto
+	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/schema.proto
+	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/user.proto
 	@protoc -I=$(PGERROR_DIRECTORY) --go_out=$(PGERROR_DIRECTORY) $(PGERROR_DIRECTORY)/errors.proto
 
 embedded:

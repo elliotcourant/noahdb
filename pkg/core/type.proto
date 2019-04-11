@@ -3,5 +3,6 @@ syntax = "proto3";
 package core;
 
 message Type {
-
+    uint64 TypeID = 1;
+    string TypeName = 2;
 }

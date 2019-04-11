@@ -44,8 +44,8 @@ func (ctx *shardContext) NewShard() (shard Shard, err error) {
 		return shard, err
 	}
 	shard.ShardID = *id
-	shard.Ready = false
-	sql := fmt.Sprintf("INSERT INTO shards VALUES (%d, %t);", shard.ShardID, shard.Ready)
+	shard.State = ShardState_New
+	sql := fmt.Sprintf("INSERT INTO shards VALUES (%d, %d);", shard.ShardID, shard.State)
 	_, err = ctx.db.Exec(sql)
 	if err != nil {
 		return Shard{}, err
@@ -80,7 +80,7 @@ func (ctx *shardContext) shardsFromRows(rows *sql.Rows) ([]Shard, error) {
 	for rows.Next() {
 		shard := Shard{}
 		if err := rows.Scan(
-			&shard.ShardID, &shard.Ready); err != nil {
+			&shard.ShardID, &shard.State); err != nil {
 			return nil, err
 		}
 		shards = append(shards, shard)

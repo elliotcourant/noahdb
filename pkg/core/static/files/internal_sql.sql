@@ -1,5 +1,11 @@
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE users (
+    user_id   BIGINT PRIMARY KEY,
+    user_name TEXT NOT NULL UNIQUE,
+    password  TEXT NOT NULL
+);
+
 CREATE TABLE data_nodes (
     data_node_id BIGINT PRIMARY KEY,
     address      TEXT    NOT NULL,
@@ -9,7 +15,7 @@ CREATE TABLE data_nodes (
 
 CREATE TABLE shards (
     shard_id BIGINT PRIMARY KEY,
-    ready    BOOLEAN NOT NULL
+    state    INT NOT NULL
 );
 
 CREATE TABLE tenants (
@@ -31,7 +37,9 @@ CREATE TABLE data_node_shards (
 CREATE TABLE types (
     type_id        INT PRIMARY KEY, -- type_id is the equivalent of postgres's's's's OID system.
     type_name      TEXT    NOT NULL UNIQUE,
-    extension_type BOOLEAN NOT NULL
+    postgres_name  TEXT    NOT NULL,
+    extension_type BOOLEAN NOT NULL,
+    alias_type_id  INT     NULL REFERENCES types (type_id) ON DELETE CASCADE
 );
 
 CREATE TABLE schemas (
@@ -49,9 +57,12 @@ CREATE TABLE tables (
 
 CREATE TABLE columns (
     column_id   BIGINT PRIMARY KEY,
-    table_id    INT  NOT NULL REFERENCES tables (table_id) ON DELETE CASCADE,
-    order       INT  NOT NULL,
-    column_name TEXT NOT NULL,
-
+    table_id    INT     NOT NULL REFERENCES tables (table_id) ON DELETE CASCADE,
+    type_id     INT     NOT NULL REFERENCES types (type_id) ON DELETE RESTRICT,
+    sort        INT     NOT NULL,
+    column_name TEXT    NOT NULL,
+    nullable    BOOLEAN NOT NULL,
+    shard_key   BOOLEAN NOT NULL,
+    serial      BOOLEAN NOT NULL,
     UNIQUE (table_id, column_name)
 );
