@@ -66,3 +66,4 @@ CREATE TABLE columns (
     serial      BOOLEAN NOT NULL,
     UNIQUE (table_id, column_name)
 );
+
