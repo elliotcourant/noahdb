@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"gopkg.in/doug-martin/goqu.v5"
+	// Use the postgres adapter for building queries.
 	_ "gopkg.in/doug-martin/goqu.v5/adapters/postgres"
 )
 
@@ -26,6 +27,7 @@ type shardContext struct {
 	*base
 }
 
+// ShardContext is just a wrapper interface for shard metadata.
 type ShardContext interface {
 	NewShard() (Shard, error)
 	GetShards() ([]Shard, error)
