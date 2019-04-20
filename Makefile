@@ -4,7 +4,7 @@ STORE_DIRECTORY = ./pkg/store
 CORE_DIRECTORY = ./pkg/core
 PGERROR_DIRECTORY = ./pkg/pgerror
 BUILD_DIRECTORY = ./bin
-PACKAGE = github.com/readystock/noah
+PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
 
 default: dependencies test
