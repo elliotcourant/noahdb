@@ -6,6 +6,19 @@ CREATE TABLE users (
     password  TEXT NOT NULL
 );
 
+CREATE TABLE types (
+    type_id        INT PRIMARY KEY, -- type_id is the equivalent of postgres's's's's OID system.
+    type_name      TEXT    NOT NULL UNIQUE,
+    postgres_name  TEXT    NOT NULL,
+    extension_type BOOLEAN NOT NULL,
+    alias_type_id  INT     NULL REFERENCES types (type_id) ON DELETE CASCADE
+);
+
+CREATE TABLE settings (
+    setting_id BIGINT PRIMARY KEY,
+    type_id    BIGINT NOT NULL REFERENCES types (type_id)
+);
+
 CREATE TABLE data_nodes (
     data_node_id BIGINT PRIMARY KEY,
     address      TEXT    NOT NULL,
@@ -34,13 +47,7 @@ CREATE TABLE data_node_shards (
     FOREIGN KEY (shard_id) REFERENCES shards (shard_id)
 );
 
-CREATE TABLE types (
-    type_id        INT PRIMARY KEY, -- type_id is the equivalent of postgres's's's's OID system.
-    type_name      TEXT    NOT NULL UNIQUE,
-    postgres_name  TEXT    NOT NULL,
-    extension_type BOOLEAN NOT NULL,
-    alias_type_id  INT     NULL REFERENCES types (type_id) ON DELETE CASCADE
-);
+
 
 CREATE TABLE schemas (
     schema_id   INT PRIMARY KEY,

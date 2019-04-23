@@ -12,6 +12,7 @@ type Colony interface {
 	DataNodes() DataNodeContext
 	Tables() TableContext
 	Schema() SchemaContext
+	Users() UserContext
 	// Shards()
 	// Nodes()
 	// Tenants()

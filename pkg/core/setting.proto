@@ -2,8 +2,11 @@ syntax = "proto3";
 
 package core;
 
+enum SettingKey {
+    SearchPath = 0;
+}
+
 message Setting {
     uint64 SettingID = 1;
     string SettingKey = 2;
-
 }
