@@ -68,6 +68,7 @@ CREATE TABLE columns (
     type_id     INT     NOT NULL REFERENCES types (type_id) ON DELETE RESTRICT,
     sort        INT     NOT NULL,
     column_name TEXT    NOT NULL,
+    primary_key BOOLEAN NOT NULL,
     nullable    BOOLEAN NOT NULL,
     shard_key   BOOLEAN NOT NULL,
     serial      BOOLEAN NOT NULL,

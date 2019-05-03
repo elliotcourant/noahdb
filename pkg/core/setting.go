@@ -15,6 +15,6 @@ func (ctx *base) Settings() SettingContext {
 }
 
 func (ctx *settingContext) GetSetting(key SettingKey, result interface{}) (bool, error) {
-	rows, err := ctx.db.Query("SELECT types.id, ")
+	// rows, err := ctx.db.Query("SELECT types.id, ")
 	panic("not implemented")
 }

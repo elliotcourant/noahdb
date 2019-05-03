@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/readystock/goqu"
 	"strings"
 )
@@ -24,7 +25,8 @@ func (ctx *schemaContext) GetSchemas() ([]Schema, error) {
 }
 
 func (ctx *schemaContext) Exists(name string) (bool, error) {
-	name = strings.ToLower(name)
+	name = ctx.cleanSchemaName(name)
+
 	sql, _, _ := goqu.
 		From("schemas").
 		Select(goqu.COUNT("schema_id")).
@@ -39,6 +41,30 @@ func (ctx *schemaContext) Exists(name string) (bool, error) {
 }
 
 // NewSchema creates a new schema in noahdb.
-func (ctx *schemaContext) NewSchema(name string) (Schema, error) {
-	return Schema{}, nil
+func (ctx *schemaContext) NewSchema(name string) (schema Schema, err error) {
+	name = ctx.cleanSchemaName(name)
+	if ok, err := ctx.Exists(name); err != nil {
+		return schema, fmt.Errorf("could not verify if there was a conflicting schema: %s", err.Error())
+	} else if ok {
+		return schema, fmt.Errorf("a schema with name [%s] already exists", name)
+	}
+
+	id, err := ctx.db.NextSequenceValueById(schemaIdSequencePath)
+	if err != nil {
+		return schema, err
+	}
+
+	sql := goqu.From("schemas").
+		Insert(goqu.Record{
+			"schema_id": *id,
+			"name":      name,
+		}).Sql
+	_, err = ctx.db.Exec(sql)
+	schema.SchemaID = *id
+	schema.SchemaName = name
+	return schema, err
+}
+
+func (ctx *schemaContext) cleanSchemaName(name string) string {
+	return strings.TrimSpace(strings.ToLower(name))
 }

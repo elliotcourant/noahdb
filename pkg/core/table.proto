@@ -11,8 +11,20 @@ enum TableType {
 }
 
 message Table {
-    uint64 TableID = 1;
-    uint64 SchemaID = 2;
+    int32 TableID = 1;
+    int32 SchemaID = 2;
     string TableName = 3;
     TableType TableType = 4;
+}
+
+message Column {
+    int32 ColumnID = 1;
+    int32 TableID = 2;
+    int32 TypeID = 3;
+    int32 Sort = 4;
+    string ColumnName = 5;
+    bool PrimaryKey = 6;
+    bool Nullable = 7;
+    bool ShardKey = 8;
+    bool Serial = 9;
 }

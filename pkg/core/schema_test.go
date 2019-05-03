@@ -14,3 +14,16 @@ func TestSchemaContext_Exists(t *testing.T) {
 		assert.False(t, ok)
 	})
 }
+
+func TestSchemaContext_NewSchema(t *testing.T) {
+	colony, cleanup := newTestColony()
+	defer cleanup()
+	t.Run("create a new schema", func(t *testing.T) {
+		name := "public"
+		schema, err := colony.Schema().(*schemaContext).NewSchema(name)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, schema)
+		assert.True(t, schema.SchemaID > 0)
+		assert.Equal(t, name, schema.SchemaName)
+	})
+}

@@ -1,12 +1,18 @@
 package sql
 
 import (
+	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
+	"github.com/readystock/golinq"
+	"github.com/readystock/golog"
+	"strings"
 )
 
 type selectStmtPlanner struct {
-	tree ast.SelectStmt
+	tables []core.Table
+	tree   ast.SelectStmt
 }
 
 func CreateSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
@@ -16,19 +22,62 @@ func CreateSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
 }
 
 func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, error) {
-	tables := queryutil.GetTables(stmt.tree)
-	if len(tables) == 0 {
+	tableNames := queryutil.GetTables(stmt.tree)
+	if len(tableNames) == 0 {
 		return InitialPlan{}, false, nil
+	}
+
+	linq.From(tableNames).Distinct().ToSlice(&tableNames)
+
+	tables, err := s.Colony().Tables().GetTables(tableNames...)
+	if err != nil {
+		return InitialPlan{}, false, err
+	}
+
+	if len(tables) != len(tableNames) {
+		// This means that there is a table missing.
+		missingTables := make([]string, 0)
+		linq.From(tableNames).
+			ExceptBy(linq.From(tables), func(i interface{}) interface{} {
+				if table, ok := i.(core.Table); ok {
+					return table.TableName
+				}
+				return nil
+			}).ToSlice(&missingTables)
+		golog.Debugf("could not resolve tables: %s", strings.Join(missingTables, ", "))
+		return InitialPlan{}, false, fmt.Errorf("could not resolve tables with names: %s", strings.Join(missingTables, ", "))
+	}
+
+	stmt.tables = tables
+
+	numberOfNoahTables := linq.From(stmt.tables).CountWith(func(t interface{}) bool {
+		if table, ok := t.(core.Table); ok {
+			return table.TableType == core.TableType_Noah
+		}
+		return false
+	})
+
+	if numberOfNoahTables != len(tableNames) {
+		// All the tables should be noah tables, or none of them should be.
+		return InitialPlan{}, false,
+			fmt.Errorf("all tables in a query must be normal tables, or noah tables")
+	}
+
+	if numberOfNoahTables > 0 {
+		// If there are noah tables in the query at this point then we want to handle that.
+		return InitialPlan{}, true, nil
 	}
 
 	return InitialPlan{}, false, nil
 }
 
 func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
-	tables := queryutil.GetTables(stmt.tree)
+	// We don't need to retrieve tables here, since getNoahQuery is called first
+	// the tables will have been setup there.
+
 	// If there are no tables then we can simply recompile the query and send it to SQLite,
 	// this will make queries like CURRENT_TIMESTAMP or 1 very fast
-	if len(tables) == 0 {
+	if len(stmt.tables) == 0 {
 		query, err := stmt.tree.Deparse(ast.Context_None)
 		if err != nil {
 			return InitialPlan{}, true, err
@@ -42,6 +91,22 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 				},
 			},
 		}, true, nil
+	}
+
+	// If any of the queried tables are shard tables then we
+	// need to target a specific shard. If none of the tables
+	// are sharded tables then we can target any node/shard.
+	if linq.From(stmt.tables).AnyWith(func(i interface{}) bool {
+		table, ok := i.(core.Table)
+		return ok && table.TableType == core.TableType_Sharded
+	}) {
+		fromTable, ok := stmt.tree.FromClause.Items[0].(ast.RangeVar)
+		if !ok {
+			golog.Warnf("could not convert first table in from clause to RangeVar")
+			return InitialPlan{}, false, fmt.Errorf("failed to generate a query plan")
+		}
+
+		queryutil.FindAccountIds()
 	}
 
 	return InitialPlan{}, false, nil
