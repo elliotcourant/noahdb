@@ -53,7 +53,7 @@ func CreateStore(directory string, listen string, joinAddr string) (*Store, erro
 		listen:            listen,
 	}
 
-	sqlstore, _ := sql.Open("sqlite3", ":memory:")
+	sqlstore, _ := sql.Open("sqlite3", "noah.db")
 	store.sqlstore = sqlstore
 	if listen == "" {
 		listen = ":6543"

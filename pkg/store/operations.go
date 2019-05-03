@@ -187,6 +187,7 @@ func (store *Store) Query(query string) (*sql.Rows, error) {
 
 func (store *Store) Count(query string) (int64, error) {
 	rows, err := store.sqlstore.Query(query)
+	defer rows.Close()
 	if err != nil {
 		return -1, err
 	}

@@ -13,7 +13,7 @@ var (
 			From("shards").
 			Select(
 			"shard_id",
-			"ready")
+			"state")
 	getWriteDataNodeShardsQuery = goqu.
 					From("data_node_shards").
 					Select(

@@ -56,8 +56,8 @@ func (ctx *schemaContext) NewSchema(name string) (schema Schema, err error) {
 
 	sql := goqu.From("schemas").
 		Insert(goqu.Record{
-			"schema_id": *id,
-			"name":      name,
+			"schema_id":   *id,
+			"schema_name": name,
 		}).Sql
 	_, err = ctx.db.Exec(sql)
 	schema.SchemaID = *id
