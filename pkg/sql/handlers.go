@@ -61,7 +61,8 @@ func getStatementHandler(tree ast.Stmt) (interface{}, error) {
 	// case ast.CreatePublicationStmt:
 	// case ast.CreateRangeStmt:
 	// case ast.CreateRoleStmt:
-	// case ast.CreateSchemaStmt:
+	case ast.CreateSchemaStmt:
+		return CreateCreateSchemaStatementPlan(stmt), nil
 	// case ast.CreateSeqStmt:
 	// case ast.CreateStatsStmt:
 	// case ast.CreateStmt:

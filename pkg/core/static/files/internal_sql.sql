@@ -16,7 +16,8 @@ CREATE TABLE types (
 
 CREATE TABLE settings (
     setting_id BIGINT PRIMARY KEY,
-    type_id    BIGINT NOT NULL REFERENCES types (type_id)
+    type_id    BIGINT NOT NULL REFERENCES types (type_id),
+    value      BLOB
 );
 
 CREATE TABLE data_nodes (

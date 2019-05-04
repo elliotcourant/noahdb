@@ -10,6 +10,10 @@ func (node CreateStmt) StatementType() StmtType { return DDL }
 
 func (node CreateStmt) StatementTag() string { return "CREATE TABLE" }
 
+func (node CreateSchemaStmt) StatementType() StmtType { return DDL }
+
+func (node CreateSchemaStmt) StatementTag() string { return "CREATE SCHEMA" }
+
 func (node DeleteStmt) StatementType() StmtType {
 	if node.ReturningList.Items != nil && len(node.ReturningList.Items) > 0 {
 		return Rows
