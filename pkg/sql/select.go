@@ -72,13 +72,12 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 }
 
 func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
+	// We don't need to retrieve tables here, since getNoahQuery is called first
+	// the tables will have been setup there.
 	query, err := stmt.tree.Deparse(ast.Context_None)
 	if err != nil {
 		return InitialPlan{}, true, err
 	}
-
-	// We don't need to retrieve tables here, since getNoahQuery is called first
-	// the tables will have been setup there.
 
 	// If there are no tables then we can simply recompile the query and send it to SQLite,
 	// this will make queries like CURRENT_TIMESTAMP or 1 very fast
@@ -139,6 +138,22 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 			return InitialPlan{}, false,
 				fmt.Errorf("cannot query sharded tables for multiple tenants")
 		}
+
+		tenant, err := s.Colony().Tenants().GetTenant(tenantId)
+		if err != nil {
+			return InitialPlan{}, false, fmt.Errorf("could not generate query plan: %s", err.Error())
+		}
+
+		return InitialPlan{
+			Target:  PlanTarget_STANDARD,
+			ShardID: tenant.ShardID,
+			Types: map[PlanType]InitialPlanTask{
+				PlanType_READ: {
+					Type:  stmt.tree.StatementType(),
+					Query: query,
+				},
+			},
+		}, true, nil
 	}
 
 	// If nothing else then we can just issue a standard query
