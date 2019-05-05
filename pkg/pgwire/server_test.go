@@ -80,31 +80,29 @@ func TestLibPqStartup(t *testing.T) {
 		}
 	}()
 	time.Sleep(1 * time.Second)
-	for i := 0; i < 5; i++ {
-		func() {
-			db, err := sql.Open("postgres", conf.LibPqConnectionString())
-			if err != nil {
-				panic(err)
-			}
-			defer db.Close()
+	func() {
+		db, err := sql.Open("postgres", conf.LibPqConnectionString())
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
 
-			if row, err := db.Query(`SELECT 1;`); err != nil {
-				panic(err)
-			} else {
-				row.Next()
-				intVal := 0
-				row.Scan(&intVal)
-				assert.Equal(t, 1, intVal)
-				row.Close()
-			}
+		if row, err := db.Query(`SELECT 1;`); err != nil {
+			panic(err)
+		} else {
+			row.Next()
+			intVal := 0
+			row.Scan(&intVal)
+			assert.Equal(t, 1, intVal)
+			row.Close()
+		}
 
-			start := time.Now()
-			if row, err := db.Query(`SELECT 1;`); err != nil {
-				panic(err)
-			} else {
-				row.Close()
-			}
-			golog.Infof("query time: %s", time.Since(start))
-		}()
-	}
+		start := time.Now()
+		if row, err := db.Query(`SELECT 1;`); err != nil {
+			panic(err)
+		} else {
+			row.Close()
+		}
+		golog.Infof("query time: %s", time.Since(start))
+	}()
 }

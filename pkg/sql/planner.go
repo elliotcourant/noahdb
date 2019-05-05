@@ -51,6 +51,24 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 		golog.Verbosef("expanding of plan took %s", time.Since(startTimestamp))
 	}()
 
+	if plan.Target == PlanTarget_INTERNAL {
+		// Internal query plans can go directly to the SQLite database.
+		golog.Verbosef("plan targets internal SQLite database")
+		panic("internal queries are not yet supported")
+	}
+
+	nodes := make([]core.DataNode, 0)
+	switch plan.ShardID {
+	case 0: // If this query does not target a specific shard.
+		if _, ok := plan.Types[PlanType_READ]; ok {
+			// Get a single node to execute the read query.
+		}
+	default:
+		if _, ok := plan.Types[PlanType_READ]; ok {
+			// Get any readable node for the given shard ID
+		}
+	}
+
 	return ExpandedPlan{
 		Tasks: make([]ExpandedPlanTask, 0),
 	}, nil
