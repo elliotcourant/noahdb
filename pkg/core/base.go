@@ -4,6 +4,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/core/static"
 	"github.com/elliotcourant/noahdb/pkg/store"
 	"github.com/readystock/golog"
+	"os"
 )
 
 type base struct {
@@ -47,9 +48,12 @@ func (ctx *base) Setup() {
 	}
 
 	// Check to see if there is a local postgres instnace we can use.
-	// initialPostgresAddress := "127.0.0.1"
-	// initialPostgresPort := os.Getenv("PGPORT")
-	// initialPostgresPassword := os.Getenv("PGPASS")
+	initialPostgresAddress := "127.0.0.1"
+	initialPostgresPort := os.Getenv("PGPORT")
+	initialPostgresPassword := os.Getenv("PGPASS")
+	if _, err := ctx.DataNodes().NewDataNode(initialPostgresAddress, initialPostgresPassword, initialPostgresPort); err != nil {
+		panic(err)
+	}
 }
 
 func (ctx *base) isSetup() bool {

@@ -3,6 +3,7 @@ package core
 import (
 	"database/sql"
 	"github.com/readystock/goqu"
+	"strconv"
 )
 
 var (
@@ -17,12 +18,41 @@ type dataNodeContext struct {
 type DataNodeContext interface {
 	GetDataNodes() ([]DataNode, error)
 	GetDataNodesForShard(uint64) ([]DataNode, error)
+	GetRandomDataNode() (DataNode, error)
+	NewDataNode(string, string, string) (DataNode, error)
 }
 
 func (ctx *base) DataNodes() DataNodeContext {
 	return &dataNodeContext{
 		ctx,
 	}
+}
+
+func (ctx *dataNodeContext) NewDataNode(address, password, port string) (DataNode, error) {
+	id, err := ctx.db.NextSequenceValueById(dataNodeIdSequencePath)
+	if err != nil {
+		return DataNode{}, err
+	}
+
+	portInt, err := strconv.Atoi(port)
+	if err != nil {
+		return DataNode{}, err
+	}
+
+	compiledSql := goqu.From("data_nodes").
+		Insert(goqu.Record{
+			"data_node_id": *id,
+			"address":      address,
+			"port":         portInt,
+			"healthy":      true,
+		}).Sql
+	_, err = ctx.db.Exec(compiledSql)
+	return DataNode{
+		DataNodeID: *id,
+		Address:    address,
+		Port:       int32(portInt),
+		Healthy:    true,
+	}, err
 }
 
 func (ctx *dataNodeContext) GetDataNodes() ([]DataNode, error) {
@@ -32,6 +62,22 @@ func (ctx *dataNodeContext) GetDataNodes() ([]DataNode, error) {
 		return nil, err
 	}
 	return ctx.dataNodesFromRows(rows)
+}
+
+func (ctx *dataNodeContext) GetRandomDataNode() (DataNode, error) {
+	compiledQuery, _, _ := getDataNodesQuery.
+		Where(goqu.Ex{
+			"healthy": true,
+		}).
+		Order(goqu.L("RANDOM()").Asc()).
+		Limit(1).
+		ToSql()
+	rows, err := ctx.db.Query(compiledQuery)
+	if err != nil {
+		return DataNode{}, err
+	}
+	nodes, err := ctx.dataNodesFromRows(rows)
+	return nodes[0], err
 }
 
 func (ctx *dataNodeContext) GetDataNodesForShard(id uint64) ([]DataNode, error) {

@@ -65,6 +65,11 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	case 0: // If this query does not target a specific shard.
 		if _, ok := plan.Types[PlanType_READ]; ok {
 			// Get a single node to execute the read query.
+			node, err := s.Colony().DataNodes().GetRandomDataNode()
+			if err != nil {
+				return ExpandedPlan{}, err
+			}
+			nodes = append(nodes, node)
 		}
 	default:
 		tempNodes, err := s.Colony().DataNodes().GetDataNodesForShard(plan.ShardID)
