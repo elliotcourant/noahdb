@@ -2,6 +2,7 @@ package core
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/readystock/goqu"
 )
 
@@ -21,6 +22,8 @@ type tableContext struct {
 
 type TableContext interface {
 	GetTables(...string) ([]Table, error)
+	GetColumns(int32) ([]Column, error)
+	GetShardColumn(int32) (Column, error)
 }
 
 func (ctx *base) Tables() TableContext {
@@ -67,7 +70,7 @@ func (ctx *tableContext) GetTable(schemaId int, tableName string) (Table, error)
 	return Table{}, nil
 }
 
-func (ctx *tableContext) GetColumns(tableId int) ([]Column, error) {
+func (ctx *tableContext) GetColumns(tableId int32) ([]Column, error) {
 	compileSql, _, _ := getColumnsQuery.
 		Where(goqu.Ex{
 			"table_id": tableId,
@@ -77,6 +80,23 @@ func (ctx *tableContext) GetColumns(tableId int) ([]Column, error) {
 		return nil, err
 	}
 	return ctx.columnsFromRows(rows)
+}
+
+func (ctx *tableContext) GetShardColumn(tableId int32) (Column, error) {
+	compileSql, _, _ := getColumnsQuery.
+		Where(goqu.Ex{
+			"table_id":  tableId,
+			"shard_key": true,
+		}).Limit(1).ToSql()
+	rows, err := ctx.db.Query(compileSql)
+	if err != nil {
+		return Column{}, err
+	}
+	columns, err := ctx.columnsFromRows(rows)
+	if len(columns) != 1 {
+		return Column{}, fmt.Errorf("tried to find one shard column, found %d", len(columns))
+	}
+	return columns[0], err
 }
 
 func (ctx *tableContext) tablesFromRows(rows *sql.Rows) ([]Table, error) {

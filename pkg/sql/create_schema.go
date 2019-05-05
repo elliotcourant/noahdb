@@ -7,11 +7,11 @@ import (
 
 type createSchemaStmtPlanner struct {
 	tables []core.Table
-	tree   ast.SelectStmt
+	tree   ast.CreateSchemaStmt
 }
 
-func CreateCreateSchemaStatementPlan(tree ast.CreateSchemaStmt) *selectStmtPlanner {
-	return &selectStmtPlanner{
+func NewCreateSchemaStatementPlan(tree ast.CreateSchemaStmt) *createSchemaStmtPlanner {
+	return &createSchemaStmtPlanner{
 		tree: tree,
 	}
 }

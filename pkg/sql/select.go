@@ -15,7 +15,7 @@ type selectStmtPlanner struct {
 	tree   ast.SelectStmt
 }
 
-func CreateSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
+func NewSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
 	return &selectStmtPlanner{
 		tree: tree,
 	}
@@ -100,13 +100,43 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 		table, ok := i.(core.Table)
 		return ok && table.TableType == core.TableType_Sharded
 	}) {
-		fromTable, ok := stmt.tree.FromClause.Items[0].(ast.RangeVar)
-		if !ok {
-			golog.Warnf("could not convert first table in from clause to RangeVar")
-			return InitialPlan{}, false, fmt.Errorf("failed to generate a query plan")
+		tenantIds, shardColumns := make([]uint64, 0), make([]string, 0)
+
+		// For all of the tables in the query that have a sharded column
+		// check the query to see if the query filters by that table's
+		// shard key, and then aggregate the resulting filters into
+		// an array for validation
+		linq.From(stmt.tables).Where(func(i interface{}) bool {
+			table, ok := i.(core.Table)
+			return ok && table.TableType == core.TableType_Sharded
+		}).Select(func(i interface{}) interface{} {
+			table, _ := i.(core.Table)
+			shardColumn, err := s.Colony().Tables().GetShardColumn(table.TableID)
+			if err != nil {
+				return 0
+			}
+			return shardColumn
+		}).Where(func(i interface{}) bool {
+			return i.(uint64) > 0
+		}).ToSlice(&shardColumns)
+
+		for _, shardColumn := range shardColumns {
+			tenantIds = append(tenantIds, queryutil.FindAccountIds(stmt.tree, shardColumn)...)
 		}
 
-		queryutil.FindAccountIds()
+		tenantId := uint64(0)
+
+		switch len(tenantIds) {
+		case 0: // No account IDs were found in the query
+			return InitialPlan{}, false,
+				fmt.Errorf("cannot query sharded tables without specifying a tenant ID")
+		case 1: // We are only querying a single tenant
+			tenantId = tenantIds[0]
+			golog.Debugf("query targets tenant ID [%d]", tenantId)
+		default:
+			return InitialPlan{}, false,
+				fmt.Errorf("cannot query sharded tables for multiple tenants")
+		}
 	}
 
 	return InitialPlan{}, false, nil
