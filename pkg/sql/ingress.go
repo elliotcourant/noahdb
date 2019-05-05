@@ -28,10 +28,10 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 				golog.Debugf("found null command, advancing 1")
 				s.StatementBuffer().AdvanceOne()
 			}
-			result := commands.NewCommandResult(s)
-
+			result := &commands.CommandResult{}
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
+				result = commands.CreateExecuteCommandResult(s)
 				err = s.ExecuteStatement(cmd, result)
 				// val := types.Int4{}
 				// val.Set(1)
@@ -72,9 +72,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 					Message: cmd.Err.Error(),
 				})
 			case commands.Sync:
-				err = s.Backend().Send(&pgproto.ReadyForQuery{
-					TxStatus: 'I',
-				})
+				result = commands.CreateSyncCommandResult(s)
 			case commands.Flush:
 			case commands.CopyIn:
 			default:
@@ -85,11 +83,20 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 				if err = result.CloseWithErr(err); err != nil {
 					return err
 				}
-			} else {
-				s.StatementBuffer().AdvanceOne()
-				if err := result.Close(); err != nil {
+				if err = s.StatementBuffer().SeekToNextBatch(); err != nil {
 					return err
 				}
+			} else {
+				if resultError := result.Err(); resultError != nil {
+					if err := result.CloseWithErr(resultError); err != nil {
+						return err
+					}
+				} else {
+					if err := result.Close(); err != nil {
+						return err
+					}
+				}
+				s.StatementBuffer().AdvanceOne()
 			}
 		}
 	}

@@ -3,6 +3,7 @@ package pgproto
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"strconv"
 )
 
@@ -123,6 +124,7 @@ func (src *ErrorResponse) marshalBinary(typeByte byte) []byte {
 		buf.WriteByte(0)
 	}
 	if src.Message != "" {
+		buf.WriteByte(byte(pgwirebase.ServerErrFieldMsgPrimary))
 		buf.WriteString(src.Message)
 		buf.WriteByte(0)
 	}

@@ -147,6 +147,11 @@ func (wire *wireServer) Serve() error {
 					Err: err,
 				})
 			}
+			if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
+				return wire.StatementBuffer().Push(commands.SendError{
+					Err: err,
+				})
+			}
 		case *pgproto.Execute:
 		case *pgproto.Parse:
 			if err := wire.handleParse(msg); err != nil {

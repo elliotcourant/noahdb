@@ -2,12 +2,11 @@ package sql
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/readystock/golog"
 	"time"
 )
 
-func (s *session) stageQueryToResult(statement ast.Stmt, result *commands.CommandResult) error {
+func (s *session) stageQueryToResult(statement ast.Stmt) error {
 	startTimestamp := time.Now()
 	defer func() {
 		golog.Debugf("execution of statement took %s", time.Since(startTimestamp))

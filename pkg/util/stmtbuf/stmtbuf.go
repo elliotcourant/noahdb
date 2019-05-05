@@ -11,10 +11,15 @@ type Command interface {
 	Command()
 }
 
+type Sync interface {
+	Sync()
+}
+
 type StatementBuffer interface {
 	Push(Command) error
 	AdvanceOne()
 	CurrentCommand() (Command, CmdPos, error)
+	SeekToNextBatch() error
 }
 
 // CmdPos represents the index of a command relative to the start of a
@@ -161,4 +166,52 @@ func (buf *stmtBuf) translatePosLocked(pos CmdPos) (int, error) {
 			pos, buf.startPos)
 	}
 	return int(pos - buf.startPos), nil
+}
+
+// SeekToNextBatch moves the cursor position to the start of the next batch of
+// commands, skipping past remaining commands from the current batch (if any).
+// Batches are delimited by Sync commands. Sync is considered to be the first
+// command in a batch, so once this returns, the cursor will be positioned over
+// a Sync command. If the cursor is positioned on a Sync when this is called,
+// that Sync will be skipped.
+//
+// This method blocks until a Sync command is pushed to the buffer.
+//
+// It is an error to start seeking when the cursor is positioned on an empty
+// slot.
+func (buf *stmtBuf) SeekToNextBatch() error {
+	buf.Mutex.Lock()
+	curPos := buf.curPos
+	cmdIdx, err := buf.translatePosLocked(curPos)
+	if err != nil {
+		buf.Mutex.Unlock()
+		return err
+	}
+	if cmdIdx == len(buf.data) {
+		buf.Mutex.Unlock()
+		return fmt.Errorf("invalid seek start point")
+	}
+	buf.Mutex.Unlock()
+
+	var foundSync bool
+	for !foundSync {
+		buf.AdvanceOne()
+		_, pos, err := buf.CurrentCommand()
+		if err != nil {
+			return err
+		}
+		buf.Mutex.Lock()
+		cmdIdx, err := buf.translatePosLocked(pos)
+		if err != nil {
+			buf.Mutex.Unlock()
+			return err
+		}
+
+		if _, ok := buf.data[cmdIdx].(Sync); ok {
+			foundSync = true
+		}
+
+		buf.Mutex.Unlock()
+	}
+	return nil
 }

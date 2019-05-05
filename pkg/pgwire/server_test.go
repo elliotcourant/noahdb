@@ -48,7 +48,7 @@ func NewConfig() config {
 
 	return config{
 		address: addr.IP.String(),
-		port:    addr.Port,
+		port:    5433,
 	}
 }
 

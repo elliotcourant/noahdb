@@ -45,6 +45,11 @@ func (ctx *base) Setup() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Check to see if there is a local postgres instnace we can use.
+	// initialPostgresAddress := "127.0.0.1"
+	// initialPostgresPort := os.Getenv("PGPORT")
+	// initialPostgresPassword := os.Getenv("PGPASS")
 }
 
 func (ctx *base) isSetup() bool {
