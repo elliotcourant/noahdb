@@ -28,8 +28,9 @@ type InitialPlanTask struct {
 }
 
 type InitialPlan struct {
-	Types  map[PlanType]InitialPlanTask
-	Target PlanTarget
+	Types   map[PlanType]InitialPlanTask
+	ShardID uint64
+	Target  PlanTarget
 }
 
 type ExpandedPlan struct {

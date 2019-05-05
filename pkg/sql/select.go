@@ -72,18 +72,20 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 }
 
 func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
+	query, err := stmt.tree.Deparse(ast.Context_None)
+	if err != nil {
+		return InitialPlan{}, true, err
+	}
+
 	// We don't need to retrieve tables here, since getNoahQuery is called first
 	// the tables will have been setup there.
 
 	// If there are no tables then we can simply recompile the query and send it to SQLite,
 	// this will make queries like CURRENT_TIMESTAMP or 1 very fast
 	if len(stmt.tables) == 0 {
-		query, err := stmt.tree.Deparse(ast.Context_None)
-		if err != nil {
-			return InitialPlan{}, true, err
-		}
 		return InitialPlan{
-			Target: PlanTarget_INTERNAL,
+			Target:  PlanTarget_INTERNAL,
+			ShardID: 0,
 			Types: map[PlanType]InitialPlanTask{
 				PlanType_READ: {
 					Type:  stmt.tree.StatementType(),
@@ -139,5 +141,16 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 		}
 	}
 
-	return InitialPlan{}, false, nil
+	// If nothing else then we can just issue a standard query
+	// plan that is read only. This query can target any node.
+	return InitialPlan{
+		Target:  PlanTarget_STANDARD,
+		ShardID: 0,
+		Types: map[PlanType]InitialPlanTask{
+			PlanType_READ: {
+				Type:  stmt.tree.StatementType(),
+				Query: query,
+			},
+		},
+	}, true, nil
 }
