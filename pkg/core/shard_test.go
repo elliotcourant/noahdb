@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 	"time"
 )
@@ -37,13 +38,43 @@ func TestShardContext_GetWriteDataNodeShards(t *testing.T) {
 }
 
 func TestShardContext_BalanceOrphanedShards(t *testing.T) {
-	colony, cleanup := newTestColony()
-	defer cleanup()
 	t.Run("balance orphaned shards", func(t *testing.T) {
+		colony, cleanup := newTestColony()
+		defer cleanup()
 		newShard, err := colony.Shards().NewShard()
 		assert.NoError(t, err)
 		assert.True(t, newShard.ShardID > 0)
 		err = colony.Shards().(*shardContext).BalanceOrphanShards()
 		assert.NoError(t, err)
+	})
+
+	t.Run("balance multiple orphaned shards", func(t *testing.T) {
+
+		colony, cleanup := newTestColony()
+		defer cleanup()
+
+		numberOfNodes := 10
+		numberOfShards := 32
+
+		for i := 0; i < numberOfNodes; i++ {
+			_, _ = colony.DataNodes().NewDataNode("127.0.0.1", os.Getenv("PGPASS"), os.Getenv("PGPORT"))
+		}
+
+		for i := 0; i < numberOfShards; i++ {
+			_, _ = colony.Shards().NewShard()
+		}
+
+		pressureBefore, _ := colony.Shards().(*shardContext).getDataNodesPressure(numberOfNodes)
+		for _, pressure := range pressureBefore {
+			assert.Empty(t, pressure.Shards)
+		}
+
+		err := colony.Shards().(*shardContext).BalanceOrphanShards()
+		assert.NoError(t, err)
+
+		pressureAfter, _ := colony.Shards().(*shardContext).getDataNodesPressure(numberOfNodes)
+		for _, pressure := range pressureAfter {
+			assert.NotEmpty(t, pressure.Shards)
+		}
 	})
 }

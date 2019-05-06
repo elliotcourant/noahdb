@@ -2,7 +2,7 @@ package core
 
 import (
 	"database/sql"
-	"github.com/kataras/golog"
+	"github.com/readystock/golog"
 	"gopkg.in/doug-martin/goqu.v5"
 	// Use the postgres adapter for building queries.
 	_ "gopkg.in/doug-martin/goqu.v5/adapters/postgres"
@@ -22,6 +22,11 @@ var (
 			"shard_id",
 			"read_only")
 )
+
+type dataNodePressure struct {
+	DataNodeID uint64
+	Shards     int
+}
 
 type shardContext struct {
 	*base
@@ -97,29 +102,76 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 	if err != nil {
 		return err
 	}
+	pressures, err := ctx.getDataNodesPressure(len(ids))
+
+	for i, shardId := range ids {
+		// Determine which node this shard should be assigned to.
+		pressureIndex := i % len(pressures)
+		dataNode := pressures[pressureIndex]
+		golog.Debugf("assigning shard [%d] to data node [%d]", shardId, dataNode.DataNodeID)
+
+		id, err := ctx.db.NextSequenceValueById(dataNodeShardIdSequencePath)
+		if err != nil {
+			return err
+		}
+
+		newDataNodeShard := goqu.
+			From("data_node_shards").
+			Insert(goqu.Record{
+				"data_node_shard_id": *id,
+				"data_node_id":       dataNode.DataNodeID,
+				"shard_id":           shardId,
+				"read_only":          false,
+			}).Sql
+		if _, err := ctx.db.Exec(newDataNodeShard); err != nil {
+			return err
+		}
+
+		updateShardStatus := goqu.
+			From("shards").
+			Where(goqu.Ex{
+				"shard_id": shardId,
+			}).
+			Update(goqu.Ex{
+				"state": ShardState_Stable,
+			}).Sql
+		if _, err := ctx.db.Exec(updateShardStatus); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ctx *shardContext) getDataNodesPressure(max int) ([]dataNodePressure, error) {
 	getPressureQuery, _, _ := goqu.
 		From("data_nodes").
 		Select(
 			goqu.I("data_nodes.data_node_id"),
-			goqu.COUNT(goqu.I("data_node_shards.shard_id"))).
+			goqu.COUNT(goqu.I("data_node_shards.shard_id")).As("shards")).
 		LeftJoin(
 			goqu.I("data_node_shards"),
 			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
 		GroupBy(goqu.I("data_nodes.data_node_id")).
+		Order(goqu.I("shards").Asc()).
+		Limit(uint(max)).
 		ToSql()
-	rows, err = ctx.db.Query(getPressureQuery)
+	rows, err := ctx.db.Query(getPressureQuery)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	pressures := make([]dataNodePressure, 0)
 	for rows.Next() {
-		items := make([]interface{}, 2)
-		items[0] = new(interface{})
-		items[1] = new(interface{})
-		err := rows.Scan(items...)
-		golog.Debugf(getPressureQuery, err)
-
+		dataNodeId, shards := uint64(0), 0
+		if err := rows.Scan(&dataNodeId, &shards); err != nil {
+			return nil, err
+		}
+		pressures = append(pressures, struct {
+			DataNodeID uint64
+			Shards     int
+		}{DataNodeID: dataNodeId, Shards: shards})
 	}
-	return nil
+	rows.Close()
+	return pressures, nil
 }
 
 func (ctx *shardContext) GetShards() ([]Shard, error) {

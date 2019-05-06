@@ -56,7 +56,7 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 
 // Restore stores the key-value store to a previous state.
 func (f *fsm) Restore(rc io.ReadCloser) error {
-	if err := f.badger.Load(rc); err != nil {
+	if err := f.badger.Load(rc, 1); err != nil {
 		return err
 	}
 	logEntries, err := f.GetPrefix(logsPrefix)
