@@ -18,7 +18,9 @@ type dataNodeContext struct {
 type DataNodeContext interface {
 	GetDataNodes() ([]DataNode, error)
 	GetDataNodesForShard(uint64) ([]DataNode, error)
-	GetRandomDataNode() (DataNode, error)
+	GetDataNodeForDataNodeShard(uint64) (DataNode, error)
+	GetRandomDataNodeShardID() (uint64, error)
+	GetDataNodeShardIDsForShard(uint64) ([]uint64, error)
 	NewDataNode(string, string, string) (DataNode, error)
 }
 
@@ -64,20 +66,20 @@ func (ctx *dataNodeContext) GetDataNodes() ([]DataNode, error) {
 	return ctx.dataNodesFromRows(rows)
 }
 
-func (ctx *dataNodeContext) GetRandomDataNode() (DataNode, error) {
-	compiledQuery, _, _ := getDataNodesQuery.
+func (ctx *dataNodeContext) GetRandomDataNodeShardID() (uint64, error) {
+	compiledQuery, _, _ := goqu.
+		From("data_nodes").
+		Select("data_node_shards.data_node_shard_id").
+		InnerJoin(
+			goqu.I("data_node_shards"),
+			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
 		Where(goqu.Ex{
-			"healthy": true,
+			"data_nodes.healthy": true,
 		}).
 		Order(goqu.L("RANDOM()").Asc()).
 		Limit(1).
 		ToSql()
-	rows, err := ctx.db.Query(compiledQuery)
-	if err != nil {
-		return DataNode{}, err
-	}
-	nodes, err := ctx.dataNodesFromRows(rows)
-	return nodes[0], err
+	return ctx.db.Count(compiledQuery)
 }
 
 func (ctx *dataNodeContext) GetDataNodesForShard(id uint64) ([]DataNode, error) {
@@ -94,6 +96,41 @@ func (ctx *dataNodeContext) GetDataNodesForShard(id uint64) ([]DataNode, error) 
 		return nil, err
 	}
 	return ctx.dataNodesFromRows(rows)
+}
+
+func (ctx *dataNodeContext) GetDataNodeShardIDsForShard(id uint64) ([]uint64, error) {
+	compiledQuery, _, _ := goqu.
+		From("data_nodes").
+		Select("data_node_shards.data_node_shard_id").
+		InnerJoin(
+			goqu.I("data_node_shards"),
+			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
+		Where(goqu.Ex{
+			"data_nodes.healthy": true,
+		}).
+		ToSql()
+	rows, err := ctx.db.Query(compiledQuery)
+	if err != nil {
+		return nil, err
+	}
+	return idArray(rows)
+}
+
+func (ctx *dataNodeContext) GetDataNodeForDataNodeShard(id uint64) (DataNode, error) {
+	compiledQuery, _, _ := getDataNodesQuery.
+		InnerJoin(
+			goqu.I("data_node_shards"),
+			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
+		Where(goqu.Ex{
+			"data_node_shards.data_node_shard_id": id,
+		}).
+		ToSql()
+	rows, err := ctx.db.Query(compiledQuery)
+	if err != nil {
+		return DataNode{}, err
+	}
+	nodes, err := ctx.dataNodesFromRows(rows)
+	return nodes[0], err
 }
 
 func (ctx *dataNodeContext) dataNodesFromRows(rows *sql.Rows) ([]DataNode, error) {
@@ -114,4 +151,20 @@ func (ctx *dataNodeContext) dataNodesFromRows(rows *sql.Rows) ([]DataNode, error
 		return nil, err
 	}
 	return nodes, nil
+}
+
+func idArray(rows *sql.Rows) ([]uint64, error) {
+	defer rows.Close()
+	ids := make([]uint64, 0)
+	for rows.Next() {
+		id := uint64(0)
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }

@@ -185,21 +185,21 @@ func (store *Store) Query(query string) (*sql.Rows, error) {
 	return store.sqlstore.Query(query)
 }
 
-func (store *Store) Count(query string) (int64, error) {
+func (store *Store) Count(query string) (uint64, error) {
 	rows, err := store.sqlstore.Query(query)
 	defer rows.Close()
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	for rows.Next() {
-		count := int64(0)
+		count := uint64(0)
 		if err = rows.Scan(&count); err != nil {
-			return -1, err
+			return 0, err
 		}
 		return count, nil
 	}
 	if err = rows.Err(); err != nil {
-		return -1, err
+		return 0, err
 	}
 	return 0, err
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/noahdb/pkg/store"
 	"github.com/kataras/golog"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -43,54 +42,6 @@ func TestCreateStore(t *testing.T) {
 
 	if string(val) != "value" {
 		t.Error("value did not match")
-		t.Fail()
-		return
-	}
-}
-
-func TestCreateStoreMultipleServers(t *testing.T) {
-	tmpDir1, _ := ioutil.TempDir("", "store_test")
-	defer os.RemoveAll(tmpDir1)
-
-	tmpDir2, _ := ioutil.TempDir("", "store_test2")
-	defer os.RemoveAll(tmpDir2)
-	store1, err := store.CreateStore(tmpDir1, ":6543", "")
-	assert.NoError(t, err)
-	defer store1.Close()
-	// Simple way to ensure there is a leader.
-	time.Sleep(5 * time.Second)
-
-	store2, err := store.CreateStore(tmpDir2, ":6544", ":6543")
-	assert.NoError(t, err)
-	defer store2.Close()
-	// store1.Join(store2.NodeID(), ":6544", ":6501")
-	time.Sleep(5 * time.Second)
-	err = store1.Set([]byte("test"), []byte("value"))
-	assert.NoError(t, err)
-
-	time.Sleep(5 * time.Second)
-	val, err := store2.Get([]byte("test"))
-	assert.NoError(t, err)
-	assert.Equal(t, "value", string(val), "value did not match")
-
-	store1.Set([]byte("test"), []byte("value1"))
-	time.Sleep(5 * time.Second)
-	val1, err := store2.Get([]byte("test"))
-	assert.NoError(t, err)
-
-	if string(val1) != "value1" {
-		t.Errorf("value did not match, found: %s", val1)
-		t.Fail()
-		return
-	}
-
-	store1.Delete([]byte("test"))
-	time.Sleep(5 * time.Second)
-	val2, err := store2.Get([]byte("test"))
-	assert.NoError(t, err)
-
-	if string(val2) == "value1" {
-		t.Errorf("value did not match, found: %s", val1)
 		t.Fail()
 		return
 	}

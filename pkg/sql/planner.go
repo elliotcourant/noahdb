@@ -3,7 +3,6 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/readystock/golog"
 	"time"
 )
@@ -35,15 +34,15 @@ type InitialPlan struct {
 }
 
 type ExpandedPlan struct {
-	Tasks []ExpandedPlanTask
+	Tasks  []ExpandedPlanTask
+	Target PlanTarget
 }
 
 type ExpandedPlanTask struct {
-	Query    string
-	ReadOnly bool
-	DataNode core.DataNode
-	Shard    core.Shard
-	Type     ast.StmtType
+	Query           string
+	ReadOnly        bool
+	DataNodeShardID uint64
+	Type            ast.StmtType
 }
 
 func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
@@ -55,54 +54,65 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	if plan.Target == PlanTarget_INTERNAL {
 		// Internal query plans can go directly to the SQLite database.
 		golog.Verbosef("plan targets internal SQLite database")
-		panic("internal queries are not yet supported")
+		readPlan, _ := plan.Types[PlanType_READ]
+		return ExpandedPlan{
+			Target: PlanTarget_INTERNAL,
+			Tasks: []ExpandedPlanTask{
+				{
+					Query:           readPlan.Query,
+					ReadOnly:        true,
+					DataNodeShardID: 0,
+					Type:            readPlan.Type,
+				},
+			},
+		}, nil
 	}
 
 	readOnly := true
-	nodes := make([]core.DataNode, 0)
-	shard := core.Shard{}
+	dataNodeShards := make([]uint64, 0)
 	switch plan.ShardID {
 	case 0: // If this query does not target a specific shard.
 		if _, ok := plan.Types[PlanType_READ]; ok {
 			// Get a single node to execute the read query.
-			node, err := s.Colony().DataNodes().GetRandomDataNode()
+			id, err := s.Colony().DataNodes().GetRandomDataNodeShardID()
 			if err != nil {
 				return ExpandedPlan{}, err
 			}
-			nodes = append(nodes, node)
+			dataNodeShards = append(dataNodeShards, id)
 		}
 	default:
-		tempNodes, err := s.Colony().DataNodes().GetDataNodesForShard(plan.ShardID)
+		tempDataNodeShardIds, err := s.Colony().DataNodes().GetDataNodeShardIDsForShard(plan.ShardID)
 		if err != nil {
 			return ExpandedPlan{}, fmt.Errorf("could not retrieve data nodes for shard ID [%d]: %s", plan.ShardID, err.Error())
 		}
 
-		if len(tempNodes) < 1 {
+		if len(tempDataNodeShardIds) < 1 {
 			return ExpandedPlan{}, fmt.Errorf("could not retrieve data nodes for shard ID [%d]: no nodes were returned", plan.ShardID)
 		}
 
 		if _, ok := plan.Types[PlanType_READ]; ok {
 			// Get any readable node for the given shard ID
-			nodes = append(nodes, tempNodes[0])
+			dataNodeShards = append(dataNodeShards, tempDataNodeShardIds[0])
 		} else if _, ok := plan.Types[PlanType_WRITE]; ok {
 			// Get all the nodes that are writable for the given shard ID
-			nodes = tempNodes
+			dataNodeShards = tempDataNodeShardIds
 			readOnly = false
 		}
 	}
 
 	// For each node/shard we are targeting, generate a task for the executor
-	tasks := make([]ExpandedPlanTask, len(nodes))
-	for i, node := range nodes {
+	tasks := make([]ExpandedPlanTask, len(dataNodeShards))
+	for i, id := range dataNodeShards {
 		task := ExpandedPlanTask{
-			ReadOnly: readOnly,
-			DataNode: node,
-			Shard:    shard,
+			ReadOnly:        readOnly,
+			DataNodeShardID: id,
 		}
 		if readPlan, ok := plan.Types[PlanType_READ]; ok {
-			task.Query, task.Type = readPlan.Query, readPlan.Type
+			task.Query,
+				task.Type = readPlan.Query, readPlan.Type
 		} else if writePlan, ok := plan.Types[PlanType_WRITE]; ok {
-			task.Query, task.Type = writePlan.Query, writePlan.Type
+			task.Query,
+				task.Type = writePlan.Query, writePlan.Type
 		}
 		tasks[i] = task
 	}
@@ -119,6 +129,7 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	}
 
 	return ExpandedPlan{
-		Tasks: tasks,
+		Target: plan.Target,
+		Tasks:  tasks,
 	}, nil
 }

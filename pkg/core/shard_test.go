@@ -35,3 +35,15 @@ func TestShardContext_GetWriteDataNodeShards(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, shards)
 }
+
+func TestShardContext_BalanceOrphanedShards(t *testing.T) {
+	colony, cleanup := newTestColony()
+	defer cleanup()
+	t.Run("balance orphaned shards", func(t *testing.T) {
+		newShard, err := colony.Shards().NewShard()
+		assert.NoError(t, err)
+		assert.True(t, newShard.ShardID > 0)
+		err = colony.Shards().(*shardContext).BalanceOrphanShards()
+		assert.NoError(t, err)
+	})
+}

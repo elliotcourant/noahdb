@@ -1,7 +1,9 @@
 package core
 
 import (
+	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/store"
+	"sync"
 	"time"
 )
 
@@ -13,6 +15,8 @@ type Colony interface {
 	Tables() TableContext
 	Schema() SchemaContext
 	Users() UserContext
+	Pool() PoolContext
+	Query(string) (*sql.Rows, error)
 	// Shards()
 	// Nodes()
 	// Tenants()
@@ -33,7 +37,9 @@ func NewColony(dataDirectory, listenAddress, joinAddress, postgresAddress string
 	}
 
 	colony := &base{
-		db: db,
+		db:       db,
+		poolSync: sync.Mutex{},
+		pool:     map[uint64]*poolItem{},
 	}
 
 	time.Sleep(6 * time.Second)

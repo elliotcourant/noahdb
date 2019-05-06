@@ -39,7 +39,7 @@ func TestCreateMemoryDataStoreWithSchema_Transaction(t *testing.T) {
 	assert.NoError(t, err)
 	tx, err := db.Begin()
 	assert.NoError(t, err)
-	_, err = tx.Exec("INSERT INTO shards (shard_id) VALUES(121);")
+	_, err = tx.Exec("INSERT INTO shards (shard_id, state) VALUES(121, 0);")
 	assert.NoError(t, err)
 	assert.NoError(t, tx.Commit())
 	_, err = db.Exec("INSERT INTO tenants (tenant_id, shard_id) VALUES(1132, 8);")

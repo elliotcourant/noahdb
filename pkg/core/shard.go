@@ -2,7 +2,7 @@ package core
 
 import (
 	"database/sql"
-	"fmt"
+	"github.com/kataras/golog"
 	"gopkg.in/doug-martin/goqu.v5"
 	// Use the postgres adapter for building queries.
 	_ "gopkg.in/doug-martin/goqu.v5/adapters/postgres"
@@ -47,12 +47,79 @@ func (ctx *shardContext) NewShard() (shard Shard, err error) {
 	}
 	shard.ShardID = *id
 	shard.State = ShardState_New
-	sql := fmt.Sprintf("INSERT INTO shards VALUES (%d, %d);", shard.ShardID, shard.State)
-	_, err = ctx.db.Exec(sql)
+
+	compiledQuery := goqu.
+		From("shards").
+		Insert(goqu.Record{
+			"shard_id": shard.ShardID,
+			"state":    shard.State,
+		}).Sql
+
+	_, err = ctx.db.Exec(compiledQuery)
 	if err != nil {
 		return Shard{}, err
 	}
 	return shard, nil
+}
+
+// BalanceOrphanShards looks at all of the shards in the cluster
+// that are not currently associated with a data node and assigns
+// them a data node. Then marks that shard as ready.
+func (ctx *shardContext) BalanceOrphanShards() error {
+	orphanedShardsQuery, _, _ := goqu.
+		From("shards").
+		Select("shards.shard_id").
+		LeftJoin(
+			goqu.I("data_node_shards"),
+			goqu.On(goqu.I("data_node_shards.shard_id").Eq(goqu.I("shards.shard_id")))).
+		Where(goqu.Ex{
+			"data_node_shards.shard_id": nil,
+		}).
+		ToSql()
+	rows, err := ctx.db.Query(orphanedShardsQuery)
+	if err != nil {
+		return err
+	}
+	ids, err := idArray(rows)
+	if err != nil {
+		return err
+	}
+	golog.Debugf("found %d orphaned shards", len(ids))
+	updateShardStateQuery := goqu.
+		From("shards").
+		Where(goqu.Ex{
+			"shard_id": ids,
+		}).
+		Update(goqu.Ex{
+			"state": ShardState_Balancing,
+		}).Sql
+	_, err = ctx.db.Exec(updateShardStateQuery)
+	if err != nil {
+		return err
+	}
+	getPressureQuery, _, _ := goqu.
+		From("data_nodes").
+		Select(
+			goqu.I("data_nodes.data_node_id"),
+			goqu.COUNT(goqu.I("data_node_shards.shard_id"))).
+		LeftJoin(
+			goqu.I("data_node_shards"),
+			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
+		GroupBy(goqu.I("data_nodes.data_node_id")).
+		ToSql()
+	rows, err = ctx.db.Query(getPressureQuery)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		items := make([]interface{}, 2)
+		items[0] = new(interface{})
+		items[1] = new(interface{})
+		err := rows.Scan(items...)
+		golog.Debugf(getPressureQuery, err)
+
+	}
+	return nil
 }
 
 func (ctx *shardContext) GetShards() ([]Shard, error) {

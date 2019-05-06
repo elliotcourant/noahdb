@@ -65,6 +65,8 @@ func (f *fsm) Restore(rc io.ReadCloser) error {
 	}
 
 	for _, entry := range logEntries {
+		index := getIndexForKey(entry.Key)
+		golog.Verbosef("restoring entry: %d", index)
 		logEntry := raft.Log{}
 		if err := proto.Unmarshal(entry.Value, &logEntry); err != nil {
 			return err
@@ -79,6 +81,7 @@ func (f *fsm) Restore(rc io.ReadCloser) error {
 				return err
 			}
 		}
+
 	}
 	return nil
 }

@@ -44,7 +44,6 @@ type Store struct {
 func CreateStore(directory string, listen string, joinAddr string) (*Store, error) {
 	// Setup Raft configuration.
 	config := raft.DefaultConfig()
-	config.CommitTimeout = 1 * time.Second
 	store := Store{
 		chunkMapMutex:     new(sync.Mutex),
 		sequenceCacheSync: new(sync.Mutex),
@@ -53,7 +52,7 @@ func CreateStore(directory string, listen string, joinAddr string) (*Store, erro
 		listen:            listen,
 	}
 
-	sqlstore, _ := sql.Open("sqlite3", "noah.db")
+	sqlstore, _ := sql.Open("sqlite3", ":memory:")
 	store.sqlstore = sqlstore
 	if listen == "" {
 		listen = ":6543"
@@ -128,23 +127,20 @@ func CreateStore(directory string, listen string, joinAddr string) (*Store, erro
 	if err != nil {
 		return nil, fmt.Errorf("file snapshot store: %s", err)
 	}
-
-	if clusterExists {
-		configuration := raft.Configuration{
-			Servers: []raft.Server{
-				{
-					ID:      config.LocalID,
-					Address: transport.LocalAddr(),
-				},
-			},
-		}
-		err := raft.RecoverCluster(config, (*fsm)(&store), &log, &stable, snapshots, transport, configuration)
-		if err != nil {
-			return nil, fmt.Errorf("recover raft: %s", err)
-		}
-	}
-	sqlstore, _ = sql.Open("sqlite3", ":memory:")
-	store.sqlstore = sqlstore
+	// if clusterExists {
+	// 	configuration := raft.Configuration{
+	// 		Servers: []raft.Server{
+	// 			{
+	// 				ID:      config.LocalID,
+	// 				Address: transport.LocalAddr(),
+	// 			},
+	// 		},
+	// 	}
+	// 	err := raft.RecoverCluster(config, (*fsm)(&store), &log, &stable, snapshots, transport, configuration)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("recover raft: %s", err)
+	// 	}
+	// }
 	ra, err := raft.NewRaft(config, (*fsm)(&store), &log, &stable, snapshots, transport)
 	if err != nil {
 		return nil, fmt.Errorf("new raft: %s", err)
@@ -225,5 +221,6 @@ func (store *Store) Close() {
 	}
 	store.raft.Shutdown()
 	store.badger.Close()
+	store.sqlstore.Close()
 	store.server.Stop()
 }

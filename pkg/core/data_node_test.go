@@ -9,8 +9,8 @@ func TestDataNodeContext_GetRandomDataNode(t *testing.T) {
 	colony, cleanup := newTestColony()
 	defer cleanup()
 	t.Run("get random node", func(t *testing.T) {
-		dataNode, err := colony.DataNodes().(*dataNodeContext).GetRandomDataNode()
+		dataNode, err := colony.DataNodes().(*dataNodeContext).GetRandomDataNodeShardID()
 		assert.NoError(t, err)
-		assert.NotEmpty(t, dataNode)
+		assert.Empty(t, dataNode)
 	})
 }

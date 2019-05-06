@@ -55,6 +55,7 @@ func TestSqlInserts(t *testing.T) {
 	store1 = nil
 	time.Sleep(5 * time.Second)
 	store1, err = store.CreateStore(tmpDir, ":9001", "")
+	assert.NoError(t, err)
 	time.Sleep(5 * time.Second)
 	for i := 0; i < 100; i++ {
 		_, err := store1.Exec(fmt.Sprintf("INSERT INTO foo (id) VALUES(%d);", i))

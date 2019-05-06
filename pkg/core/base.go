@@ -1,14 +1,19 @@
 package core
 
 import (
+	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/core/static"
 	"github.com/elliotcourant/noahdb/pkg/store"
 	"github.com/readystock/golog"
 	"os"
+	"sync"
 )
 
 type base struct {
 	db *store.Store
+
+	poolSync sync.Mutex
+	pool     map[uint64]*poolItem
 }
 
 // CoordinatorID returns the unique ID for this noahdb coordinator within the cluster.
@@ -54,6 +59,10 @@ func (ctx *base) Setup() {
 	if _, err := ctx.DataNodes().NewDataNode(initialPostgresAddress, initialPostgresPassword, initialPostgresPort); err != nil {
 		panic(err)
 	}
+}
+
+func (ctx *base) Query(query string) (*sql.Rows, error) {
+	return ctx.db.Query(query)
 }
 
 func (ctx *base) isSetup() bool {
