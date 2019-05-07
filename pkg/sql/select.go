@@ -82,7 +82,6 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 	// If there are no tables then we can simply recompile the query and send it to SQLite,
 	// this will make queries like CURRENT_TIMESTAMP or 1 very fast
 	if len(stmt.tables) == 0 {
-
 		return InitialPlan{
 			Target:  PlanTarget_INTERNAL,
 			ShardID: 0,

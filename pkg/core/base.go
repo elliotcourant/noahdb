@@ -3,6 +3,7 @@ package core
 import (
 	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/core/static"
+	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/elliotcourant/noahdb/pkg/store"
 	"github.com/readystock/golog"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 type base struct {
 	db *store.Store
+	fr *frunk.Store
 
 	poolSync sync.Mutex
 	pool     map[uint64]*poolItem

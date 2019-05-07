@@ -9,7 +9,14 @@ import (
 	"github.com/readystock/pgx/pgio"
 )
 
+var (
+	RaftStartupMessageError = errors.New("startup message is raft")
+	RpcStartupMessageError  = errors.New("startup message is rpc")
+)
+
 const (
+	RaftNumber            = 20190109
+	RpcNumber             = 19950202
 	ProtocolVersionNumber = 196608 // 3.0
 	sslRequestNumber      = 80877103
 )
@@ -29,11 +36,16 @@ func (dst *StartupMessage) Decode(src []byte) error {
 	dst.ProtocolVersion = binary.BigEndian.Uint32(src)
 	rp := 4
 
-	if dst.ProtocolVersion == sslRequestNumber {
+	switch dst.ProtocolVersion {
+	case sslRequestNumber:
 		return errors.Errorf("can't handle ssl connection request")
-	}
-
-	if dst.ProtocolVersion != ProtocolVersionNumber {
+	case RaftNumber:
+		return RaftStartupMessageError
+	case RpcNumber:
+		return RpcStartupMessageError
+	case ProtocolVersionNumber:
+		// Do nothing.
+	default: // Anything else
 		return errors.Errorf("Bad startup message version number. Expected %d, got %d", ProtocolVersionNumber, dst.ProtocolVersion)
 	}
 

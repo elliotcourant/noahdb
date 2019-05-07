@@ -67,111 +67,115 @@ func newWire(colony core.Colony, conn io.ReadWriter) (*wireServer, error) {
 		reader:  conn,
 		writer:  conn,
 		backend: backend,
-		stmtBuf: stmtbuf.NewStatementBuffer(),
 	}, nil
 }
 
 func (wire *wireServer) Serve() error {
 	// Receive startup messages.
-	startupMsg, err := wire.backend.ReceiveStartupMessage()
+	initialMsg, err := wire.backend.ReceiveInitialMessage()
 	if err != nil {
 		return wire.Errorf(err.Error())
 	}
-	// golog.Infof("received startup message: %+v", startupMsg)
 
-	if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
-		return wire.Errorf("user authentication required")
-	} else if username := strings.ToLower(strings.TrimSpace(user)); username != "noah" {
-		return wire.Errorf("user [%s] does not exist", username)
-	}
-
-	switch startupMsg.ProtocolVersion {
-	case pgproto.ProtocolVersionNumber:
-		if err := wire.backend.Send(&pgproto.Authentication{
-			Type: pgproto.AuthTypeMD5Password,
-		}); err != nil {
-			return wire.Errorf(err.Error())
+	switch startupMsg := initialMsg.(type) {
+	case *pgproto.RpcStartupMessage:
+		golog.Warnf("received rpc startup message!")
+	case *pgproto.StartupMessage:
+		wire.stmtBuf = stmtbuf.NewStatementBuffer() // We only want to setup a statement buffer if there is a need
+		if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
+			return wire.Errorf("user authentication required")
+		} else if username := strings.ToLower(strings.TrimSpace(user)); username != "noah" {
+			return wire.Errorf("user [%s] does not exist", username)
 		}
 
-		response, err := wire.backend.Receive()
-		if err != nil {
-			return wire.Errorf(err.Error())
-		}
-
-		_, ok := response.(*pgproto.PasswordMessage)
-		if !ok {
-			return wire.Errorf("authentication failed")
-		}
-		// golog.Verbosef("received password authentication for user [%s]", authResponse.Password)
-
-		if err := wire.backend.Send(&pgproto.Authentication{
-			Type: pgproto.AuthTypeOk,
-		}); err != nil {
-			return wire.Errorf(err.Error())
-		}
-
-		if err := wire.backend.Send(&pgproto.BackendKeyData{
-			ProcessID: 0,
-			SecretKey: 0,
-		}); err != nil {
-			return wire.Errorf(err.Error())
-		}
-
-		if err := wire.backend.Send(&pgproto.ReadyForQuery{
-			TxStatus: 'I',
-		}); err != nil {
-			return wire.Errorf(err.Error())
-		}
-	default:
-		return wire.Errorf("could not handle protocol version [%d]", startupMsg.ProtocolVersion)
-	}
-
-	terminateChannel := make(chan bool)
-
-	go func() {
-		if err := sql.Run(wire, terminateChannel); err != nil {
-			golog.Errorf(err.Error())
-		}
-	}()
-
-	for {
-		message, err := wire.backend.Receive()
-		if err != nil {
-			return wire.Errorf(err.Error())
-		}
-
-		switch msg := message.(type) {
-		case *pgproto.Query:
-			if err := wire.handleSimpleQuery(msg); err != nil {
-				return wire.StatementBuffer().Push(commands.SendError{
-					Err: err,
-				})
+		switch startupMsg.ProtocolVersion {
+		case pgproto.ProtocolVersionNumber:
+			if err := wire.backend.Send(&pgproto.Authentication{
+				Type: pgproto.AuthTypeMD5Password,
+			}); err != nil {
+				return wire.Errorf(err.Error())
 			}
-			if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
-				return wire.StatementBuffer().Push(commands.SendError{
-					Err: err,
-				})
+
+			response, err := wire.backend.Receive()
+			if err != nil {
+				return wire.Errorf(err.Error())
 			}
-		case *pgproto.Execute:
-		case *pgproto.Parse:
-			if err := wire.handleParse(msg); err != nil {
-				return wire.StatementBuffer().Push(commands.SendError{
-					Err: err,
-				})
+
+			_, ok := response.(*pgproto.PasswordMessage)
+			if !ok {
+				return wire.Errorf("authentication failed")
 			}
-		case *pgproto.Describe:
-		case *pgproto.Bind:
-		case *pgproto.Close:
-		case *pgproto.Terminate:
-			terminateChannel <- true
-			return nil
-		case *pgproto.Sync:
-		case *pgproto.Flush:
-		case *pgproto.CopyData:
+
+			if err := wire.backend.Send(&pgproto.Authentication{
+				Type: pgproto.AuthTypeOk,
+			}); err != nil {
+				return wire.Errorf(err.Error())
+			}
+
+			if err := wire.backend.Send(&pgproto.BackendKeyData{
+				ProcessID: 0,
+				SecretKey: 0,
+			}); err != nil {
+				return wire.Errorf(err.Error())
+			}
+
+			if err := wire.backend.Send(&pgproto.ReadyForQuery{
+				TxStatus: 'I',
+			}); err != nil {
+				return wire.Errorf(err.Error())
+			}
 		default:
-			return wire.Errorf("could not handle message type [%s]", reflect.TypeOf(message).Elem().Name())
+			return wire.Errorf("could not handle protocol version [%d]", startupMsg.ProtocolVersion)
+		}
+
+		terminateChannel := make(chan bool)
+
+		go func() {
+			if err := sql.Run(wire, terminateChannel); err != nil {
+				golog.Errorf(err.Error())
+			}
+		}()
+
+		for {
+			message, err := wire.backend.Receive()
+			if err != nil {
+				return wire.Errorf(err.Error())
+			}
+
+			switch msg := message.(type) {
+			case *pgproto.Query:
+				if err := wire.handleSimpleQuery(msg); err != nil {
+					return wire.StatementBuffer().Push(commands.SendError{
+						Err: err,
+					})
+				}
+				if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
+					return wire.StatementBuffer().Push(commands.SendError{
+						Err: err,
+					})
+				}
+			case *pgproto.Execute:
+			case *pgproto.Parse:
+				if err := wire.handleParse(msg); err != nil {
+					return wire.StatementBuffer().Push(commands.SendError{
+						Err: err,
+					})
+				}
+			case *pgproto.Describe:
+			case *pgproto.Bind:
+			case *pgproto.Close:
+			case *pgproto.Terminate:
+				terminateChannel <- true
+				return nil
+			case *pgproto.Sync:
+			case *pgproto.Flush:
+			case *pgproto.CopyData:
+			default:
+				return wire.Errorf("could not handle message type [%s]", reflect.TypeOf(message).Elem().Name())
+			}
 		}
 	}
+	return nil
 }
 
 func (wire *wireServer) Backend() *pgproto.Backend {

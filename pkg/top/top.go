@@ -24,9 +24,9 @@ func (conf pgwireConfig) Port() int {
 	return conf.port
 }
 
-func NoahMain(dataDirectory, listenAddress, joinAddress, postgresAddress string) {
+func NoahMain(dataDirectory, joinAddress, postgresAddress, raftAddress string) {
 	golog.Debugf("starting noahdb")
-	colony, err := core.NewColony(dataDirectory, listenAddress, joinAddress, postgresAddress)
+	colony, err := core.NewColony(dataDirectory, joinAddress, postgresAddress, raftAddress)
 	if err != nil {
 		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
 	} else if colony == nil {

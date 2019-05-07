@@ -95,8 +95,8 @@ func getStatementHandler(tree ast.Stmt) (interface{}, error) {
 	// case nodes.GrantRoleStmt:
 	// case nodes.ImportForeignSchemaStmt:
 	// case nodes.IndexStmt:
-	// case ast.InsertStmt:
-	// 	return CreateInsertStatement(stmt), nil
+	case ast.InsertStmt:
+		return NewInsertStatementPlan(stmt), nil
 	// case nodes.ListenStmt:
 	// case nodes.LoadStmt:
 	// case nodes.LockStmt:
