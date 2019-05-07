@@ -24,6 +24,7 @@ noahdb is a distributed multi-tenant new-sql database.
         - Tenants On Each Shard
         - Tenants On Each Node
 - Internals
+    - [Net Code](/docs/NetCode.md)
     - [Parser](/docs/Parser.md)
     - [Internal Data-Store](/docs/InternalDatastore.md)
     
