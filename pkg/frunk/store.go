@@ -10,6 +10,7 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/transport"
 	"io"
 	"io/ioutil"
 	"log"
@@ -171,7 +172,7 @@ type Store struct {
 
 	raft   *raft.Raft // The consensus mechanism.
 	ln     Listener
-	raftTn *raft.NetworkTransport
+	raftTn *transport.NetworkTransport
 	raftID string    // Node ID.
 	dbConf *DBConfig // SQLite database config.
 	dbPath string    // Path to underlying SQLite file, if not in-memory.
@@ -272,7 +273,7 @@ func (s *Store) Open(enableSingle bool) error {
 	newNode := !pathExists(filepath.Join(s.raftDir, "raft.db"))
 
 	// Create Raft-compatible network layer.
-	s.raftTn = raft.NewNetworkTransport(NewTransport(s.ln),
+	s.raftTn = transport.NewNetworkTransport(NewTransport(s.ln),
 		connectionPoolCount, connectionTimeout, nil)
 
 	// Get the Raft configuration for this store.

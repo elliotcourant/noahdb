@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package frunk;
+
+message GetNodeIdRequest {
+
+}
+
+message GetNodeIdResponse {
+    uint64 NodeID = 1;
+}
+
+enum OperationType {
+    SQL = 0;
+    KV = 1;
+}
+
+enum Operation {
+    GET = 0;
+    SET = 1;
+    DELETE = 2;
+}
+
+message Command {
+    OperationType OperationType = 1;
+    Operation Operation = 2;
+    uint64 Timestamp = 3;
+    bytes Key = 4;
+    bytes Value = 5;
+    bytes Query = 6;
+}
+
+message CommandResponse {
+    OperationType OperationType = 1;
+    Operation Operation = 2;
+    bool IsSuccess = 3;
+    string ErrorMessage = 4;
+    bytes Value = 5;
+    uint64 Timestamp = 6;
+    uint64 AppliedTimestamp = 7;
+}
+
+message JoinRequest {
+    string RaftAddress = 1;
+    uint64 ID = 2;
+}
+
+message JoinResponse {
+    bool IsSuccess = 1;
+    string ErrorMessage = 2;
+}
+
+message Peer {
+    uint64 NodeID = 1;
+    string RaftAddress = 2;
+}
+
+message sequenceChunkRequest {
+    string SequenceName = 1;
+}
+
+message sequenceChunkResponse {
+    string SequenceName = 1;
+    uint64 Start = 2;
+    uint64 End = 3;
+    uint64 Offset = 4;
+    uint64 Count = 5;
+}
+
+message sequence {
+    uint64 CurrentValue = 1;
+    uint64 LastPartitionIndex = 2;
+    uint64 MaxPartitionIndex = 3;
+    uint64 Partitions = 4;
+}
