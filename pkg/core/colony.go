@@ -1,7 +1,6 @@
 package core
 
 import (
-	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/elliotcourant/noahdb/pkg/store"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
@@ -21,7 +20,7 @@ type Colony interface {
 	Schema() SchemaContext
 	Users() UserContext
 	Pool() PoolContext
-	Query(string) (*sql.Rows, error)
+	Query(string) (*frunk.QueryResponse, error)
 	// Shards()
 	// Nodes()
 	// Tenants()
@@ -81,8 +80,6 @@ func NewColony(dataDirectory, joinAddresses, postgresAddress, raftAddr string) (
 		golog.Fatalf("failed to open store: %s", err.Error())
 	}
 
-	fr.
-
 	// handle joins here
 
 	openTimeout, err := time.ParseDuration("120s")
@@ -92,9 +89,7 @@ func NewColony(dataDirectory, joinAddresses, postgresAddress, raftAddr string) (
 	fr.WaitForLeader(openTimeout)
 	fr.WaitForApplied(openTimeout)
 
-	meta := map[string]string{
-
-	}
+	meta := map[string]string{}
 
 	// This may be a standalone server. In that case set its own metadata.
 	if err := fr.SetMetadata(meta); err != nil && err != store.ErrNotLeader {
@@ -104,8 +99,7 @@ func NewColony(dataDirectory, joinAddresses, postgresAddress, raftAddr string) (
 	}
 
 	colony := &base{
-		db:       nil,
-		fr:       fr,
+		db:       fr,
 		poolSync: sync.Mutex{},
 		pool:     map[uint64]*poolItem{},
 	}

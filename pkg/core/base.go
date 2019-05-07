@@ -1,18 +1,15 @@
 package core
 
 import (
-	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/core/static"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
-	"github.com/elliotcourant/noahdb/pkg/store"
 	"github.com/readystock/golog"
 	"os"
 	"sync"
 )
 
 type base struct {
-	db *store.Store
-	fr *frunk.Store
+	db *frunk.Store
 
 	poolSync sync.Mutex
 	pool     map[uint64]*poolItem
@@ -20,12 +17,13 @@ type base struct {
 
 // CoordinatorID returns the unique ID for this noahdb coordinator within the cluster.
 func (ctx *base) CoordinatorID() uint64 {
-	return ctx.db.NodeID()
+	return uint64(1)
+	// return ctx.db
 }
 
 // Close shuts down the colony.
 func (ctx *base) Close() {
-	ctx.db.Close()
+	ctx.db.Close(true)
 }
 
 // IsLeader returns true if the current coordinator is the leader of the cluster.
@@ -63,7 +61,7 @@ func (ctx *base) Setup() {
 	}
 }
 
-func (ctx *base) Query(query string) (*sql.Rows, error) {
+func (ctx *base) Query(query string) (*frunk.QueryResponse, error) {
 	return ctx.db.Query(query)
 }
 

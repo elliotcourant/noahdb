@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/raft"
 	"github.com/elliotcourant/raft-boltdb"
+	"github.com/hashicorp/raft"
 	sdb "github.com/rqlite/rqlite/db"
 )
 

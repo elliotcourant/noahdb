@@ -2,6 +2,7 @@ package core
 
 import (
 	"database/sql"
+	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/goqu"
 	"strconv"
 )
@@ -59,11 +60,11 @@ func (ctx *dataNodeContext) NewDataNode(address, password, port string) (DataNod
 
 func (ctx *dataNodeContext) GetDataNodes() ([]DataNode, error) {
 	compiledQuery, _, _ := getDataNodesQuery.ToSql()
-	rows, err := ctx.db.Query(compiledQuery)
+	result, err := ctx.db.Query(compiledQuery)
 	if err != nil {
 		return nil, err
 	}
-	return ctx.dataNodesFromRows(rows)
+	return ctx.dataNodesFromRows(result)
 }
 
 func (ctx *dataNodeContext) GetRandomDataNodeShardID() (uint64, error) {
@@ -79,7 +80,11 @@ func (ctx *dataNodeContext) GetRandomDataNodeShardID() (uint64, error) {
 		Order(goqu.L("RANDOM()").Asc()).
 		Limit(1).
 		ToSql()
-	return ctx.db.Count(compiledQuery)
+	response, err := ctx.db.Query(compiledQuery)
+	if err != nil {
+		return 0, err
+	}
+	return count(response)
 }
 
 func (ctx *dataNodeContext) GetDataNodesForShard(id uint64) ([]DataNode, error) {
@@ -91,11 +96,11 @@ func (ctx *dataNodeContext) GetDataNodesForShard(id uint64) ([]DataNode, error) 
 			"data_node_shards.shard_id": id,
 		}).
 		ToSql()
-	rows, err := ctx.db.Query(compiledQuery)
+	response, err := ctx.db.Query(compiledQuery)
 	if err != nil {
 		return nil, err
 	}
-	return ctx.dataNodesFromRows(rows)
+	return ctx.dataNodesFromRows(response)
 }
 
 func (ctx *dataNodeContext) GetDataNodeShardIDsForShard(id uint64) ([]uint64, error) {
@@ -109,11 +114,11 @@ func (ctx *dataNodeContext) GetDataNodeShardIDsForShard(id uint64) ([]uint64, er
 			"data_nodes.healthy": true,
 		}).
 		ToSql()
-	rows, err := ctx.db.Query(compiledQuery)
+	response, err := ctx.db.Query(compiledQuery)
 	if err != nil {
 		return nil, err
 	}
-	return idArray(rows)
+	return idArray(response)
 }
 
 func (ctx *dataNodeContext) GetDataNodeForDataNodeShard(id uint64) (DataNode, error) {
@@ -125,46 +130,35 @@ func (ctx *dataNodeContext) GetDataNodeForDataNodeShard(id uint64) (DataNode, er
 			"data_node_shards.data_node_shard_id": id,
 		}).
 		ToSql()
-	rows, err := ctx.db.Query(compiledQuery)
+	response, err := ctx.db.Query(compiledQuery)
 	if err != nil {
 		return DataNode{}, err
 	}
-	nodes, err := ctx.dataNodesFromRows(rows)
+	nodes, err := ctx.dataNodesFromRows(response)
 	return nodes[0], err
 }
 
-func (ctx *dataNodeContext) dataNodesFromRows(rows *sql.Rows) ([]DataNode, error) {
-	defer rows.Close()
+func (ctx *dataNodeContext) dataNodesFromRows(response *frunk.QueryResponse) ([]DataNode, error) {
 	nodes := make([]DataNode, 0)
-	for rows.Next() {
-		node := DataNode{}
-		if err := rows.Scan(
-			&node.DataNodeID,
-			&node.Address,
-			&node.Port,
-			&node.Healthy); err != nil {
-			return nil, err
-		}
-		nodes = append(nodes, node)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+	for _, row := range response.Rows[0].Values {
+		nodes = append(nodes, DataNode{
+			DataNodeID: row[0].(uint64),
+			Address:    row[1].(string),
+			Port:       row[2].(int32),
+			Healthy:    row[3].(bool),
+		})
 	}
 	return nodes, nil
 }
 
-func idArray(rows *sql.Rows) ([]uint64, error) {
-	defer rows.Close()
+func count(response *frunk.QueryResponse) (uint64, error) {
+	return response.Rows[0].Values[0][0].(uint64), nil
+}
+
+func idArray(response *frunk.QueryResponse) ([]uint64, error) {
 	ids := make([]uint64, 0)
-	for rows.Next() {
-		id := uint64(0)
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+	for _, row := range response.Rows[0].Values {
+		ids = append(ids, row[0].(uint64))
 	}
 	return ids, nil
 }
