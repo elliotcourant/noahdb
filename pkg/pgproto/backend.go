@@ -108,25 +108,25 @@ func (b *Backend) Receive() (FrontendMessage, error) {
 
 	var msg FrontendMessage
 	switch b.msgType {
-	case 'B':
+	case PgBind:
 		msg = &b.bind
-	case 'C':
+	case PgClose:
 		msg = &b._close
-	case 'D':
+	case PgDescribe:
 		msg = &b.describe
-	case 'E':
+	case PgExecute:
 		msg = &b.execute
-	case 'H':
+	case PgFlush:
 		msg = &b.flush
-	case 'P':
+	case PgParse:
 		msg = &b.parse
-	case 'p':
+	case PgPasswordMessage:
 		msg = &b.passwordMessage
-	case 'Q':
+	case PgQuery:
 		msg = &b.query
-	case 'S':
+	case PgSync:
 		msg = &b.sync
-	case 'X':
+	case PgTerminate:
 		msg = &b.terminate
 	default:
 		return nil, errors.Errorf("unknown message type: %c", b.msgType)

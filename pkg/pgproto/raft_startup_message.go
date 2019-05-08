@@ -9,7 +9,9 @@ import (
 type RaftStartupMessage struct {
 }
 
-func (*RaftStartupMessage) Frontend() {}
+func (RaftStartupMessage) Frontend() {}
+
+func (RaftStartupMessage) RaftFrontend() {}
 
 func (dst *RaftStartupMessage) Decode(src []byte) error {
 	if len(src) < 4 {
