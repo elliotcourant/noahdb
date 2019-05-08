@@ -465,7 +465,7 @@ func (n *PgTransport) handleConn(connCtx context.Context, conn net.Conn) {
 }
 
 // handleCommand is used to decode and dispatch a single command.
-func (n *PgTransport) handleCommand(backend *pgproto.Backend) error {
+func (n *PgTransport) handleCommand(backend *pgproto.RaftBackend) error {
 	message, err := backend.Receive()
 	if err != nil {
 		return err
@@ -481,7 +481,7 @@ func (n *PgTransport) handleCommand(backend *pgproto.Backend) error {
 	isHeartbeat := false
 
 	switch req := message.(type) {
-	case *pgproto.AppendEntries:
+	case *pgproto.AppendEntriesRequest:
 		rpc.Command = &req
 
 		// Check if this is a heartbeat
@@ -490,6 +490,8 @@ func (n *PgTransport) handleCommand(backend *pgproto.Backend) error {
 			len(req.Entries) == 0 && req.LeaderCommitIndex == 0 {
 			isHeartbeat = true
 		}
+	case *pgproto.RequestVoteRequest:
+		rpc.Command = &req
 	default:
 		return fmt.Errorf("unknown rpc type")
 	}
@@ -501,13 +503,6 @@ func (n *PgTransport) handleCommand(backend *pgproto.Backend) error {
 	}
 
 	switch rpcType {
-	case rpcRequestVote:
-		var req raft.RequestVoteRequest
-		if err := dec.Decode(&req); err != nil {
-			return err
-		}
-		rpc.Command = &req
-
 	case rpcInstallSnapshot:
 		var req raft.InstallSnapshotRequest
 		if err := dec.Decode(&req); err != nil {

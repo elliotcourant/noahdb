@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-func TestAppendEntries(t *testing.T) {
+func TestAppendEntriesRequest(t *testing.T) {
 	t.Run("encode and decode", func(t *testing.T) {
-		appendEntry := AppendEntries{
+		appendEntry := AppendEntriesRequest{
 			AppendEntriesRequest: raft.AppendEntriesRequest{
 				RPCHeader: raft.RPCHeader{
 					ProtocolVersion: raft.ProtocolVersionMax,
@@ -38,14 +38,14 @@ func TestAppendEntries(t *testing.T) {
 		}
 		encoded := appendEntry.Encode(nil)
 		fmt.Println(hex.Dump(encoded))
-		decodeEntry := AppendEntries{}
+		decodeEntry := AppendEntriesRequest{}
 		err := decodeEntry.Decode(encoded[5:])
 		assert.NoError(t, err)
 		assert.Equal(t, appendEntry, decodeEntry)
 	})
 
 	t.Run("encode with nil and decode", func(t *testing.T) {
-		appendEntry := AppendEntries{
+		appendEntry := AppendEntriesRequest{
 			AppendEntriesRequest: raft.AppendEntriesRequest{
 				RPCHeader: raft.RPCHeader{
 					ProtocolVersion: raft.ProtocolVersionMax,
@@ -68,7 +68,7 @@ func TestAppendEntries(t *testing.T) {
 		}
 		encoded := appendEntry.Encode(nil)
 		fmt.Println(hex.Dump(encoded))
-		decodeEntry := AppendEntries{}
+		decodeEntry := AppendEntriesRequest{}
 		err := decodeEntry.Decode(encoded[5:])
 		assert.NoError(t, err)
 		assert.Equal(t, appendEntry, decodeEntry)

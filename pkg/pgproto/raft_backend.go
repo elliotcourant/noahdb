@@ -11,7 +11,8 @@ type RaftBackend struct {
 	cr *chunkreader.ChunkReader
 	w  io.Writer
 
-	appendEntries AppendEntries
+	appendEntries AppendEntriesRequest
+	requestVote   RequestVoteRequest
 
 	bodyLen    int
 	msgType    byte
@@ -44,6 +45,8 @@ func (b *RaftBackend) Receive() (RaftFrontendMessage, error) {
 	switch b.msgType {
 	case RaftAppendEntriesRequest:
 		msg = &b.appendEntries
+	case RaftRequestVoteRequest:
+		msg = &b.requestVote
 	default:
 		return nil, fmt.Errorf("unknown raft message type: %c", b.msgType)
 	}

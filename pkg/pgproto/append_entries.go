@@ -7,16 +7,16 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-type AppendEntries struct {
+type AppendEntriesRequest struct {
 	raft.AppendEntriesRequest
 }
 
-func (AppendEntries) Frontend() {}
+func (AppendEntriesRequest) Frontend() {}
 
-func (AppendEntries) RaftFrontend() {}
+func (AppendEntriesRequest) RaftFrontend() {}
 
-func (appendEntries *AppendEntries) Decode(src []byte) error {
-	*appendEntries = AppendEntries{}
+func (appendEntries *AppendEntriesRequest) Decode(src []byte) error {
+	*appendEntries = AppendEntriesRequest{}
 	buf := bytes.NewBuffer(src)
 	appendEntries.ProtocolVersion = raft.ProtocolVersion(binary.BigEndian.Uint32(buf.Next(4)))
 	appendEntries.Term = binary.BigEndian.Uint64(buf.Next(8))
@@ -54,7 +54,7 @@ func (appendEntries *AppendEntries) Decode(src []byte) error {
 	return nil
 }
 
-func (appendEntries *AppendEntries) Encode(dst []byte) []byte {
+func (appendEntries *AppendEntriesRequest) Encode(dst []byte) []byte {
 	dst = append(dst, RaftAppendEntriesRequest)
 	sp := len(dst)
 	dst = pgio.AppendInt32(dst, -1)
