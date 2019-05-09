@@ -26,6 +26,8 @@ type StartupMessage struct {
 	Parameters      map[string]string
 }
 
+func (StartupMessage) Initial() {}
+
 func (*StartupMessage) Frontend() {}
 
 func (dst *StartupMessage) Decode(src []byte) error {

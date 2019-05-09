@@ -5,10 +5,17 @@ import (
 	"encoding/binary"
 	"github.com/elliotcourant/noahdb/pkg/pgio"
 	"github.com/hashicorp/raft"
+	"io"
 )
 
 type InstallSnapshotRequest struct {
 	raft.InstallSnapshotRequest
+
+	SnapshotData []byte
+}
+
+func (installSnapshot *InstallSnapshotRequest) Reader() io.Reader {
+	return bytes.NewBuffer(installSnapshot.SnapshotData)
 }
 
 func (InstallSnapshotRequest) Frontend() {}
@@ -37,6 +44,7 @@ func (installSnapshot *InstallSnapshotRequest) Decode(src []byte) error {
 	installSnapshot.ConfigurationIndex = binary.BigEndian.Uint64(buf.Next(8))
 	installSnapshot.Size = int64(binary.BigEndian.Uint64(buf.Next(8)))
 
+	installSnapshot.SnapshotData = buf.Next(int(installSnapshot.Size))
 	return nil
 }
 
@@ -64,6 +72,8 @@ func (installSnapshot *InstallSnapshotRequest) Encode(dst []byte) []byte {
 
 	dst = pgio.AppendUint64(dst, installSnapshot.ConfigurationIndex)
 	dst = pgio.AppendInt64(dst, installSnapshot.Size)
+
+	dst = append(dst, installSnapshot.SnapshotData...)
 
 	pgio.SetInt32(dst[sp:], int32(len(dst[sp:])))
 	return dst

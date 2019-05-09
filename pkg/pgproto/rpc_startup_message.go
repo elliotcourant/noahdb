@@ -9,6 +9,8 @@ import (
 type RpcStartupMessage struct {
 }
 
+func (RpcStartupMessage) Initial() {}
+
 func (*RpcStartupMessage) Frontend() {}
 
 func (dst *RpcStartupMessage) Decode(src []byte) error {

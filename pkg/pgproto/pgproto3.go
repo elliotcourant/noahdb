@@ -13,6 +13,11 @@ type Message interface {
 	Encode(dst []byte) []byte
 }
 
+type InitialMessage interface {
+	Message
+	Initial()
+}
+
 type FrontendMessage interface {
 	Message
 	Frontend() // no-op method to distinguish frontend from backend methods

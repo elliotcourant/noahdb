@@ -40,38 +40,18 @@ func (b *Backend) Send(msg BackendMessage) error {
 	return err
 }
 
-func (b *Backend) ReceiveInitialMessage() (interface{}, error) {
+func (b *Backend) ReceiveInitialMessage() (int, error) {
 	buf, err := b.cr.Next(4)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	msgSize := int(binary.BigEndian.Uint32(buf) - 4)
+	_ = int(binary.BigEndian.Uint32(buf) - 4)
 
-	buf, err = b.cr.Next(msgSize)
+	buf, err = b.cr.Next(4)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-
-	err = b.startupMessage.Decode(buf)
-	if err != nil {
-		return nil, err
-	}
-
-	switch err {
-	case RaftStartupMessageError:
-		panic("not yet handling raft connections")
-	case RpcStartupMessageError:
-		rpcMessage := RpcStartupMessage{}
-		err = rpcMessage.Decode(buf)
-		if err != nil {
-			return nil, err
-		}
-		return &rpcMessage, nil
-	case nil:
-		return &b.startupMessage, nil
-	default:
-		return nil, err
-	}
+	return int(binary.BigEndian.Uint32(buf) - 4), nil
 }
 
 func (b *Backend) ReceiveStartupMessage() (*StartupMessage, error) {

@@ -51,6 +51,8 @@ func NewColony(dataDirectory, joinAddresses, postgresAddress, raftAddr string) (
 		return nil, err
 	}
 
+	tn.Accept()
+
 	fr := frunk.New(tn, &frunk.StoreConfig{
 		DBConf: &frunk.DBConfig{
 			DSN:    "",

@@ -9,6 +9,8 @@ import (
 type RaftStartupMessage struct {
 }
 
+func (RaftStartupMessage) Initial() {}
+
 func (RaftStartupMessage) Frontend() {}
 
 func (RaftStartupMessage) RaftFrontend() {}

@@ -75,6 +75,11 @@ const (
 	RaftRequestVoteRequest     = 'v'
 	RaftInstallSnapshotRequest = 'i'
 
+	/*
+		Raft Backend Messages
+	*/
+	RaftRPCResponse = 'r'
+
 	// Both
 	PgCopyData = 'd'
 	PgCopyDone = 'c'
