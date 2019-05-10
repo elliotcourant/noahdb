@@ -93,9 +93,9 @@ func (wrapper *transportWrapper) Start() {
 
 			switch initial {
 			case pgproto.RaftNumber:
-
+				wrapper.raftTransport.SendAccept(conn, nil)
 			case pgproto.RpcNumber:
-
+				wrapper.rpcTransport.SendAccept(conn, nil)
 			case pgproto.ProtocolVersionNumber:
 
 			default:

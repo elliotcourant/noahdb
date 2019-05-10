@@ -72,7 +72,7 @@ func newWire(colony core.Colony, conn io.ReadWriter) (*wireServer, error) {
 
 func (wire *wireServer) Serve() error {
 	// Receive startup messages.
-	initialMsg, err := wire.backend.ReceiveInitialMessage()
+	initialMsg, err := wire.backend.ReceiveStartupMessage()
 	if err != nil {
 		return wire.Errorf(err.Error())
 	}
