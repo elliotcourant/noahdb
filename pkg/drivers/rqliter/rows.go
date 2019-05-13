@@ -13,6 +13,7 @@ import (
 
 type Rows interface {
 	Columns() []string
+	ColumnTypes() []string
 	Next() bool
 	NextResultSet() bool
 	HasNextResultSet() bool
@@ -39,6 +40,13 @@ func (rows *rqlrows) Columns() []string {
 		return make([]string, 0)
 	}
 	return rows.results().Columns
+}
+
+func (rows *rqlrows) ColumnTypes() []string {
+	if !rows.anyResults() {
+		return make([]string, 0)
+	}
+	return rows.results().Types
 }
 
 func (rows *rqlrows) HasNextResultSet() bool {

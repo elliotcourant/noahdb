@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/goqu"
@@ -135,6 +136,9 @@ func (ctx *dataNodeContext) GetDataNodeForDataNodeShard(id uint64) (DataNode, er
 		return DataNode{}, err
 	}
 	nodes, err := ctx.dataNodesFromRows(response)
+	if len(nodes) == 0 {
+		return DataNode{}, fmt.Errorf("could not find data node for data node shard ID [%d]", id)
+	}
 	return nodes[0], err
 }
 

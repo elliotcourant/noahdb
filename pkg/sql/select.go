@@ -83,7 +83,7 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 	// this will make queries like CURRENT_TIMESTAMP or 1 very fast
 	if len(stmt.tables) == 0 {
 		return InitialPlan{
-			Target:  PlanTarget_INTERNAL,
+			Target:  PlanTarget_STANDARD,
 			ShardID: 0,
 			Types: map[PlanType]InitialPlanTask{
 				PlanType_READ: {

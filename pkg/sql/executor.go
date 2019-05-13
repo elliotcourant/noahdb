@@ -3,6 +3,7 @@ package sql
 import (
 	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/types"
@@ -10,6 +11,11 @@ import (
 	"reflect"
 	"time"
 )
+
+type responsePipe struct {
+	conn core.PoolConnection
+	err  error
+}
 
 func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 	startTimestamp := time.Now()
@@ -19,18 +25,19 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 
 	switch plan.Target {
 	case PlanTarget_STANDARD:
-		responses := make(chan core.PoolConnection, len(plan.Tasks))
+		responses := make(chan *responsePipe, len(plan.Tasks))
 
 		for i, task := range plan.Tasks {
 			go func(index int, task ExpandedPlanTask) {
-				var frontend core.PoolConnection = nil
+				var response = &responsePipe{}
 				defer func() {
-					responses <- frontend
+					responses <- response
 				}()
 
 				frontend, err := s.Colony().Pool().GetConnectionForDataNodeShard(task.DataNodeShardID)
 				if err != nil {
 					golog.Errorf("could not retrieve connection from pool for data node shard [%d]: %s", task.DataNodeShardID, err.Error())
+					response.err = err
 					return
 				}
 
@@ -38,13 +45,19 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					String: task.Query,
 				}); err != nil {
 					golog.Errorf("could not send query to data node [%d]: %s", task.DataNodeShardID, err.Error())
+					response.err = err
 					return
 				}
+				response.conn = frontend
 			}(i, task)
 		}
 
 		for i := 0; i < len(plan.Tasks); i++ {
-			return func(frontend core.PoolConnection) error {
+			return func(response *responsePipe) error {
+				if response.err != nil {
+					return response.err
+				}
+				frontend := response.conn
 				defer frontend.Release()
 				canExit := false
 				for {
@@ -76,19 +89,20 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 	case PlanTarget_INTERNAL:
 		for i, task := range plan.Tasks {
 			return func() error {
+				return nil
 				golog.Verbosef("executing task %d on internal data store", i)
-				rows, err := s.Colony().Query(task.Query)
-				defer rows.Close()
+				response, err := s.Colony().Query(task.Query)
+				rows := rqliter.NewRqlRows(response)
 				if err != nil {
 					golog.Errorf("could not execute internal query: %s", err.Error())
 					return err
 				}
 				result := make([][]interface{}, 0)
-				columns, err := rows.Columns()
+				columns := rows.Columns()
 				var colTypes []*sql.ColumnType = nil
 				for rows.Next() {
 					if colTypes == nil {
-						colTypes, _ = rows.ColumnTypes()
+						// colTypes, _ = rows.ColumnTypes()
 					}
 					row := make([]interface{}, len(columns))
 					for i := 0; i < len(columns); i++ {

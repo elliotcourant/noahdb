@@ -31,6 +31,7 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 	ln := transport.NormalTransport()
 
 	for {
+		golog.Verbosef("accepting connection at: %s", ln.Addr())
 		conn, err := ln.Accept()
 		if err != nil {
 			return err

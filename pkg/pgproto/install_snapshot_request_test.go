@@ -25,6 +25,7 @@ func TestInstallSnapshotRequest(t *testing.T) {
 				ConfigurationIndex: 213,
 				Size:               21495219431,
 			},
+			SnapshotData: []byte{},
 		}
 		encoded := item.Encode(nil)
 		fmt.Println(hex.Dump(encoded))

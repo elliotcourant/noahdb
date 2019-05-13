@@ -42,7 +42,7 @@ const (
 	PgParameterStatus                 = 'S'
 	PgParseComplete                   = '1'
 	PgPortialSuspended                = 's'
-	PgReadyForQuery                   = 'z'
+	PgReadyForQuery                   = 'Z'
 	PgRowDescription                  = 'T'
 
 	/*

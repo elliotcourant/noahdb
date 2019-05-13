@@ -15,55 +15,28 @@ import (
 	"time"
 )
 
-type config struct {
-	address string
-	port    int
-}
-
-func (conf config) Address() string {
-	return conf.address
-}
-
-func (conf config) Port() int {
-	return conf.port
-}
-
-func (conf config) LibPqConnectionString() string {
+func LibPqConnectionString(address net.Addr) string {
+	addr, err := net.ResolveTCPAddr(address.Network(), address.String())
+	if err != nil {
+		panic(err)
+	}
 	return fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		conf.Address(), conf.Port(), "noah", "password", "postgres")
+		addr.IP.String(), addr.Port, "noah", "password", "postgres")
 }
 
-func NewConfig() config {
-	ln, err := net.Listen("tcp", "127.0.0.1:")
-	if err != nil {
-		panic(err)
-	}
-
-	defer ln.Close()
-	addr, err := net.ResolveTCPAddr(ln.Addr().Network(), ln.Addr().String())
-	if err != nil {
-		panic(err)
-	}
-
-	return config{
-		address: addr.IP.String(),
-		port:    5433,
-	}
-}
-
-func NewColony() (core.Colony, func()) {
+func NewColony() (core.Colony, core.TransportWrapper, func()) {
 	tempdir, err := ioutil.TempDir("", "core-temp")
 	if err != nil {
 		panic(err)
 	}
 
-	colony, err := core.NewColony(tempdir, ":", "", ":")
+	colony, wrapper, err := core.NewColony(tempdir, "", ":")
 	if err != nil {
 		panic(err)
 	}
 
-	return colony, func() {
+	return colony, wrapper, func() {
 		if err := os.RemoveAll(tempdir); err != nil {
 			panic(err)
 		}
@@ -71,17 +44,16 @@ func NewColony() (core.Colony, func()) {
 }
 
 func TestLibPqStartup(t *testing.T) {
-	conf := NewConfig()
-	colony, cleanup := NewColony()
+	colony, wrapper, cleanup := NewColony()
 	defer cleanup()
 	go func() {
-		if err := pgwire.NewServer(colony, conf); err != nil {
+		if err := pgwire.NewServer(colony, wrapper); err != nil {
 			panic(err)
 		}
 	}()
 	time.Sleep(1 * time.Second)
 	func() {
-		db, err := sql.Open("postgres", conf.LibPqConnectionString())
+		db, err := sql.Open("postgres", LibPqConnectionString(wrapper.Addr()))
 		if err != nil {
 			panic(err)
 		}
