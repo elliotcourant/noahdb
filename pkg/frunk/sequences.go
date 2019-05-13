@@ -98,7 +98,7 @@ type SequenceChunk struct {
 	sequenceName string
 }
 
-func (s *Store) NextSequenceValueById(sequenceName string) (*uint64, error) {
+func (s *Store) NextSequenceValueById(sequenceName string) (uint64, error) {
 	s.chunkMapMutex.Lock()
 	defer s.chunkMapMutex.Unlock()
 	chunk, ok := s.sequenceChunks[sequenceName]
@@ -138,13 +138,13 @@ func (sequence *SequenceChunk) GetSequenceIndex() uint64 {
 	return sequence.index
 }
 
-func (sequence *SequenceChunk) Next() (*uint64, error) {
+func (sequence *SequenceChunk) Next() (uint64, error) {
 	sequence.sync.Lock()
 	defer sequence.sync.Unlock()
 	if sequence.current == nil {
 		chunk, err := sequence.Store.getSequenceChunk(sequence.sequenceName)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		sequence.current = chunk
 		sequence.next = nil
@@ -153,13 +153,13 @@ func (sequence *SequenceChunk) Next() (*uint64, error) {
 NewId:
 	nextId := sequence.current.Start + sequence.current.Offset + (sequence.current.Count * sequence.index) - (sequence.current.Count - 1)
 	if nextId > sequence.current.End {
-		golog.Debugf("moving next chunk into current sequence [%s]", sequence.sequenceName)
+		golog.Verbosef("moving next chunk into current sequence [%s]", sequence.sequenceName)
 		if sequence.next != nil {
 			sequence.current = sequence.next
 		} else {
 			chunk, err := sequence.Store.getSequenceChunk(sequence.sequenceName)
 			if err != nil {
-				return nil, err
+				return 0, err
 			}
 			sequence.current = chunk
 		}
@@ -168,13 +168,13 @@ NewId:
 		goto NewId
 	}
 	if sequence.next == nil && float64(sequence.index*sequence.current.Count)/float64(sequence.current.End-sequence.current.Start) > (float64(SequencePreretrieve)/100) {
-		golog.Debugf("requesting next chunk in sequence [%s] preemptive", sequence.sequenceName)
+		golog.Verbosef("requesting next chunk in sequence [%s] preemptive", sequence.sequenceName)
 		chunk, err := sequence.Store.getSequenceChunk(sequence.sequenceName)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		sequence.next = chunk
 	}
 	sequence.index++
-	return &nextId, nil
+	return nextId, nil
 }

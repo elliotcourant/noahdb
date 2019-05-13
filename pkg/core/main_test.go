@@ -19,7 +19,7 @@ func newTestColony() (Colony, func()) {
 		panic(err)
 	}
 
-	colony, err := NewColony(tempdir, ":", "", ":")
+	colony, _, err := NewColony(tempdir, "", ":")
 	if err != nil {
 		panic(err)
 	}

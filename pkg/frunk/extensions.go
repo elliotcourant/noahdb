@@ -6,7 +6,11 @@ import (
 
 // Get returns a byte array for a given key from BoltDB.
 func (s *Store) Get(key []byte) ([]byte, error) {
-	return s.boltStore.Get(key)
+	val, err := s.boltStore.Get(key)
+	if err != nil && err.Error() != "not found" {
+		return nil, err
+	}
+	return val, nil
 }
 
 // Set updates the value of a key-value pair.

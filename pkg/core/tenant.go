@@ -2,6 +2,8 @@ package core
 
 import (
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
+	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/goqu"
 )
 
@@ -26,18 +28,11 @@ func (ctx *base) Tenants() TenantContext {
 }
 
 func (ctx *tenantContext) GetTenants() ([]Tenant, error) {
-	rows, err := ctx.db.Query("SELECT tenant_id, shard_id FROM tenants;")
+	response, err := ctx.db.Query("SELECT tenant_id, shard_id FROM tenants;")
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	tenants := make([]Tenant, 0)
-	for rows.Next() {
-		tenant := Tenant{}
-		rows.Scan(&tenant.TenantID, &tenant.ShardID)
-		tenants = append(tenants, tenant)
-	}
-	return tenants, nil
+	return ctx.tenantsFromRows(response)
 }
 
 func (ctx *tenantContext) GetTenant(id uint64) (Tenant, error) {
@@ -47,19 +42,34 @@ func (ctx *tenantContext) GetTenant(id uint64) (Tenant, error) {
 		}).
 		Limit(1).
 		ToSql()
-	rows, err := ctx.db.Query(compiledSql)
+	response, err := ctx.db.Query(compiledSql)
 	if err != nil {
 		return Tenant{}, err
 	}
-	defer rows.Close()
-	tenants := make([]Tenant, 0)
-	for rows.Next() {
-		tenant := Tenant{}
-		rows.Scan(&tenant.TenantID, &tenant.ShardID)
-		tenants = append(tenants, tenant)
+	tenants, err := ctx.tenantsFromRows(response)
+	if err != nil {
+		return Tenant{}, err
 	}
 	if len(tenants) != 1 {
 		return Tenant{}, fmt.Errorf("tried to find one tenant, found %d", len(tenants))
 	}
 	return tenants[0], nil
+}
+
+func (ctx *tenantContext) tenantsFromRows(response *frunk.QueryResponse) ([]Tenant, error) {
+	rows := rqliter.NewRqlRows(response)
+	tenants := make([]Tenant, 0)
+	for rows.Next() {
+		tenant := Tenant{}
+		if err := rows.Scan(
+			&tenant.TenantID,
+			&tenant.ShardID); err != nil {
+			return nil, err
+		}
+		tenants = append(tenants, tenant)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }

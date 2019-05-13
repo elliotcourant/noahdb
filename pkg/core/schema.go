@@ -33,11 +33,11 @@ func (ctx *schemaContext) Exists(name string) (bool, error) {
 		Where(
 			goqu.Ex{"schema_name": name}).
 		ToSql()
-	count, err := ctx.db.Count(sql)
+	response, err := ctx.db.Query(sql)
 	if err != nil {
 		return false, err
 	}
-	return count == 1, nil
+	return exists(response)
 }
 
 // NewSchema creates a new schema in noahdb.
@@ -56,11 +56,11 @@ func (ctx *schemaContext) NewSchema(name string) (schema Schema, err error) {
 
 	sql := goqu.From("schemas").
 		Insert(goqu.Record{
-			"schema_id":   *id,
+			"schema_id":   id,
 			"schema_name": name,
 		}).Sql
 	_, err = ctx.db.Exec(sql)
-	schema.SchemaID = *id
+	schema.SchemaID = id
 	schema.SchemaName = name
 	return schema, err
 }

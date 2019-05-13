@@ -15,5 +15,6 @@ func NewRpcServer(colony core.Colony, transport core.TransportWrapper) error {
 			continue
 		}
 
+		conn.Close()
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/dgraph-io/badger"
-	_ "github.com/elliotcourant/noahdb/pkg/drivers/sqlite"
 	"github.com/kataras/golog"
 	"github.com/readystock/raft"
 	"google.golang.org/grpc"

@@ -66,8 +66,8 @@ func (ctx *base) Query(query string) (*frunk.QueryResponse, error) {
 }
 
 func (ctx *base) isSetup() bool {
-	_, err := ctx.db.Query("SELECT data_node_id FROM data_nodes LIMIT 1;")
+	re, err := ctx.db.Query("SELECT data_node_id FROM data_nodes LIMIT 1;")
 	// If the error is nil then that means the table exists and the cluster has been
 	// setup. If the error is not nil then the cluster needs to be setup again.
-	return err == nil
+	return err == nil && re.Rows[0].Error == ""
 }

@@ -2,7 +2,6 @@ package core
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/frunk"
-	"github.com/elliotcourant/noahdb/pkg/store"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/readystock/golog"
 	"net"
@@ -84,21 +83,21 @@ func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, Transpo
 
 	// handle joins here
 
-	openTimeout, err := time.ParseDuration("120s")
+	openTimeout, err := time.ParseDuration("10s")
 	if err != nil {
 		golog.Fatalf("failed to parse Raft open timeout: %s", err.Error())
 	}
 	fr.WaitForLeader(openTimeout)
 	fr.WaitForApplied(openTimeout)
 
-	meta := map[string]string{}
+	// meta := map[string]string{}
 
-	// This may be a standalone server. In that case set its own metadata.
-	if err := fr.SetMetadata(meta); err != nil && err != store.ErrNotLeader {
-		// Non-leader errors are OK, since metadata will then be set through
-		// consensus as a result of a join. All other errors indicate a problem.
-		golog.Fatalf("failed to set store metadata: %s", err.Error())
-	}
+	// // This may be a standalone server. In that case set its own metadata.
+	// if err := fr.SetMetadata(meta); err != nil && err != store.ErrNotLeader {
+	// 	// Non-leader errors are OK, since metadata will then be set through
+	// 	// consensus as a result of a join. All other errors indicate a problem.
+	// 	golog.Fatalf("failed to set store metadata: %s", err.Error())
+	// }
 
 	colony := &base{
 		db:       fr,

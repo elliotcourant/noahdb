@@ -1,8 +1,9 @@
 package core
 
 import (
-	"database/sql"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
+	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/goqu"
 )
 
@@ -99,8 +100,8 @@ func (ctx *tableContext) GetShardColumn(tableId int32) (Column, error) {
 	return columns[0], err
 }
 
-func (ctx *tableContext) tablesFromRows(rows *sql.Rows) ([]Table, error) {
-	defer rows.Close()
+func (ctx *tableContext) tablesFromRows(response *frunk.QueryResponse) ([]Table, error) {
+	rows := rqliter.NewRqlRows(response)
 	items := make([]Table, 0)
 	for rows.Next() {
 		item := Table{}
@@ -119,8 +120,8 @@ func (ctx *tableContext) tablesFromRows(rows *sql.Rows) ([]Table, error) {
 	return items, nil
 }
 
-func (ctx *tableContext) columnsFromRows(rows *sql.Rows) ([]Column, error) {
-	defer rows.Close()
+func (ctx *tableContext) columnsFromRows(response *frunk.QueryResponse) ([]Column, error) {
+	rows := rqliter.NewRqlRows(response)
 	items := make([]Column, 0)
 	for rows.Next() {
 		item := Column{}

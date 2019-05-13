@@ -1,7 +1,8 @@
 package core
 
 import (
-	"database/sql"
+	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
+	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/golog"
 	"gopkg.in/doug-martin/goqu.v5"
 	// Use the postgres adapter for building queries.
@@ -50,7 +51,7 @@ func (ctx *shardContext) NewShard() (shard Shard, err error) {
 	if err != nil {
 		return shard, err
 	}
-	shard.ShardID = *id
+	shard.ShardID = id
 	shard.State = ShardState_New
 
 	compiledQuery := goqu.
@@ -118,7 +119,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		newDataNodeShard := goqu.
 			From("data_node_shards").
 			Insert(goqu.Record{
-				"data_node_shard_id": *id,
+				"data_node_shard_id": id,
 				"data_node_id":       dataNode.DataNodeID,
 				"shard_id":           shardId,
 				"read_only":          false,
@@ -155,10 +156,11 @@ func (ctx *shardContext) getDataNodesPressure(max int) ([]dataNodePressure, erro
 		Order(goqu.I("shards").Asc()).
 		Limit(uint(max)).
 		ToSql()
-	rows, err := ctx.db.Query(getPressureQuery)
+	response, err := ctx.db.Query(getPressureQuery)
 	if err != nil {
 		return nil, err
 	}
+	rows := rqliter.NewRqlRows(response)
 	pressures := make([]dataNodePressure, 0)
 	for rows.Next() {
 		dataNodeId, shards := uint64(0), 0
@@ -170,17 +172,16 @@ func (ctx *shardContext) getDataNodesPressure(max int) ([]dataNodePressure, erro
 			Shards     int
 		}{DataNodeID: dataNodeId, Shards: shards})
 	}
-	rows.Close()
 	return pressures, nil
 }
 
 func (ctx *shardContext) GetShards() ([]Shard, error) {
 	sql, _, _ := getShardsQuery.ToSql()
-	rows, err := ctx.db.Query(sql)
+	response, err := ctx.db.Query(sql)
 	if err != nil {
 		return nil, err
 	}
-	return ctx.shardsFromRows(rows)
+	return ctx.shardsFromRows(response)
 }
 
 func (ctx *shardContext) GetWriteDataNodeShards(id uint64) ([]DataNodeShard, error) {
@@ -188,15 +189,15 @@ func (ctx *shardContext) GetWriteDataNodeShards(id uint64) ([]DataNodeShard, err
 		Where(goqu.Ex{"shard_id": id}).
 		Where(goqu.Ex{"read_only": false}).
 		ToSql()
-	rows, err := ctx.db.Query(sql)
+	response, err := ctx.db.Query(sql)
 	if err != nil {
 		return nil, err
 	}
-	return ctx.dataNodeShardsFromRows(rows)
+	return ctx.dataNodeShardsFromRows(response)
 }
 
-func (ctx *shardContext) shardsFromRows(rows *sql.Rows) ([]Shard, error) {
-	defer rows.Close()
+func (ctx *shardContext) shardsFromRows(response *frunk.QueryResponse) ([]Shard, error) {
+	rows := rqliter.NewRqlRows(response)
 	shards := make([]Shard, 0)
 	for rows.Next() {
 		shard := Shard{}
@@ -212,8 +213,8 @@ func (ctx *shardContext) shardsFromRows(rows *sql.Rows) ([]Shard, error) {
 	return shards, nil
 }
 
-func (ctx *shardContext) dataNodeShardsFromRows(rows *sql.Rows) ([]DataNodeShard, error) {
-	defer rows.Close()
+func (ctx *shardContext) dataNodeShardsFromRows(response *frunk.QueryResponse) ([]DataNodeShard, error) {
+	rows := rqliter.NewRqlRows(response)
 	dataNodeShards := make([]DataNodeShard, 0)
 	for rows.Next() {
 		dataNodeShard := DataNodeShard{}

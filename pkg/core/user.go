@@ -1,6 +1,9 @@
 package core
 
-import "database/sql"
+import (
+	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
+	"github.com/elliotcourant/noahdb/pkg/frunk"
+)
 
 type userContext struct {
 	*base
@@ -18,15 +21,15 @@ func (ctx *base) Users() UserContext {
 }
 
 func (ctx *userContext) GetUsers() ([]User, error) {
-	rows, err := ctx.db.Query("SELECT * FROM users;")
+	response, err := ctx.db.Query("SELECT * FROM users;")
 	if err != nil {
 		return nil, err
 	}
-	return ctx.userFromRows(rows)
+	return ctx.userFromRows(response)
 }
 
-func (ctx *userContext) userFromRows(rows *sql.Rows) ([]User, error) {
-	defer rows.Close()
+func (ctx *userContext) userFromRows(response *frunk.QueryResponse) ([]User, error) {
+	rows := rqliter.NewRqlRows(response)
 	users := make([]User, 0)
 	for rows.Next() {
 		user := User{}

@@ -2,7 +2,7 @@ package static
 
 import (
 	"database/sql"
-	_ "github.com/elliotcourant/noahdb/pkg/drivers/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"

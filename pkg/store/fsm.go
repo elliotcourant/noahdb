@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/dgraph-io/badger"
-	_ "github.com/elliotcourant/noahdb/pkg/drivers/sqlite"
 	"github.com/golang/protobuf/proto"
 	"github.com/readystock/golog"
 	"github.com/readystock/raft"
