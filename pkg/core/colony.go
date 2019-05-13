@@ -34,26 +34,26 @@ type Colony interface {
 	Close()
 }
 
-func NewColony(dataDirectory, joinAddresses, postgresAddress, raftAddr string) (Colony, error) {
+func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, TransportWrapper, error) {
 	// db, err := store.CreateStore(dataDirectory, listenAddress, "")
 	// if err != nil {
 	// 	return nil, err
 	// }
 
-	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", raftAddr)
+	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	tn := tcp.NewTransport()
 
 	if err := tn.Open(parsedRaftAddr.String()); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	tn.Accept()
+	trans := NewTransportWrapper(tn)
 
-	fr := frunk.New(tn, &frunk.StoreConfig{
+	fr := frunk.New(trans.RaftTransport(), &frunk.StoreConfig{
 		DBConf: &frunk.DBConfig{
 			DSN:    "",
 			Memory: true,
@@ -64,17 +64,17 @@ func NewColony(dataDirectory, joinAddresses, postgresAddress, raftAddr string) (
 
 	joinAllowed, err := frunk.JoinAllowed(dataDirectory)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var joins []string
 	if joinAllowed {
 		joins, err = determineJoinAddresses(joinAddresses)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Now, open store.
@@ -110,7 +110,7 @@ func NewColony(dataDirectory, joinAddresses, postgresAddress, raftAddr string) (
 
 	colony.Setup()
 
-	return colony, nil
+	return colony, trans, nil
 }
 
 func determineJoinAddresses(joinAddr string) ([]string, error) {

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/transport"
 	"io"
 	"io/ioutil"
@@ -206,6 +207,11 @@ type Store struct {
 	ApplyTimeout      time.Duration
 
 	connPollPeriod time.Duration
+
+	chunkMapMutex     *sync.Mutex
+	sequenceCacheSync *sync.Mutex
+	sequenceChunks    map[string]*SequenceChunk
+	sequenceCache     map[string]*pgproto.SequenceResponse
 }
 
 // StoreConfig represents the configuration of the underlying Store.
@@ -225,18 +231,22 @@ func New(ln Listener, c *StoreConfig) *Store {
 	}
 
 	return &Store{
-		ln:             ln,
-		raftDir:        c.Dir,
-		raftID:         c.ID,
-		dbConf:         c.DBConf,
-		dbPath:         filepath.Join(c.Dir, sqliteFile),
-		randSrc:        rand.New(rand.NewSource(time.Now().UnixNano())),
-		conns:          make(map[uint64]*Connection),
-		done:           make(chan struct{}, 1),
-		meta:           make(map[string]map[string]string),
-		logger:         logger,
-		ApplyTimeout:   applyTimeout,
-		connPollPeriod: connectionPollPeriod,
+		ln:                ln,
+		raftDir:           c.Dir,
+		raftID:            c.ID,
+		dbConf:            c.DBConf,
+		dbPath:            filepath.Join(c.Dir, sqliteFile),
+		randSrc:           rand.New(rand.NewSource(time.Now().UnixNano())),
+		conns:             make(map[uint64]*Connection),
+		done:              make(chan struct{}, 1),
+		meta:              make(map[string]map[string]string),
+		logger:            logger,
+		ApplyTimeout:      applyTimeout,
+		connPollPeriod:    connectionPollPeriod,
+		chunkMapMutex:     new(sync.Mutex),
+		sequenceCacheSync: new(sync.Mutex),
+		sequenceCache:     map[string]*pgproto.SequenceResponse{},
+		sequenceChunks:    map[string]*SequenceChunk{},
 	}
 }
 

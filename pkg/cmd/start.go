@@ -27,14 +27,13 @@ var (
 	startCmd = &cobra.Command{
 		Use: "start",
 		Run: func(cmd *cobra.Command, args []string) {
-			top.NoahMain(StoreDirectory, JoinAddr, PGWireAddr, RaftAddr)
+			top.NoahMain(StoreDirectory, JoinAddr, PGWireAddr)
 		},
 	}
 )
 
 func init() {
 	startCmd.Flags().StringVarP(&PGWireAddr, "pg", "p", ":5433", "address that will accept PostgreSQL connections")
-	startCmd.Flags().StringVarP(&RaftAddr, "raft", "r", ":5435", "address that will be used for Noah's raft protocol")
 	startCmd.Flags().StringVarP(&JoinAddr, "join", "j", "", "address and gRPC port of another node in a cluster to join")
 	startCmd.Flags().StringVarP(&StoreDirectory, "store", "s", "data", "directory that will be used for Noah's key value store")
 	startCmd.Flags().StringVarP(&LogLevel, "log", "l", "verbose", "log output level, valid values: trace, verbose, debug, info, warn, error, fatal")

@@ -1,9 +1,7 @@
 package core
 
 import (
-	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
-	"io"
 	"net"
 	"time"
 )
@@ -15,16 +13,21 @@ type Listener interface {
 	Dial(address string, timeout time.Duration) (net.Conn, error)
 }
 
-type TransportPredicate func(io.Reader) bool
+type TransportWrapper interface {
+	NormalTransport() net.Listener
+	ForwardToRaft(net.Conn, error)
+	ForwardToRpc(net.Conn, error)
+	RaftTransport() Listener
+	RpcTransport() Listener
+	Close()
+}
 
 type accept struct {
 	conn net.Conn
 	err  error
 }
 type transportWrapperItem struct {
-	listener  Listener
-	predicate TransportPredicate
-
+	listener      Listener
 	acceptChannel chan accept
 
 	closeCallback func()
@@ -54,57 +57,59 @@ func (t *transportWrapperItem) Dial(address string, timeout time.Duration) (net.
 }
 
 type transportWrapper struct {
-	transport Listener
-
-	raftTransport     *transportWrapperItem
-	rpcTransport      *transportWrapperItem
-	postgresTransport *transportWrapperItem
+	transport     Listener
+	raftTransport *transportWrapperItem
+	rpcTransport  *transportWrapperItem
 }
 
-func (wrapper *transportWrapper) Start() {
-	sendError := func(err error) {
-		// If there is an error, issue the error to all the listening connections.
-		wrapper.raftTransport.SendAccept(nil, err)
-		wrapper.rpcTransport.SendAccept(nil, err)
-		wrapper.postgresTransport.SendAccept(nil, err)
+func NewTransportWrapper(listener Listener) TransportWrapper {
+	wrapper := &transportWrapper{
+		transport: listener,
+		raftTransport: &transportWrapperItem{
+			acceptChannel: make(chan accept, 0),
+		},
+		rpcTransport: &transportWrapperItem{
+			acceptChannel: make(chan accept, 0),
+		},
 	}
 
-	go func() {
-		for {
-			conn, err := wrapper.transport.Accept()
-			if err != nil {
-				sendError(err)
-				golog.Warnf("received error when accepting connection")
-				continue
-			}
+	{
+		wrapper.raftTransport.closeCallback = wrapper.closeCallback
+		wrapper.raftTransport.listener = wrapper.transport
+	}
 
-			backend, err := pgproto.NewBackend(conn, conn)
-			if err != nil {
-				sendError(err)
-				golog.Warnf("received error when creating backend")
-				continue
-			}
+	{
+		wrapper.rpcTransport.closeCallback = wrapper.closeCallback
+		wrapper.rpcTransport.listener = wrapper.transport
+	}
 
-			initial, err := backend.ReceiveInitialMessage()
-			if err != nil {
-				sendError(err)
-				golog.Warnf("could not receive initial message")
-			}
+	return wrapper
+}
 
-			switch initial {
-			case pgproto.RaftNumber:
-				wrapper.raftTransport.SendAccept(conn, nil)
-			case pgproto.RpcNumber:
-				wrapper.rpcTransport.SendAccept(conn, nil)
-			case pgproto.ProtocolVersionNumber:
+func (wrapper *transportWrapper) ForwardToRaft(conn net.Conn, err error) {
+	wrapper.raftTransport.SendAccept(conn, err)
+}
 
-			default:
-
-			}
-		}
-	}()
+func (wrapper *transportWrapper) ForwardToRpc(conn net.Conn, err error) {
+	wrapper.rpcTransport.SendAccept(conn, err)
 }
 
 func (wrapper *transportWrapper) closeCallback() {
 	golog.Verbosef("received close callback")
+}
+
+func (wrapper *transportWrapper) RaftTransport() Listener {
+	return wrapper.raftTransport
+}
+
+func (wrapper *transportWrapper) RpcTransport() Listener {
+	return wrapper.rpcTransport
+}
+
+func (wrapper *transportWrapper) NormalTransport() net.Listener {
+	return wrapper.transport
+}
+
+func (wrapper *transportWrapper) Close() {
+	wrapper.raftTransport.Close()
 }

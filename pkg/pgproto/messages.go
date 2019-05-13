@@ -78,7 +78,16 @@ const (
 	/*
 		Raft Backend Messages
 	*/
+
+	// RaftRPCResponse is a generic tag
 	RaftRPCResponse = 'r'
+
+	/*
+		RPC Backend Messages
+	*/
+
+	// RpcSequenceResponse indicates sequence metadata.
+	RpcSequenceResponse = 'S'
 
 	// Both
 	PgCopyData = 'd'

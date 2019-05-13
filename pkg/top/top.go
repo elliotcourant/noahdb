@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
+	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/readystock/golog"
 	"os"
 	"os/signal"
@@ -24,9 +25,9 @@ func (conf pgwireConfig) Port() int {
 	return conf.port
 }
 
-func NoahMain(dataDirectory, joinAddress, postgresAddress, raftAddress string) {
+func NoahMain(dataDirectory, joinAddress, listenAddr string) {
 	golog.Debugf("starting noahdb")
-	colony, err := core.NewColony(dataDirectory, joinAddress, postgresAddress, raftAddress)
+	colony, trans, err := core.NewColony(dataDirectory, joinAddress, listenAddr)
 	if err != nil {
 		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
 	} else if colony == nil {
@@ -53,10 +54,14 @@ func NoahMain(dataDirectory, joinAddress, postgresAddress, raftAddress string) {
 
 	go func() {
 		defer tasks.Done()
-		if err = pgwire.NewServer(colony, pgwireConfig{
-			address: "127.0.0.1",
-			port:    5433,
-		}); err != nil {
+		if err = pgwire.NewServer(colony, trans); err != nil {
+			golog.Errorf(err.Error())
+		}
+	}()
+
+	go func() {
+		defer tasks.Done()
+		if err = rpcwire.NewRpcServer(colony, trans); err != nil {
 			golog.Errorf(err.Error())
 		}
 	}()

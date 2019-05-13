@@ -3,11 +3,18 @@ package frunk
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
-	"github.com/golang/protobuf/proto"
 	"github.com/readystock/golog"
 	"net"
 	"sync"
 )
+
+type SequenceChunkResponse struct {
+	SequenceName string
+	Start        uint64
+	End          uint64
+	Offset       uint64
+	Count        uint64
+}
 
 const (
 	SequenceRangeSize   = 1000
@@ -35,7 +42,7 @@ func (s *Store) getNextChunkInSequence(sequenceName string) error {
 
 func (s *Store) getSequenceChunk(sequenceName string) (*SequenceChunkResponse, error) {
 	if !s.IsLeader() { // Only the leader can manage sequences
-		return s.clusterClient.getNextChunkInSequence(sequenceName)
+		// return s.clusterClient.getNextChunkInSequence(sequenceName)
 	}
 	s.sequenceCacheSync.Lock()
 	defer s.sequenceCacheSync.Unlock()
@@ -47,15 +54,15 @@ func (s *Store) getSequenceChunk(sequenceName string) (*SequenceChunkResponse, e
 			return nil, err
 		}
 		if len(seq) == 0 {
-			sequenceCache = &Sequence{
+			sequenceCache = &pgproto.SequenceResponse{
 				CurrentValue:       0,
 				LastPartitionIndex: 0,
 				MaxPartitionIndex:  SequencePartitions - 1,
 				Partitions:         SequencePartitions,
 			}
 		} else {
-			sequenceCache = &Sequence{}
-			err = proto.Unmarshal(seq, sequenceCache)
+			sequenceCache = &pgproto.SequenceResponse{}
+			err := sequenceCache.Decode(seq)
 			if err != nil {
 				return nil, err
 			}
@@ -69,11 +76,8 @@ func (s *Store) getSequenceChunk(sequenceName string) (*SequenceChunkResponse, e
 	}
 	index := sequenceCache.LastPartitionIndex
 	sequenceCache.LastPartitionIndex++
-	b, err := proto.Marshal(sequenceCache)
-	if err != nil {
-		return nil, err
-	}
-	err = s.Set(path, b)
+	b := sequenceCache.Encode(nil)
+	err := s.Set(path, b)
 	if err != nil {
 		return nil, err
 	}

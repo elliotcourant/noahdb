@@ -8,23 +8,27 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/sql"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
 	"github.com/readystock/golog"
-	"io"
 	"net"
 	"reflect"
 	"strings"
 )
+
+type TransportWrapper interface {
+	NormalTransport() net.Listener
+	ForwardToRaft(net.Conn, error)
+	ForwardToRpc(net.Conn, error)
+	Close()
+}
 
 type ServerConfig interface {
 	Address() string
 	Port() int
 }
 
-func NewServer(colony core.Colony, config ServerConfig) error {
-	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", config.Address(), config.Port()))
-	if err != nil {
-		return err
-	}
-	defer ln.Close()
+func NewServer(colony core.Colony, transport TransportWrapper) error {
+	defer transport.Close()
+
+	ln := transport.NormalTransport()
 
 	for {
 		conn, err := ln.Accept()
@@ -33,14 +37,13 @@ func NewServer(colony core.Colony, config ServerConfig) error {
 		}
 
 		go func() {
-			defer conn.Close()
 			wire, err := newWire(colony, conn)
 			if err != nil {
 				golog.Errorf("failed setting up wire: %s", err.Error())
 			}
 
 			// golog.Verbosef("handling connection from: %s", conn.RemoteAddr().String())
-			if err := wire.Serve(); err != nil {
+			if err := wire.Serve(transport); err != nil {
 				golog.Errorf("failed serving connection: %s", err.Error())
 			}
 		}()
@@ -49,130 +52,132 @@ func NewServer(colony core.Colony, config ServerConfig) error {
 
 type wireServer struct {
 	colony core.Colony
+	conn   net.Conn
 
-	reader  io.Reader
-	writer  io.Writer
 	backend *pgproto.Backend
 
 	stmtBuf stmtbuf.StatementBuffer
 }
 
-func newWire(colony core.Colony, conn io.ReadWriter) (*wireServer, error) {
+func newWire(colony core.Colony, conn net.Conn) (*wireServer, error) {
 	backend, err := pgproto.NewBackend(conn, conn)
 	if err != nil {
 		return nil, err
 	}
 	return &wireServer{
 		colony:  colony,
-		reader:  conn,
-		writer:  conn,
+		conn:    conn,
 		backend: backend,
 	}, nil
 }
 
-func (wire *wireServer) Serve() error {
+func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 	// Receive startup messages.
-	initialMsg, err := wire.backend.ReceiveStartupMessage()
+	startupMsg, err := wire.backend.ReceiveStartupMessage()
 	if err != nil {
-		return wire.Errorf(err.Error())
+		switch err {
+		case pgproto.RaftStartupMessageError:
+			wrapper.ForwardToRaft(wire.conn, nil)
+		case pgproto.RpcStartupMessageError:
+			wrapper.ForwardToRpc(wire.conn, nil)
+		default:
+			defer wire.conn.Close()
+			return wire.Errorf(err.Error())
+		}
+	}
+	defer wire.conn.Close()
+
+	wire.stmtBuf = stmtbuf.NewStatementBuffer() // We only want to setup a statement buffer if there is a need
+	if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
+		return wire.Errorf("user authentication required")
+	} else if username := strings.ToLower(strings.TrimSpace(user)); username != "noah" {
+		return wire.Errorf("user [%s] does not exist", username)
 	}
 
-	switch startupMsg := initialMsg.(type) {
-	case *pgproto.RpcStartupMessage:
-		golog.Warnf("received rpc startup message!")
-	case *pgproto.StartupMessage:
-		wire.stmtBuf = stmtbuf.NewStatementBuffer() // We only want to setup a statement buffer if there is a need
-		if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
-			return wire.Errorf("user authentication required")
-		} else if username := strings.ToLower(strings.TrimSpace(user)); username != "noah" {
-			return wire.Errorf("user [%s] does not exist", username)
+	switch startupMsg.ProtocolVersion {
+	case pgproto.ProtocolVersionNumber:
+		if err := wire.backend.Send(&pgproto.Authentication{
+			Type: pgproto.AuthTypeMD5Password,
+		}); err != nil {
+			return wire.Errorf(err.Error())
 		}
 
-		switch startupMsg.ProtocolVersion {
-		case pgproto.ProtocolVersionNumber:
-			if err := wire.backend.Send(&pgproto.Authentication{
-				Type: pgproto.AuthTypeMD5Password,
-			}); err != nil {
-				return wire.Errorf(err.Error())
-			}
+		response, err := wire.backend.Receive()
+		if err != nil {
+			return wire.Errorf(err.Error())
+		}
 
-			response, err := wire.backend.Receive()
-			if err != nil {
-				return wire.Errorf(err.Error())
-			}
+		_, ok := response.(*pgproto.PasswordMessage)
+		if !ok {
+			return wire.Errorf("authentication failed")
+		}
 
-			_, ok := response.(*pgproto.PasswordMessage)
-			if !ok {
-				return wire.Errorf("authentication failed")
-			}
+		if err := wire.backend.Send(&pgproto.Authentication{
+			Type: pgproto.AuthTypeOk,
+		}); err != nil {
+			return wire.Errorf(err.Error())
+		}
 
-			if err := wire.backend.Send(&pgproto.Authentication{
-				Type: pgproto.AuthTypeOk,
-			}); err != nil {
-				return wire.Errorf(err.Error())
-			}
+		if err := wire.backend.Send(&pgproto.BackendKeyData{
+			ProcessID: 0,
+			SecretKey: 0,
+		}); err != nil {
+			return wire.Errorf(err.Error())
+		}
 
-			if err := wire.backend.Send(&pgproto.BackendKeyData{
-				ProcessID: 0,
-				SecretKey: 0,
-			}); err != nil {
-				return wire.Errorf(err.Error())
-			}
+		if err := wire.backend.Send(&pgproto.ReadyForQuery{
+			TxStatus: 'I',
+		}); err != nil {
+			return wire.Errorf(err.Error())
+		}
+	default:
+		return wire.Errorf("could not handle protocol version [%d]", startupMsg.ProtocolVersion)
+	}
 
-			if err := wire.backend.Send(&pgproto.ReadyForQuery{
-				TxStatus: 'I',
-			}); err != nil {
-				return wire.Errorf(err.Error())
+	terminateChannel := make(chan bool)
+
+	go func() {
+		if err := sql.Run(wire, terminateChannel); err != nil {
+			golog.Errorf(err.Error())
+		}
+	}()
+
+	for {
+		message, err := wire.backend.Receive()
+		if err != nil {
+			return wire.Errorf(err.Error())
+		}
+
+		switch msg := message.(type) {
+		case *pgproto.Query:
+			if err := wire.handleSimpleQuery(msg); err != nil {
+				return wire.StatementBuffer().Push(commands.SendError{
+					Err: err,
+				})
 			}
+			if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
+				return wire.StatementBuffer().Push(commands.SendError{
+					Err: err,
+				})
+			}
+		case *pgproto.Execute:
+		case *pgproto.Parse:
+			if err := wire.handleParse(msg); err != nil {
+				return wire.StatementBuffer().Push(commands.SendError{
+					Err: err,
+				})
+			}
+		case *pgproto.Describe:
+		case *pgproto.Bind:
+		case *pgproto.Close:
+		case *pgproto.Terminate:
+			terminateChannel <- true
+			return nil
+		case *pgproto.Sync:
+		case *pgproto.Flush:
+		case *pgproto.CopyData:
 		default:
-			return wire.Errorf("could not handle protocol version [%d]", startupMsg.ProtocolVersion)
-		}
-
-		terminateChannel := make(chan bool)
-
-		go func() {
-			if err := sql.Run(wire, terminateChannel); err != nil {
-				golog.Errorf(err.Error())
-			}
-		}()
-
-		for {
-			message, err := wire.backend.Receive()
-			if err != nil {
-				return wire.Errorf(err.Error())
-			}
-
-			switch msg := message.(type) {
-			case *pgproto.Query:
-				if err := wire.handleSimpleQuery(msg); err != nil {
-					return wire.StatementBuffer().Push(commands.SendError{
-						Err: err,
-					})
-				}
-				if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
-					return wire.StatementBuffer().Push(commands.SendError{
-						Err: err,
-					})
-				}
-			case *pgproto.Execute:
-			case *pgproto.Parse:
-				if err := wire.handleParse(msg); err != nil {
-					return wire.StatementBuffer().Push(commands.SendError{
-						Err: err,
-					})
-				}
-			case *pgproto.Describe:
-			case *pgproto.Bind:
-			case *pgproto.Close:
-			case *pgproto.Terminate:
-				terminateChannel <- true
-				return nil
-			case *pgproto.Sync:
-			case *pgproto.Flush:
-			case *pgproto.CopyData:
-			default:
-				return wire.Errorf("could not handle message type [%s]", reflect.TypeOf(message).Elem().Name())
-			}
+			return wire.Errorf("could not handle message type [%s]", reflect.TypeOf(message).Elem().Name())
 		}
 	}
 	return nil
