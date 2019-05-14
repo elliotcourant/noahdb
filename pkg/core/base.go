@@ -4,6 +4,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/core/static"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/golog"
+	"net"
 	"os"
 	"sync"
 )
@@ -11,8 +12,14 @@ import (
 type base struct {
 	db *frunk.Store
 
+	trans    TransportWrapper
 	poolSync sync.Mutex
 	pool     map[uint64]*poolItem
+}
+
+// Addr returns the address of the current node.
+func (ctx *base) Addr() net.Addr {
+	return ctx.trans.Addr()
 }
 
 // CoordinatorID returns the unique ID for this noahdb coordinator within the cluster.

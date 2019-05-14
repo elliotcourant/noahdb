@@ -21,3 +21,7 @@ In the documentation above, the StartupMessage has a protocol version.
 This is the value that is used to determine the connection type.
 
 Currently noahdb supports protocol version 3.0 for all PostgreSQL connections.
+
+# Flow
+
+![flow](/docs/imgs/netflow.png "Network Flow")

@@ -89,7 +89,6 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 	case PlanTarget_INTERNAL:
 		for i, task := range plan.Tasks {
 			return func() error {
-				return nil
 				golog.Verbosef("executing task %d on internal data store", i)
 				response, err := s.Colony().Query(task.Query)
 				rows := rqliter.NewRqlRows(response)
@@ -123,7 +122,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					Fields: make([]pgproto.FieldDescription, len(columns)),
 				}
 
-				typs := make([]interface{}, len(colTypes))
+				typs := make([]interface{}, len(columns))
 
 				for i, typ := range colTypes {
 					field := pgproto.FieldDescription{

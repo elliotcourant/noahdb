@@ -31,6 +31,7 @@ type Colony interface {
 
 	CoordinatorID() uint64
 	Close()
+	Addr() net.Addr
 }
 
 func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, TransportWrapper, error) {
@@ -58,7 +59,7 @@ func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, Transpo
 			Memory: true,
 		},
 		Dir: dataDirectory,
-		ID:  parsedRaftAddr.String(),
+		ID:  trans.Addr().String(),
 	})
 
 	joinAllowed, err := frunk.JoinAllowed(dataDirectory)
@@ -101,6 +102,7 @@ func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, Transpo
 
 	colony := &base{
 		db:       fr,
+		trans:    trans,
 		poolSync: sync.Mutex{},
 		pool:     map[uint64]*poolItem{},
 	}
