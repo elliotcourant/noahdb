@@ -15,6 +15,8 @@ func NewRpcServer(colony core.Colony, transport core.TransportWrapper) error {
 			continue
 		}
 
+		golog.Verbosef("received rpc connection from [%s]", conn.RemoteAddr().String())
+
 		conn.Close()
 	}
 }

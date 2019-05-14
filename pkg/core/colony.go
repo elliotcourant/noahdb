@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/readystock/golog"
@@ -83,6 +84,25 @@ func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, Transpo
 	}
 
 	// handle joins here
+
+	if len(joins) > 0 {
+		for i, joinAddr := range joins {
+			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr)
+			rpcDriver, err := rpcer.NewRPCDriver(trans.Addr(), joinAddr)
+			if err != nil {
+				golog.Fatalf("could not connect to join address [%s]: %v", joinAddr, err)
+			}
+			if rpcDriver == nil {
+				golog.Fatalf("failed to create frontend for address [%s]", joinAddr)
+			}
+			if err := rpcDriver.Join(); err != nil {
+				golog.Fatalf("could not join address [%s]: %v", joinAddr, err)
+			} else {
+				golog.Infof("successfully joined at address [%s]", joinAddr)
+				break
+			}
+		}
+	}
 
 	openTimeout, err := time.ParseDuration("10s")
 	if err != nil {

@@ -1,4 +1,4 @@
-package core
+package core_test
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -10,7 +10,7 @@ func TestSchemaContext_Exists(t *testing.T) {
 	colony, cleanup := newTestColony()
 	defer cleanup()
 	t.Run("doesn't exist", func(t *testing.T) {
-		ok, err := colony.Schema().(*schemaContext).Exists("imaginary")
+		ok, err := colony.Schema().Exists("imaginary")
 		assert.NoError(t, err)
 		assert.False(t, ok)
 	})
@@ -21,7 +21,7 @@ func TestSchemaContext_NewSchema(t *testing.T) {
 	defer cleanup()
 	t.Run("create a new schema", func(t *testing.T) {
 		name := "public"
-		schema, err := colony.Schema().(*schemaContext).NewSchema(name)
+		schema, err := colony.Schema().NewSchema(name)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, schema)
 		assert.True(t, schema.SchemaID > 0)
@@ -37,13 +37,13 @@ func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
 	defer cleanup2()
 	t.Run("create a new schema", func(t *testing.T) {
 		name := "public"
-		schema, err := colony1.Schema().(*schemaContext).NewSchema(name)
+		schema, err := colony1.Schema().NewSchema(name)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, schema)
 		assert.True(t, schema.SchemaID > 0)
 		assert.Equal(t, name, schema.SchemaName)
 		time.Sleep(1 * time.Second)
-		exists, err := colony2.Schema().(*schemaContext).Exists(name)
+		exists, err := colony2.Schema().Exists(name)
 		assert.NoError(t, err)
 		assert.True(t, exists)
 	})

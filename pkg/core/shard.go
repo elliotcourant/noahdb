@@ -24,7 +24,7 @@ var (
 			"read_only")
 )
 
-type dataNodePressure struct {
+type DataNodePressure struct {
 	DataNodeID uint64
 	Shards     int
 }
@@ -38,6 +38,8 @@ type ShardContext interface {
 	NewShard() (Shard, error)
 	GetShards() ([]Shard, error)
 	GetWriteDataNodeShards(uint64) ([]DataNodeShard, error)
+	BalanceOrphanShards() error
+	GetDataNodesPressure(max int) ([]DataNodePressure, error)
 }
 
 func (ctx *base) Shards() ShardContext {
@@ -103,7 +105,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 	if err != nil {
 		return err
 	}
-	pressures, err := ctx.getDataNodesPressure(len(ids))
+	pressures, err := ctx.GetDataNodesPressure(len(ids))
 
 	for i, shardId := range ids {
 		// Determine which node this shard should be assigned to.
@@ -143,7 +145,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 	return nil
 }
 
-func (ctx *shardContext) getDataNodesPressure(max int) ([]dataNodePressure, error) {
+func (ctx *shardContext) GetDataNodesPressure(max int) ([]DataNodePressure, error) {
 	getPressureQuery, _, _ := goqu.
 		From("data_nodes").
 		Select(
@@ -161,7 +163,7 @@ func (ctx *shardContext) getDataNodesPressure(max int) ([]dataNodePressure, erro
 		return nil, err
 	}
 	rows := rqliter.NewRqlRows(response)
-	pressures := make([]dataNodePressure, 0)
+	pressures := make([]DataNodePressure, 0)
 	for rows.Next() {
 		dataNodeId, shards := uint64(0), 0
 		if err := rows.Scan(&dataNodeId, &shards); err != nil {

@@ -79,8 +79,10 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 		switch err {
 		case pgproto.RaftStartupMessageError:
 			wrapper.ForwardToRaft(wire.conn, nil)
+			return nil
 		case pgproto.RpcStartupMessageError:
 			wrapper.ForwardToRpc(wire.conn, nil)
+			return nil
 		default:
 			defer wire.conn.Close()
 			return wire.Errorf(err.Error())

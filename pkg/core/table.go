@@ -25,6 +25,7 @@ type TableContext interface {
 	GetTables(...string) ([]Table, error)
 	GetColumns(int32) ([]Column, error)
 	GetShardColumn(int32) (Column, error)
+	GetTablesInSchema(schema string, names ...string) ([]Table, error)
 }
 
 func (ctx *base) Tables() TableContext {

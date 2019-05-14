@@ -12,6 +12,8 @@ type schemaContext struct {
 
 type SchemaContext interface {
 	GetSchemas() ([]Schema, error)
+	Exists(string) (bool, error)
+	NewSchema(string) (Schema, error)
 }
 
 func (ctx *base) Schema() SchemaContext {

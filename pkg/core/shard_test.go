@@ -1,4 +1,4 @@
-package core
+package core_test
 
 import (
 	"github.com/readystock/golog"
@@ -44,7 +44,7 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 		newShard, err := colony.Shards().NewShard()
 		assert.NoError(t, err)
 		assert.True(t, newShard.ShardID > 0)
-		err = colony.Shards().(*shardContext).BalanceOrphanShards()
+		err = colony.Shards().BalanceOrphanShards()
 		assert.NoError(t, err)
 	})
 
@@ -64,15 +64,15 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 			_, _ = colony.Shards().NewShard()
 		}
 
-		pressureBefore, _ := colony.Shards().(*shardContext).getDataNodesPressure(numberOfNodes)
+		pressureBefore, _ := colony.Shards().GetDataNodesPressure(numberOfNodes)
 		for _, pressure := range pressureBefore {
 			assert.Empty(t, pressure.Shards)
 		}
 
-		err := colony.Shards().(*shardContext).BalanceOrphanShards()
+		err := colony.Shards().BalanceOrphanShards()
 		assert.NoError(t, err)
 
-		pressureAfter, _ := colony.Shards().(*shardContext).getDataNodesPressure(numberOfNodes)
+		pressureAfter, _ := colony.Shards().GetDataNodesPressure(numberOfNodes)
 		for _, pressure := range pressureAfter {
 			assert.NotEmpty(t, pressure.Shards)
 		}
