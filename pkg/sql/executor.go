@@ -1,14 +1,12 @@
 package sql
 
 import (
-	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/readystock/golog"
-	"reflect"
 	"time"
 )
 
@@ -98,11 +96,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 				}
 				result := make([][]interface{}, 0)
 				columns := rows.Columns()
-				var colTypes []*sql.ColumnType = nil
 				for rows.Next() {
-					if colTypes == nil {
-						// colTypes, _ = rows.ColumnTypes()
-					}
 					row := make([]interface{}, len(columns))
 					for i := 0; i < len(columns); i++ {
 						row[i] = new(interface{})
@@ -124,18 +118,32 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 
 				typs := make([]interface{}, len(columns))
 
-				for i, typ := range colTypes {
-					field := pgproto.FieldDescription{
-						Name:   typ.Name(),
-						Format: int16(pgwirebase.FormatText),
-					}
-					t := reflect.New(typ.ScanType()).Interface()
-					typs[i] = t
-					switch t.(type) {
-					case *int64:
-						field.DataTypeOID = uint32(core.Type_int8)
-					}
-					rowDescription.Fields[i] = field
+				for i := 0; i < len(columns); i++ {
+					func() {
+						field := pgproto.FieldDescription{
+							Name:   columns[i],
+							Format: int16(pgwirebase.FormatText),
+						}
+						defer func() {
+							rowDescription.Fields[i] = field
+						}()
+						if len(result) > 0 {
+							if len(result[0])-1 >= i {
+								// This is some weird pointer magic to determine the type of the cell
+								// basically without the *interface{} cast T would be 3 types at once?
+								// which shouldn't be possible to my knowledge but it would show
+								// as interface{} | *interface{} | int64 with a select 1 query.
+								// So none of the types in the switch case would evaluate properly.
+								// This weird magic fixes that.
+								t := result[0][i].(*interface{})
+								typs[i] = *t
+								switch (*t).(type) {
+								case int64:
+									field.DataTypeOID = uint32(core.Type_int8)
+								}
+							}
+						}
+					}()
 				}
 
 				if err := s.Backend().Send(&rowDescription); err != nil {
@@ -148,7 +156,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					}
 					for x, col := range row {
 						switch typs[x].(type) {
-						case *int64:
+						case int64:
 							val := types.Int8{}
 							if err := val.Set(col); err != nil {
 								return err
@@ -163,7 +171,6 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 						return err
 					}
 				}
-
 				return nil
 			}()
 		}

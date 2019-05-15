@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"github.com/elliotcourant/noahdb/testutils"
 	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestShardContext_NewShard(t *testing.T) {
-	colony, cleanup := newTestColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	newShard, err := colony.Shards().NewShard()
 	assert.NoError(t, err)
@@ -17,7 +18,7 @@ func TestShardContext_NewShard(t *testing.T) {
 }
 
 func TestShardContext_GetShards(t *testing.T) {
-	colony, cleanup := newTestColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	newShard, err := colony.Shards().NewShard()
 	assert.NoError(t, err)
@@ -30,7 +31,7 @@ func TestShardContext_GetShards(t *testing.T) {
 }
 
 func TestShardContext_GetWriteDataNodeShards(t *testing.T) {
-	colony, cleanup := newTestColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	shards, err := colony.Shards().GetWriteDataNodeShards(1)
 	assert.NoError(t, err)
@@ -39,8 +40,9 @@ func TestShardContext_GetWriteDataNodeShards(t *testing.T) {
 
 func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 	t.Run("balance orphaned shards", func(t *testing.T) {
-		colony, cleanup := newTestColony()
+		colony, cleanup := testutils.NewTestColony()
 		defer cleanup()
+		_, _ = colony.DataNodes().NewDataNode("127.0.0.1", os.Getenv("PGPASS"), os.Getenv("PGPORT"))
 		newShard, err := colony.Shards().NewShard()
 		assert.NoError(t, err)
 		assert.True(t, newShard.ShardID > 0)
@@ -50,7 +52,7 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 
 	t.Run("balance multiple orphaned shards", func(t *testing.T) {
 
-		colony, cleanup := newTestColony()
+		colony, cleanup := testutils.NewTestColony()
 		defer cleanup()
 
 		numberOfNodes := 10

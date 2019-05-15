@@ -1,12 +1,13 @@
 package core_test
 
 import (
+	"github.com/elliotcourant/noahdb/testutils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestTableContext_GetTables(t *testing.T) {
-	colony, cleanup := newTestColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	t.Run("get imaginary tables", func(t *testing.T) {
 		tables, err := colony.Tables().
@@ -17,7 +18,7 @@ func TestTableContext_GetTables(t *testing.T) {
 }
 
 func TestTableContext_GetTablesInSchema(t *testing.T) {
-	colony, cleanup := newTestColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	t.Run("get tables in imaginary schema", func(t *testing.T) {
 		tables, err := colony.Tables().GetTablesInSchema("imaginary", "test")
