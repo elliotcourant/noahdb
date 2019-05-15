@@ -3,14 +3,11 @@ package pgwire_test
 import (
 	"database/sql"
 	"fmt"
-	"github.com/elliotcourant/noahdb/pkg/core"
-	"github.com/elliotcourant/noahdb/pkg/pgwire"
+	"github.com/elliotcourant/noahdb/testutils"
 	_ "github.com/lib/pq"
 	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"net"
-	"os"
 	"testing"
 	"time"
 )
@@ -25,35 +22,12 @@ func LibPqConnectionString(address net.Addr) string {
 		addr.IP.String(), addr.Port, "noah", "password", "postgres")
 }
 
-func NewColony() (core.Colony, core.TransportWrapper, func()) {
-	tempdir, err := ioutil.TempDir("", "core-temp")
-	if err != nil {
-		panic(err)
-	}
-
-	colony, wrapper, err := core.NewColony(tempdir, "", ":")
-	if err != nil {
-		panic(err)
-	}
-
-	return colony, wrapper, func() {
-		if err := os.RemoveAll(tempdir); err != nil {
-			panic(err)
-		}
-	}
-}
-
 func TestLibPqStartup(t *testing.T) {
-	colony, wrapper, cleanup := NewColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
-	go func() {
-		if err := pgwire.NewServer(colony, wrapper); err != nil {
-			panic(err)
-		}
-	}()
 	time.Sleep(1 * time.Second)
 	func() {
-		db, err := sql.Open("postgres", LibPqConnectionString(wrapper.Addr()))
+		db, err := sql.Open("postgres", LibPqConnectionString(colony.Addr()))
 		if err != nil {
 			panic(err)
 		}

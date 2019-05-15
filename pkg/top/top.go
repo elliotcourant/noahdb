@@ -5,36 +5,33 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
+	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/readystock/golog"
+	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 )
 
-type pgwireConfig struct {
-	address string
-	port    int
-}
-
-func (conf pgwireConfig) Address() string {
-	return conf.address
-}
-
-func (conf pgwireConfig) Port() int {
-	return conf.port
-}
-
-func NoahMain(dataDirectory, joinAddress, listenAddr string) {
+func NoahMain(dataDirectory, joinAddresses, listenAddr string) {
 	golog.Debugf("starting noahdb")
-	colony, trans, err := core.NewColony(dataDirectory, joinAddress, listenAddr)
+
+	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
 	if err != nil {
-		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
-	} else if colony == nil {
-		panic("failed to create a valid colony")
+		panic(err)
+		// return nil, nil, err
 	}
 
-	golog.Debugf("colony initialized, coordinator [%d]", colony.CoordinatorID())
+	tn := tcp.NewTransport()
+
+	if err := tn.Open(parsedRaftAddr.String()); err != nil {
+		panic(err)
+	}
+
+	trans := core.NewTransportWrapper(tn)
+
+	colony := core.NewColony()
 
 	tasks := new(sync.WaitGroup)
 	ch := make(chan os.Signal)
@@ -65,6 +62,15 @@ func NoahMain(dataDirectory, joinAddress, listenAddr string) {
 			golog.Errorf(err.Error())
 		}
 	}()
+
+	err = colony.InitColony(dataDirectory, joinAddresses, trans)
+	if err != nil {
+		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
+	} else if colony == nil {
+		panic("failed to create a valid colony")
+	}
+
+	golog.Debugf("colony initialized, coordinator [%d]", colony.CoordinatorID())
 
 	tasks.Wait()
 }

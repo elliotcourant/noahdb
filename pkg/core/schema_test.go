@@ -1,13 +1,14 @@
 package core_test
 
 import (
+	"github.com/elliotcourant/noahdb/testutils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
 func TestSchemaContext_Exists(t *testing.T) {
-	colony, cleanup := newTestColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	t.Run("doesn't exist", func(t *testing.T) {
 		ok, err := colony.Schema().Exists("imaginary")
@@ -17,7 +18,7 @@ func TestSchemaContext_Exists(t *testing.T) {
 }
 
 func TestSchemaContext_NewSchema(t *testing.T) {
-	colony, cleanup := newTestColony()
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	t.Run("create a new schema", func(t *testing.T) {
 		name := "public"
@@ -31,7 +32,7 @@ func TestSchemaContext_NewSchema(t *testing.T) {
 
 func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
 	t.Run("create a new schema", func(t *testing.T) {
-		colony1, cleanup1 := newTestColony()
+		colony1, cleanup1 := testutils.NewTestColony()
 		defer cleanup1()
 		name := "public"
 		schema, err := colony1.Schema().NewSchema(name)
@@ -39,7 +40,7 @@ func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
 		assert.NotEmpty(t, schema)
 		assert.True(t, schema.SchemaID > 0)
 		assert.Equal(t, name, schema.SchemaName)
-		colony2, cleanup2 := newTestColony(colony1.Addr().String())
+		colony2, cleanup2 := testutils.NewTestColony(colony1.Addr().String())
 		defer cleanup2()
 		time.Sleep(1 * time.Second)
 		exists, err := colony2.Schema().Exists(name)
