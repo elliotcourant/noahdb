@@ -14,6 +14,19 @@ type base struct {
 	trans    TransportWrapper
 	poolSync sync.Mutex
 	pool     map[uint64]*poolItem
+
+	joinCluster func() error
+}
+
+func (ctx *base) JoinCluster() error {
+	if ctx.joinCluster != nil {
+		return ctx.joinCluster()
+	}
+	return nil
+}
+
+func (ctx *base) Join(id, addr string) error {
+	return ctx.db.Join(id, addr, map[string]string{})
 }
 
 // Addr returns the address of the current node.

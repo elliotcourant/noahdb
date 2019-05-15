@@ -8,6 +8,8 @@ type Terminate struct{}
 
 func (*Terminate) Frontend() {}
 
+func (*Terminate) RpcFrontend() {}
+
 func (dst *Terminate) Decode(src []byte) error {
 	if len(src) != 0 {
 		return &invalidMessageLenErr{messageType: "Terminate", expectedLen: 0, actualLen: len(src)}

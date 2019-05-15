@@ -3,6 +3,7 @@ package tcp
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"net"
 	"time"
 )
@@ -66,23 +67,20 @@ func (t *Transport) Dial(addr string, timeout time.Duration) (net.Conn, error) {
 		conn, err = dialer.Dial("tcp", addr)
 	}
 
-	// if err != nil {
-	// 	return nil, err
-	// }
-	//
-	// // Because the raft, rpc, and pgwire all share the same wire we need to start
-	// // by sending a message telling the wire we are a raft connection
-	// front, err := pgproto.NewFrontend(conn, conn)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	//
-	// if err := front.Send(&pgproto.RaftStartupMessage{}); err != nil {
-	// 	return nil, err
-	// }
-	//
-	//
+	if err != nil {
+		return nil, err
+	}
 
+	// Because the raft, rpc, and pgwire all share the same wire we need to start
+	// by sending a message telling the wire we are a raft connection
+	front, err := pgproto.NewFrontend(conn, conn)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := front.Send(&pgproto.RaftStartupMessage{}); err != nil {
+		return nil, err
+	}
 
 	return conn, err
 }

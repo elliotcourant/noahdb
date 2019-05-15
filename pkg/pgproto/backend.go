@@ -1,16 +1,18 @@
 package pgproto
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 
+	"github.com/jackc/pgx/chunkreader"
 	"github.com/pkg/errors"
-	"github.com/readystock/pgx/chunkreader"
 )
 
 type Backend struct {
 	cr *chunkreader.ChunkReader
 	w  io.Writer
+	b  *bytes.Buffer
 
 	// Frontend message flyweights
 	bind            Bind
@@ -32,11 +34,16 @@ type Backend struct {
 
 func NewBackend(r io.Reader, w io.Writer) (*Backend, error) {
 	cr := chunkreader.NewChunkReader(r)
-	return &Backend{cr: cr, w: w}, nil
+	return &Backend{cr: cr, w: w, b: bytes.NewBuffer(make([]byte, 0))}, nil
 }
 
 func (b *Backend) Send(msg BackendMessage) error {
 	_, err := b.w.Write(msg.Encode(nil))
+	return err
+}
+
+func (b *Backend) Flush() error {
+	_, err := b.b.WriteTo(b.w)
 	return err
 }
 

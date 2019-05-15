@@ -30,18 +30,17 @@ func TestSchemaContext_NewSchema(t *testing.T) {
 }
 
 func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
-	colony1, cleanup1 := newTestColony()
-	defer cleanup1()
-
-	colony2, cleanup2 := newTestColony(colony1.Addr().String())
-	defer cleanup2()
 	t.Run("create a new schema", func(t *testing.T) {
+		colony1, cleanup1 := newTestColony()
+		defer cleanup1()
 		name := "public"
 		schema, err := colony1.Schema().NewSchema(name)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, schema)
 		assert.True(t, schema.SchemaID > 0)
 		assert.Equal(t, name, schema.SchemaName)
+		colony2, cleanup2 := newTestColony(colony1.Addr().String())
+		defer cleanup2()
 		time.Sleep(1 * time.Second)
 		exists, err := colony2.Schema().Exists(name)
 		assert.NoError(t, err)

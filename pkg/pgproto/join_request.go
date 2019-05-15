@@ -13,6 +13,8 @@ type JoinRequest struct {
 
 func (JoinRequest) Frontend() {}
 
+func (JoinRequest) RpcFrontend() {}
+
 func (join *JoinRequest) Decode(src []byte) error {
 	*join = JoinRequest{}
 	buf := bytes.NewBuffer(src)

@@ -3,7 +3,6 @@ package core
 import (
 	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
-	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/readystock/golog"
 	"net"
 	"strings"
@@ -31,29 +30,20 @@ type Colony interface {
 	// Sequences()
 
 	CoordinatorID() uint64
+	IsLeader() bool
 	Close()
 	Addr() net.Addr
+	Join(id, addr string) error
+	JoinCluster() error
+
+	InitColony(dataDirectory, joinAddresses string, trans TransportWrapper) error
 }
 
-func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, TransportWrapper, error) {
-	// db, err := store.CreateStore(dataDirectory, listenAddress, "")
-	// if err != nil {
-	// 	return nil, err
-	// }
+func NewColony() Colony {
+	return &base{}
+}
 
-	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	tn := tcp.NewTransport()
-
-	if err := tn.Open(parsedRaftAddr.String()); err != nil {
-		return nil, nil, err
-	}
-
-	trans := NewTransportWrapper(tn)
-
+func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans TransportWrapper) error {
 	fr := frunk.New(trans.RaftTransport(), &frunk.StoreConfig{
 		DBConf: &frunk.DBConfig{
 			DSN:    "",
@@ -65,23 +55,48 @@ func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, Transpo
 
 	joinAllowed, err := frunk.JoinAllowed(dataDirectory)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	var joins []string
 	if joinAllowed {
 		joins, err = determineJoinAddresses(joinAddresses)
 		if err != nil {
-			return nil, nil, err
+			return err
 		}
 	} else {
-		return nil, nil, err
+		return err
 	}
 
 	// Now, open store.
 	if err := fr.Open(len(joins) == 0); err != nil {
 		golog.Fatalf("failed to open store: %s", err.Error())
 	}
+
+	*ctx = base{
+		db:       fr,
+		trans:    trans,
+		poolSync: sync.Mutex{},
+		pool:     map[uint64]*poolItem{},
+	}
+
+	openTimeout, err := time.ParseDuration("10s")
+	if err != nil {
+		golog.Fatalf("failed to parse Raft open timeout: %s", err.Error())
+	}
+	fr.WaitForLeader(openTimeout)
+	fr.WaitForApplied(openTimeout)
+
+	// meta := map[string]string{}
+
+	// // This may be a standalone server. In that case set its own metadata.
+	// if err := fr.SetMetadata(meta); err != nil && err != store.ErrNotLeader {
+	// 	// Non-leader errors are OK, since metadata will then be set through
+	// 	// consensus as a result of a join. All other errors indicate a problem.
+	// 	golog.Fatalf("failed to set store metadata: %s", err.Error())
+	// }
+
+	time.Sleep(6 * time.Second)
 
 	// handle joins here
 
@@ -104,34 +119,9 @@ func NewColony(dataDirectory, joinAddresses, listenAddr string) (Colony, Transpo
 		}
 	}
 
-	openTimeout, err := time.ParseDuration("10s")
-	if err != nil {
-		golog.Fatalf("failed to parse Raft open timeout: %s", err.Error())
-	}
-	fr.WaitForLeader(openTimeout)
-	fr.WaitForApplied(openTimeout)
+	ctx.Setup()
 
-	// meta := map[string]string{}
-
-	// // This may be a standalone server. In that case set its own metadata.
-	// if err := fr.SetMetadata(meta); err != nil && err != store.ErrNotLeader {
-	// 	// Non-leader errors are OK, since metadata will then be set through
-	// 	// consensus as a result of a join. All other errors indicate a problem.
-	// 	golog.Fatalf("failed to set store metadata: %s", err.Error())
-	// }
-
-	colony := &base{
-		db:       fr,
-		trans:    trans,
-		poolSync: sync.Mutex{},
-		pool:     map[uint64]*poolItem{},
-	}
-
-	time.Sleep(6 * time.Second)
-
-	colony.Setup()
-
-	return colony, trans, nil
+	return nil
 }
 
 func determineJoinAddresses(joinAddr string) ([]string, error) {

@@ -36,6 +36,7 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 		if err != nil {
 			return err
 		}
+		golog.Verbosef("accepted connection from: %s", conn.RemoteAddr())
 
 		go func() {
 			wire, err := newWire(colony, conn)

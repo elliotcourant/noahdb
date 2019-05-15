@@ -29,6 +29,12 @@ type RaftFrontendMessage interface {
 	RaftFrontend() // no-op method to distinguish raft frontend from backend methods
 }
 
+type RpcFrontendMessage interface {
+	Message
+	Frontend()    // no-op method to distinguish frontend from backend methods
+	RpcFrontend() // no-op method to distinguish raft frontend from backend methods
+}
+
 type BackendMessage interface {
 	Message
 	Backend() // no-op method to distinguish frontend from backend methods

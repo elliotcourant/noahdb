@@ -8,6 +8,11 @@ import (
 	"net"
 )
 
+type rpcWire struct {
+	colony  core.Colony
+	backend *pgproto.RpcBackend
+}
+
 func NewRpcServer(colony core.Colony, transport core.TransportWrapper) error {
 	ln := transport.RpcTransport()
 
@@ -28,9 +33,9 @@ func NewRpcServer(colony core.Colony, transport core.TransportWrapper) error {
 }
 
 func serveRpcConnection(colony core.Colony, conn net.Conn) error {
-	golog.Verbosef("received rpc connection from [%s]", conn.RemoteAddr().String())
+	// golog.Verbosef("received rpc connection from [%s]", conn.RemoteAddr().String())
 
-	backend, err := pgproto.NewBackend(conn, conn)
+	backend, err := pgproto.NewRpcBackend(conn, conn)
 	if err != nil {
 		return err
 	}
@@ -40,17 +45,27 @@ func serveRpcConnection(colony core.Colony, conn net.Conn) error {
 		return err
 	}
 
-	msg, err := backend.Receive()
-
-	if err != nil {
-		return err
+	wire := &rpcWire{
+		backend: backend,
+		colony:  colony,
 	}
 
-	switch msg.(type) {
-	case *pgproto.JoinRequest:
+	for {
+		msg, err := backend.Receive()
 
-	default:
-		return fmt.Errorf("cannot handle message type: %v", msg)
+		if err != nil {
+			return err
+		}
+
+		switch message := msg.(type) {
+		case *pgproto.JoinRequest:
+			if err := wire.handleJoin(message); err != nil {
+				backend.Send(&pgproto.ErrorResponse{Message: err.Error()})
+			}
+		case *pgproto.Terminate:
+			return nil
+		default:
+			return fmt.Errorf("cannot handle message type: %v", message)
+		}
 	}
-	return nil
 }
