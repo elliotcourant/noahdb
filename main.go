@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
+	// Main entry point for all of noahdb.
 	cmd.Execute()
 }
