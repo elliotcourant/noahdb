@@ -1,6 +1,5 @@
 .PHONY: default strings protos embedded test coverage generated
 
-STORE_DIRECTORY = ./pkg/store
 CORE_DIRECTORY = ./pkg/core
 PGERROR_DIRECTORY = ./pkg/pgerror
 BUILD_DIRECTORY = ./bin
@@ -40,8 +39,6 @@ strings:
 
 protos:
 	@echo generating protos...
-	@protoc -I=$(STORE_DIRECTORY) --go_out=plugins=grpc:$(STORE_DIRECTORY) $(STORE_DIRECTORY)/fsm.proto
-	@protoc -I=$(STORE_DIRECTORY) --go_out=plugins=grpc:$(STORE_DIRECTORY) $(STORE_DIRECTORY)/raft.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/shard.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/data_node.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/tenant.proto
