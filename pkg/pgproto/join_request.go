@@ -26,7 +26,7 @@ func (join *JoinRequest) Decode(src []byte) error {
 }
 
 func (join *JoinRequest) Encode(dst []byte) []byte {
-	dst = append(dst, RaftRequestVoteRequest)
+	dst = append(dst, RpcJoinRequest)
 	sp := len(dst)
 	dst = pgio.AppendInt32(dst, -1)
 
