@@ -5,7 +5,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/golog"
 	"net"
-	"os"
 	"sync"
 )
 
@@ -59,13 +58,13 @@ func (ctx *base) Setup() {
 		panic(err)
 	}
 
-	// Check to see if there is a local postgres instnace we can use.
-	initialPostgresAddress := "127.0.0.1"
-	initialPostgresPort := os.Getenv("PGPORT")
-	initialPostgresPassword := os.Getenv("PGPASS")
-	if _, err := ctx.DataNodes().NewDataNode(initialPostgresAddress, initialPostgresPassword, initialPostgresPort); err != nil {
-		panic(err)
-	}
+	//// Check to see if there is a local postgres instnace we can use.
+	//initialPostgresAddress := "127.0.0.1"
+	//initialPostgresPort := os.Getenv("PGPORT")
+	//initialPostgresPassword := os.Getenv("PGPASS")
+	//if _, err := ctx.DataNodes().NewDataNode(initialPostgresAddress, initialPostgresPassword, initialPostgresPort); err != nil {
+	//	panic(err)
+	//}
 }
 
 func (ctx *base) Query(query string) (*frunk.QueryResponse, error) {

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/logger"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/transport"
 	"io"
@@ -289,7 +290,8 @@ func (s *Store) Open(enableSingle bool) error {
 	// Get the Raft configuration for this store.
 	config := s.raftConfig()
 	config.LocalID = raft.ServerID(s.raftID)
-	config.Logger = log.New(os.Stderr, "[raft] ", log.LstdFlags)
+	config.Logger = logger.NewLogger()
+	//config.Logger = log.New(os.Stderr, "[raft] ", log.LstdFlags)
 
 	// Create the snapshot store. This allows Raft to truncate the log.
 	snapshots, err := raft.NewFileSnapshotStore(s.raftDir, retainSnapshotCount, os.Stderr)
