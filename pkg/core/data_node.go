@@ -23,7 +23,7 @@ type DataNodeContext interface {
 	GetDataNodeForDataNodeShard(uint64) (DataNode, error)
 	GetRandomDataNodeShardID() (uint64, error)
 	GetDataNodeShardIDsForShard(uint64) ([]uint64, error)
-	NewDataNode(string, string, string) (DataNode, error)
+	NewDataNode(address string, password string, port string) (DataNode, error)
 }
 
 func (ctx *base) DataNodes() DataNodeContext {

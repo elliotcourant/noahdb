@@ -68,6 +68,17 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 		return InitialPlan{}, true, nil
 	}
 
+	// So far we have processed the tables in the select query. Now we want to check and see if any
+	// of the targets for the select query are actually function calls.
+	functionCalls := stmt.getFunctionCalls()
+
+	// If there are no function calls, then there is nothing for us to do here.
+	if len(functionCalls) == 0 {
+		return InitialPlan{}, false, nil
+	}
+
+	// TODO elliotcourant implement function call handling.
+
 	return InitialPlan{}, false, nil
 }
 
@@ -79,11 +90,11 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 		return InitialPlan{}, true, err
 	}
 
-	// If there are no tables then we can simply recompile the query and send it to SQLite,
+	// If there are no tables then we can simply recompile the query and send it through,
 	// this will make queries like CURRENT_TIMESTAMP or 1 very fast
 	if len(stmt.tables) == 0 {
 		return InitialPlan{
-			Target:  PlanTarget_INTERNAL,
+			Target:  PlanTarget_STANDARD,
 			ShardID: 0,
 			Types: map[PlanType]InitialPlanTask{
 				PlanType_READ: {
@@ -168,4 +179,21 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 			},
 		},
 	}, true, nil
+}
+
+// getFunctionCalls loops over the targets of the query and returns any functions calls.
+func (stmt *selectStmtPlanner) getFunctionCalls() []ast.FuncCall {
+	functionCalls := make([]ast.FuncCall, 0)
+	linq.From(stmt.tree.TargetList.Items).Where(func(i interface{}) bool {
+		if resTarget, ok := i.(ast.ResTarget); ok {
+			_, ok := resTarget.Val.(ast.FuncCall)
+			return ok
+		} else {
+			return false
+		}
+	}).Select(func(i interface{}) interface{} {
+		functionCall, _ := i.(ast.ResTarget).Val.(ast.FuncCall)
+		return functionCall
+	}).ToSlice(&functionCalls)
+	return functionCalls
 }

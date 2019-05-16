@@ -42,7 +42,6 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 	t.Run("balance orphaned shards", func(t *testing.T) {
 		colony, cleanup := testutils.NewTestColony()
 		defer cleanup()
-		_, _ = colony.DataNodes().NewDataNode("127.0.0.1", os.Getenv("PGPASS"), os.Getenv("PGPORT"))
 		newShard, err := colony.Shards().NewShard()
 		assert.NoError(t, err)
 		assert.True(t, newShard.ShardID > 0)
@@ -55,11 +54,14 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 		colony, cleanup := testutils.NewTestColony()
 		defer cleanup()
 
-		numberOfNodes := 10
+		existingNodes, err := colony.DataNodes().GetDataNodes()
+		assert.NoError(t, err)
+
+		numberOfNodes := 10 - len(existingNodes)
 		numberOfShards := 32
 
 		for i := 0; i < numberOfNodes; i++ {
-			_, _ = colony.DataNodes().NewDataNode("127.0.0.1", os.Getenv("PGPASS"), os.Getenv("PGPORT"))
+			_, _ = colony.DataNodes().NewDataNode("127.0.0.1", os.Getenv("PGPASSWORD"), os.Getenv("PGPORT"))
 		}
 
 		for i := 0; i < numberOfShards; i++ {
@@ -71,7 +73,7 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 			assert.Empty(t, pressure.Shards)
 		}
 
-		err := colony.Shards().BalanceOrphanShards()
+		err = colony.Shards().BalanceOrphanShards()
 		assert.NoError(t, err)
 
 		pressureAfter, _ := colony.Shards().GetDataNodesPressure(numberOfNodes)

@@ -22,10 +22,13 @@ func (p *poolItem) addConnection(frontend *pgproto.Frontend) {
 }
 
 func (p *poolItem) GetConnection() PoolConnection {
-	item := p.pool.Get().(*pgproto.Frontend)
+	item := p.pool.Get()
+	if item == nil {
+		return nil
+	}
 	return &frontendConnection{
-		item,
-		p,
+		Frontend: item.(*pgproto.Frontend),
+		pool:     p,
 	}
 }
 
@@ -41,6 +44,9 @@ type frontendConnection struct {
 }
 
 func (f *frontendConnection) Release() {
+	if f.Frontend == nil {
+		return
+	}
 	f.pool.pool.Put(f)
 }
 
@@ -102,16 +108,43 @@ func (ctx *poolContext) GetConnectionForDataNodeShard(id uint64) (PoolConnection
 		if err := frontend.Send(&pgproto.StartupMessage{
 			ProtocolVersion: pgproto.ProtocolVersionNumber,
 			Parameters: map[string]string{
-				"user": "postgres",
+				"user":     "postgres",
+				"database": fmt.Sprintf("partition_%d", id),
 			},
 		}); err != nil {
 			golog.Errorf("could not send startup message to data node [%d]: %s", dataNode.DataNodeID, err.Error())
 			return nil, err
 		}
-		_, _ = frontend.Receive()
+
+		if err := func() error {
+			for {
+				response, err := frontend.Receive()
+				if err != nil {
+					return err
+				}
+
+				switch msg := response.(type) {
+				case *pgproto.Authentication:
+					panic("authentication is not implemented")
+				case *pgproto.ParameterStatus:
+				case *pgproto.ParameterDescription:
+				case *pgproto.ReadyForQuery:
+					return nil // We are good to go, exit the loop
+				case *pgproto.ErrorResponse:
+					return fmt.Errorf("from backend: %s", msg.Message)
+				default:
+					golog.Warnf("unexpected message from backend %v", msg)
+				}
+			}
+		}(); err != nil {
+			return nil, err
+		}
 
 		ctx.pool[id].addConnection(frontend)
 	}
-
-	return pItem.GetConnection(), nil
+	poolConn := pItem.GetConnection()
+	if poolConn == nil {
+		return nil, fmt.Errorf("could not retrieve connection for data node shard ID [%d]", id)
+	}
+	return poolConn, nil
 }

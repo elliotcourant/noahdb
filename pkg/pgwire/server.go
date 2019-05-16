@@ -44,7 +44,6 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 				golog.Errorf("failed setting up wire: %s", err.Error())
 			}
 
-			// golog.Verbosef("handling connection from: %s", conn.RemoteAddr().String())
 			if err := wire.Serve(transport); err != nil {
 				golog.Errorf("failed serving connection: %s", err.Error())
 			}

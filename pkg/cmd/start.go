@@ -9,7 +9,6 @@ import (
 
 var (
 	PGWireAddr     string
-	RaftAddr       string
 	JoinAddr       string
 	StoreDirectory string
 	LogLevel       string

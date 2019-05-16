@@ -1,10 +1,13 @@
-.PHONY: default strings protos embedded test coverage generated
+.PHONY: default strings protos embedded test coverage generated docker
 
 CORE_DIRECTORY = ./pkg/core
 PGERROR_DIRECTORY = ./pkg/pgerror
 BUILD_DIRECTORY = ./bin
 PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
+
+docker:
+	docker build --no-cache -t noahdb/coordinator .
 
 default: dependencies test
 

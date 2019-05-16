@@ -53,6 +53,18 @@ func NewTestColonyEx(listenAddr string, joinAddresses ...string) (core.Colony, f
 		panic(err)
 	}
 
+	if colony.IsLeader() {
+		_, err = colony.DataNodes().NewDataNode("127.0.0.1", os.Getenv("PGPASSWORD"), os.Getenv("PGPORT"))
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = colony.Shards().NewShard()
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return colony, func() {
 		if err := os.RemoveAll(tempdir); err != nil {
 			panic(err)
