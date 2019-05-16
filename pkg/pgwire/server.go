@@ -88,7 +88,6 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 			return wire.Errorf(err.Error())
 		}
 	}
-	defer wire.conn.Close()
 
 	wire.stmtBuf = stmtbuf.NewStatementBuffer() // We only want to setup a statement buffer if there is a need
 	if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
@@ -140,6 +139,7 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 	terminateChannel := make(chan bool)
 
 	go func() {
+		defer wire.conn.Close()
 		if err := sql.Run(wire, terminateChannel); err != nil {
 			golog.Errorf(err.Error())
 		}
@@ -154,21 +154,27 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 		switch msg := message.(type) {
 		case *pgproto.Query:
 			if err := wire.handleSimpleQuery(msg); err != nil {
-				return wire.StatementBuffer().Push(commands.SendError{
+				if e := wire.StatementBuffer().Push(commands.SendError{
 					Err: err,
-				})
+				}); e != nil {
+					return e
+				}
 			}
 			if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
-				return wire.StatementBuffer().Push(commands.SendError{
+				if e := wire.StatementBuffer().Push(commands.SendError{
 					Err: err,
-				})
+				}); e != nil {
+					return e
+				}
 			}
 		case *pgproto.Execute:
 		case *pgproto.Parse:
 			if err := wire.handleParse(msg); err != nil {
-				return wire.StatementBuffer().Push(commands.SendError{
+				if e := wire.StatementBuffer().Push(commands.SendError{
 					Err: err,
-				})
+				}); e != nil {
+					return e
+				}
 			}
 		case *pgproto.Describe:
 		case *pgproto.Bind:

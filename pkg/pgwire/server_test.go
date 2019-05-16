@@ -53,3 +53,18 @@ func TestLibPqStartup(t *testing.T) {
 		golog.Infof("query time: %s", time.Since(start))
 	}()
 }
+
+func Test_HandleParse_BadSyntax(t *testing.T) {
+	colony, cleanup := testutils.NewTestColonyEx(":5433")
+	defer cleanup()
+	time.Sleep(1 * time.Second)
+	func() {
+		db, err := sql.Open("postgres", LibPqConnectionString(colony.Addr()))
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+		_, err = db.Query(`SELECTad;`)
+		assert.Error(t, err) // There should not be an error sending the query.
+	}()
+}

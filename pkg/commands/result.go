@@ -45,6 +45,13 @@ func CreateExecuteCommandResult(session sessionContext) *CommandResult {
 	return result
 }
 
+func CreateErrorResult(session sessionContext, err error) *CommandResult {
+	result := NewCommandResult(session)
+	result.typ = noCompletionMsg
+	result.err = err
+	return result
+}
+
 func NewCommandResult(session sessionContext) *CommandResult {
 	return &CommandResult{
 		closed:  false,

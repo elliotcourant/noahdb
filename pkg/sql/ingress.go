@@ -68,6 +68,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			case commands.BindStatement:
 			case commands.DeletePreparedStatement:
 			case commands.SendError:
+				result = commands.CreateErrorResult(s, cmd.Err)
 				err = s.Backend().Send(&pgproto.ErrorResponse{
 					Message: cmd.Err.Error(),
 				})
