@@ -6,7 +6,7 @@ go:
 
 os:
   - linux
-  -
+
 env:
   global:
     - PGPORT=5433
