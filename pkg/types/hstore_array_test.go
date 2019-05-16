@@ -6,7 +6,7 @@ import (
 
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/types/testutil"
-	"github.com/readystock/pgx"
+	"github.com/jackc/pgx"
 )
 
 func TestHstoreArrayTranscode(t *testing.T) {
