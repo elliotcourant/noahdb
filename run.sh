@@ -2,4 +2,4 @@
 
 /node/bin/postgres -D /node/pgdata &
 
-/node/bin/noahdb start
+/node/bin/noahdb start -a

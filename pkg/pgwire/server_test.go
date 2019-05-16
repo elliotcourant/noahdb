@@ -55,7 +55,7 @@ func TestLibPqStartup(t *testing.T) {
 }
 
 func Test_HandleParse_BadSyntax(t *testing.T) {
-	colony, cleanup := testutils.NewTestColonyEx(":5433")
+	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	time.Sleep(1 * time.Second)
 	func() {

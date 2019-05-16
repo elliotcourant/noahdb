@@ -7,12 +7,15 @@ PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
 
 docker:
-	docker build --no-cache -t noahdb/node:edge .
+	docker build -t noahdb/node:local .
+
+kube:
+	kubectl run noahdb --image=noahdb/node:local --port=5433 --image-pull-policy=Never
 
 default: dependencies test
 
 dependencies: generated
-	go get -u -t -v ./...
+	dep ensure
 
 test:
 	go test -v ./...

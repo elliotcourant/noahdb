@@ -4,3 +4,4 @@
 *.pb.go
 *.embedded.go
 noahdb
+/vendor

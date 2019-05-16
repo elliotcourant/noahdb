@@ -14,7 +14,7 @@ import (
 	"syscall"
 )
 
-func NoahMain(dataDirectory, joinAddresses, listenAddr string) {
+func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode bool) {
 	golog.Debugf("starting noahdb")
 
 	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
@@ -68,6 +68,10 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string) {
 		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
 	} else if colony == nil {
 		panic("failed to create a valid colony")
+	}
+
+	if colony.IsLeader() && autoDataNode {
+		golog.Infof("auto-detecting a local PostgreSQL instance")
 	}
 
 	golog.Debugf("colony initialized, coordinator [%d]", colony.CoordinatorID())

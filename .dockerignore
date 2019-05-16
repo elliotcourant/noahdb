@@ -8,3 +8,4 @@ docs
 codecov.yml
 coverage.sh
 Dockerfile
+Makefile

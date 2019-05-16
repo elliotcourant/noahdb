@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	PGWireAddr     string
+	ListenAddr     string
 	JoinAddr       string
+	AutoDataNode   bool
 	StoreDirectory string
 	LogLevel       string
 )
@@ -26,14 +27,15 @@ var (
 	startCmd = &cobra.Command{
 		Use: "start",
 		Run: func(cmd *cobra.Command, args []string) {
-			top.NoahMain(StoreDirectory, JoinAddr, PGWireAddr)
+			top.NoahMain(StoreDirectory, JoinAddr, ListenAddr, AutoDataNode)
 		},
 	}
 )
 
 func init() {
-	startCmd.Flags().StringVarP(&PGWireAddr, "pg", "p", ":5433", "address that will accept PostgreSQL connections")
-	startCmd.Flags().StringVarP(&JoinAddr, "join", "j", "", "address and gRPC port of another node in a cluster to join")
+	startCmd.Flags().StringVarP(&ListenAddr, "listen", "i", ":5433", "address that will accept connections")
+	startCmd.Flags().StringVarP(&JoinAddr, "join", "j", "", "address of another node in the cluster to use to join")
+	startCmd.Flags().BoolVarP(&AutoDataNode, "auto-data-node", "a", false, "look for a local PostgreSQL instance")
 	startCmd.Flags().StringVarP(&StoreDirectory, "store", "s", "data", "directory that will be used for Noah's key value store")
 	startCmd.Flags().StringVarP(&LogLevel, "log", "l", "verbose", "log output level, valid values: trace, verbose, debug, info, warn, error, fatal")
 	rootCmd.AddCommand(startCmd)
