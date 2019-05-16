@@ -31,12 +31,12 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 	ln := transport.NormalTransport()
 
 	for {
-		golog.Verbosef("accepting connection at: %s", ln.Addr())
+		golog.Infof("accepting connection at: %s", ln.Addr())
 		conn, err := ln.Accept()
 		if err != nil {
 			return err
 		}
-		golog.Verbosef("accepted connection from: %s", conn.RemoteAddr())
+		golog.Infof("accepted connection from: %s", conn.RemoteAddr())
 
 		go func() {
 			wire, err := newWire(colony, conn)

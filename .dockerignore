@@ -7,3 +7,4 @@ data
 docs
 codecov.yml
 coverage.sh
+Dockerfile
