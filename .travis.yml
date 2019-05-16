@@ -7,17 +7,6 @@ go:
 os:
   - linux
 
-services:
-  - postgresql
-  - docker
-
-addons:
-  postgresql: "10"
-  apt:
-    packages:
-      - postgresql-10
-      - postgresql-client-10
-
 env:
   global:
     - PGPORT=5433
@@ -30,6 +19,14 @@ env:
 jobs:
   include:
     - stage: Build & Test
+      services:
+        - postgresql
+      addons:
+        postgresql: "10"
+        apt:
+          packages:
+            - postgresql-10
+            - postgresql-client-10
       before_script:
         - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
         - sudo sed -i 's/#max_prepared_transactions.*/max_prepared_transactions = 100/' /etc/postgresql/*/main/postgresql.conf
@@ -53,5 +50,7 @@ jobs:
         - bash <(curl -s https://codecov.io/bash)
     - stage: Build Docker Image
       if: branch = master
+      services:
+        - docker
       script:
         - make docker
