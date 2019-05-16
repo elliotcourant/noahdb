@@ -48,7 +48,7 @@ jobs:
         - make coverage
       after_success:
         - bash <(curl -s https://codecov.io/bash)
-    - stage: Build Docker Image
+    - stage: Build & Publish Docker Image
       if: branch = master
       services:
         - docker
