@@ -7,7 +7,7 @@ PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
 
 docker:
-	docker build --no-cache -t noahdb/node .
+	docker build --no-cache -t noahdb/node:edge .
 
 default: dependencies test
 
