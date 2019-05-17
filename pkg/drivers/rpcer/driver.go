@@ -7,15 +7,17 @@ import (
 )
 
 type RpcDriver struct {
+	id         string
 	localAddr  net.Addr
 	remoteAddr net.Addr
 	conn       net.Conn
 	front      *pgproto.Frontend
 }
 
-func NewRPCDriver(localAddr net.Addr, remoteAddr string) (*RpcDriver, error) {
+func NewRPCDriver(id string, localAddr net.Addr, remoteAddr string) (*RpcDriver, error) {
 	driver := &RpcDriver{
 		localAddr: localAddr,
+		id:        id,
 	}
 	addr, err := net.ResolveTCPAddr("tcp", remoteAddr)
 	if err != nil {
@@ -55,16 +57,8 @@ func NewRPCDriver(localAddr net.Addr, remoteAddr string) (*RpcDriver, error) {
 }
 
 func (rpc *RpcDriver) Join() error {
-	return rpc.JoinEx("")
-}
-
-func (rpc *RpcDriver) JoinEx(id string) error {
-	if id == "" {
-		id = rpc.localAddr.String()
-	}
-
 	if err := rpc.front.Send(&pgproto.JoinRequest{
-		NodeID:  id,
+		NodeID:  rpc.id,
 		Address: rpc.localAddr.String(),
 	}); err != nil {
 		return err

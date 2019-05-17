@@ -20,15 +20,15 @@ import (
 
 // I'm the eye hole man
 func RunEyeholes(colony core.Colony) {
+	return
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())
 	}
-	host, err := os.Hostname()
-	myName := os.Getenv("HOSTNAME")
+	host := os.Getenv("HOSTNAME")
 
-	golog.Infof("sfafsarunning watcher from: %s", host)
+	golog.Infof("running watcher from: %s", host)
 
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
@@ -48,7 +48,7 @@ func RunEyeholes(colony core.Colony) {
 		if colony == nil {
 			continue
 		}
-		if colony.IsLeader() {
+		if !colony.IsLeader() {
 			golog.Debugf("looking for friendly neighbors")
 			neighborItems, err := colony.Neighbors()
 			if err != nil {
@@ -68,7 +68,7 @@ func RunEyeholes(colony core.Colony) {
 			golog.Debugf("found %d pod(s)", len(pods.Items))
 
 			for _, pod := range pods.Items {
-				if pod.Name == myName {
+				if pod.Name == host {
 					continue
 				}
 				addr := pod.Status.PodIP

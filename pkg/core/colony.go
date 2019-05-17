@@ -1,10 +1,12 @@
 package core
 
 import (
+	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/golog"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -35,6 +37,8 @@ type Colony interface {
 	Addr() net.Addr
 	Join(id, addr string) error
 	JoinCluster() error
+	LeaderID() (string, error)
+	State() frunk.ClusterState
 
 	Neighbors() ([]*frunk.Server, error)
 
@@ -46,13 +50,19 @@ func NewColony() Colony {
 }
 
 func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans TransportWrapper) error {
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+	id := fmt.Sprintf("%s:%d", hostname, trans.Port())
+
 	fr := frunk.New(trans.RaftTransport(), &frunk.StoreConfig{
 		DBConf: &frunk.DBConfig{
 			DSN:    "",
 			Memory: true,
 		},
 		Dir: dataDirectory,
-		ID:  trans.Addr().String(),
+		ID:  id,
 	})
 
 	joinAllowed, err := frunk.JoinAllowed(dataDirectory)
@@ -98,22 +108,22 @@ func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans Transport
 	// 	golog.Fatalf("failed to set store metadata: %s", err.Error())
 	// }
 
-	time.Sleep(6 * time.Second)
+	// time.Sleep(6 * time.Second)
 
 	// handle joins here
 
 	if len(joins) > 0 {
 		for i, joinAddr := range joins {
 			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr)
-			rpcDriver, err := rpcer.NewRPCDriver(trans.Addr(), joinAddr)
+			rpcDriver, err := rpcer.NewRPCDriver(id, trans.Addr(), joinAddr)
 			if err != nil {
-				golog.Fatalf("could not connect to join address [%s]: %v", joinAddr, err)
+				golog.Warnf("could not connect to join address [%s]: %v", joinAddr, err)
 			}
 			if rpcDriver == nil {
-				golog.Fatalf("failed to create frontend for address [%s]", joinAddr)
+				golog.Warnf("failed to create frontend for address [%s]", joinAddr)
 			}
 			if err := rpcDriver.Join(); err != nil {
-				golog.Fatalf("could not join address [%s]: %v", joinAddr, err)
+				golog.Warnf("could not join address [%s]: %v", joinAddr, err)
 			} else {
 				golog.Infof("successfully joined at address [%s]", joinAddr)
 				break

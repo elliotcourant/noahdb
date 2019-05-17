@@ -19,6 +19,7 @@ type TransportWrapper interface {
 	ForwardToRpc(net.Conn, error)
 	RaftTransport() Listener
 	RpcTransport() Listener
+	Port() int
 	Addr() net.Addr
 	Close()
 }
@@ -109,6 +110,11 @@ func (wrapper *transportWrapper) RpcTransport() Listener {
 
 func (wrapper *transportWrapper) NormalTransport() net.Listener {
 	return wrapper.transport
+}
+
+func (wrapper *transportWrapper) Port() int {
+	addr, _ := net.ResolveTCPAddr("tcp", wrapper.Addr().String())
+	return addr.Port
 }
 
 func (wrapper *transportWrapper) Addr() net.Addr {

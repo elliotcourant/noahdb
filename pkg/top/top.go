@@ -7,17 +7,24 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
+	"github.com/elliotcourant/noahdb/pkg/util"
 	"github.com/readystock/golog"
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
+	"time"
 )
 
-func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode bool) {
+func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, autoJoin bool) {
 	golog.Debugf("starting noahdb")
-
+	l, err := util.ResolveLocalAddress(listenAddr)
+	if err != nil {
+		panic(err)
+	}
+	listenAddr = l
 	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
 	if err != nil {
 		panic(err)
@@ -68,6 +75,34 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode bool
 		defer tasks.Done()
 		kube.RunEyeholes(colony)
 	}()
+
+	go func() {
+		for {
+			time.Sleep(1 * time.Minute)
+			if colony == nil {
+				golog.Infof("still strapping my boots")
+			} else {
+				leaderId, err := colony.LeaderID()
+				if err != nil {
+					golog.Errorf("could not get leader ID: %s", err)
+				} else {
+					golog.Infof("current state [%s] current leader: %s", colony.State(), leaderId)
+				}
+			}
+		}
+	}()
+
+	// If we are auto joining and no join address have been specified
+	if autoJoin && joinAddresses == "" {
+		potentialJoins, err := getAutoJoinAddresses()
+		if err != nil {
+			// If something went wrong inside the auto join address function, we likely
+			// would not be able to continue
+			panic(err)
+		}
+		golog.Infof("found %d potential auto-join addresses", len(potentialJoins))
+		joinAddresses = strings.Join(potentialJoins, ",")
+	}
 
 	err = colony.InitColony(dataDirectory, joinAddresses, trans)
 	if err != nil {

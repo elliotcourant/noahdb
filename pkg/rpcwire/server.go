@@ -26,7 +26,7 @@ func NewRpcServer(colony core.Colony, transport core.TransportWrapper) error {
 		go func(colony core.Colony, conn net.Conn) {
 			defer conn.Close()
 			if err := serveRpcConnection(colony, conn); err != nil {
-				golog.Errorf("failed serving rpc connection: %v", err)
+				golog.Errorf("failed serving rpc connection from [%s]: %v", conn.RemoteAddr(), err)
 			}
 		}(colony, conn)
 	}

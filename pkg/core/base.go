@@ -18,6 +18,14 @@ type base struct {
 	joinCluster func() error
 }
 
+func (ctx *base) State() frunk.ClusterState {
+	return ctx.db.State()
+}
+
+func (ctx *base) LeaderID() (string, error) {
+	return ctx.db.LeaderID()
+}
+
 func (ctx *base) Neighbors() ([]*frunk.Server, error) {
 	return ctx.db.Nodes()
 }
