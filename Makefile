@@ -9,8 +9,10 @@ EXECUTABLE_NAME = noah
 docker:
 	docker build -t noahdb/node:local .
 
-kube:
-	kubectl run noahdb --image=noahdb/node:local --port=5433 --image-pull-policy=Never
+kube: docker
+	kubectl delete deployment.apps/noahdb
+	kubectl delete --all pods --namespace=default
+	kubectl run noahdb --image=noahdb/node:local --port=5433 --image-pull-policy=Never --serviceaccount=noah-operator
 
 default: dependencies test
 

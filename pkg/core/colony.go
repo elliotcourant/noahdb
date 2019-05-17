@@ -36,6 +36,8 @@ type Colony interface {
 	Join(id, addr string) error
 	JoinCluster() error
 
+	Neighbors() ([]*frunk.Server, error)
+
 	InitColony(dataDirectory, joinAddresses string, trans TransportWrapper) error
 }
 

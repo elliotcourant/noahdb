@@ -30,7 +30,6 @@ RUN mkdir /node
 WORKDIR /node
 RUN mkdir /node/pgdata
 COPY --from=postgres-builder /postbuild /node
-EXPOSE 5432
 ENV LD_LIBRARY_PATH=/node/lib
 ENV PGPASSWORD=""
 ENV PGPORT=5432
@@ -44,6 +43,6 @@ RUN /node/bin/initdb -D /node/pgdata
 COPY ./pg_hba.conf /node/pgdata/pg_hba.conf
 COPY ./postgresql.conf /node/pgdata/postgresql.conf
 COPY --from=builder /go/src/github.com/elliotcourant/noahdb/bin/noahdb /node/bin/noahdb
-EXPOSE 5433
+EXPOSE 5433 5432
 COPY ./run.sh /run.sh
 CMD ["/run.sh"]

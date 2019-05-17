@@ -18,6 +18,10 @@ type base struct {
 	joinCluster func() error
 }
 
+func (ctx *base) Neighbors() ([]*frunk.Server, error) {
+	return ctx.db.Nodes()
+}
+
 func (ctx *base) JoinCluster() error {
 	if ctx.joinCluster != nil {
 		return ctx.joinCluster()

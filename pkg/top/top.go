@@ -3,6 +3,7 @@ package top
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/kube"
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
@@ -39,7 +40,7 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode bool
 	signal.Notify(ch, os.Interrupt, syscall.SIGSEGV)
 	signal.Notify(ch, os.Interrupt, syscall.SIGQUIT)
 
-	tasks.Add(2)
+	tasks.Add(3)
 
 	go func() {
 		defer tasks.Done()
@@ -61,6 +62,11 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode bool
 		if err = rpcwire.NewRpcServer(colony, trans); err != nil {
 			golog.Errorf(err.Error())
 		}
+	}()
+
+	go func() {
+		defer tasks.Done()
+		kube.RunEyeholes(colony)
 	}()
 
 	err = colony.InitColony(dataDirectory, joinAddresses, trans)

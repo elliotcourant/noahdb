@@ -5,3 +5,4 @@
 *.embedded.go
 noahdb
 /vendor
+/.vendor-new
