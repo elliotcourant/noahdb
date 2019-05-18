@@ -37,7 +37,7 @@ type Colony interface {
 	Addr() net.Addr
 	Join(id, addr string) error
 	JoinCluster() error
-	LeaderID() (string, error)
+	LeaderID() (string, string, error)
 	State() frunk.ClusterState
 
 	Neighbors() ([]*frunk.Server, error)
@@ -92,6 +92,25 @@ func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans Transport
 		pool:     map[uint64]*poolItem{},
 	}
 
+	if len(joins) > 0 {
+		for i, joinAddr := range joins {
+			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr)
+			rpcDriver, err := rpcer.NewRPCDriver(id, trans.Addr(), joinAddr)
+			if err != nil {
+				golog.Warnf("could not connect to join address [%s]: %v", joinAddr, err)
+			}
+			if rpcDriver == nil {
+				golog.Warnf("failed to create frontend for address [%s]", joinAddr)
+			}
+			if err := rpcDriver.Join(); err != nil {
+				golog.Warnf("could not join address [%s]: %v", joinAddr, err)
+			} else {
+				golog.Infof("successfully joined at address [%s]", joinAddr)
+				break
+			}
+		}
+	}
+
 	openTimeout, err := time.ParseDuration("10s")
 	if err != nil {
 		golog.Fatalf("failed to parse Raft open timeout: %s", err.Error())
@@ -111,25 +130,6 @@ func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans Transport
 	// time.Sleep(6 * time.Second)
 
 	// handle joins here
-
-	if len(joins) > 0 {
-		for i, joinAddr := range joins {
-			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr)
-			rpcDriver, err := rpcer.NewRPCDriver(id, trans.Addr(), joinAddr)
-			if err != nil {
-				golog.Warnf("could not connect to join address [%s]: %v", joinAddr, err)
-			}
-			if rpcDriver == nil {
-				golog.Warnf("failed to create frontend for address [%s]", joinAddr)
-			}
-			if err := rpcDriver.Join(); err != nil {
-				golog.Warnf("could not join address [%s]: %v", joinAddr, err)
-			} else {
-				golog.Infof("successfully joined at address [%s]", joinAddr)
-				break
-			}
-		}
-	}
 
 	ctx.Setup()
 

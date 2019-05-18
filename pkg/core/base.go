@@ -22,8 +22,10 @@ func (ctx *base) State() frunk.ClusterState {
 	return ctx.db.State()
 }
 
-func (ctx *base) LeaderID() (string, error) {
-	return ctx.db.LeaderID()
+func (ctx *base) LeaderID() (string, string, error) {
+	addr := ctx.db.LeaderAddr()
+	id, err := ctx.db.LeaderID()
+	return addr, id, err
 }
 
 func (ctx *base) Neighbors() ([]*frunk.Server, error) {

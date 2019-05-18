@@ -217,7 +217,7 @@ func NewNetworkTransportWithConfig(
 		maxPool:               config.MaxPool,
 		shutdownCh:            make(chan struct{}),
 		stream:                config.Stream,
-		timeout:               config.Timeout,
+		timeout:               0,
 		TimeoutScale:          DefaultTimeoutScale,
 		serverAddressProvider: config.ServerAddressProvider,
 	}
@@ -388,6 +388,7 @@ func (n *NetworkTransport) getConn(target raft.ServerAddress) (*netConn, error) 
 	// Dial a new connection
 	conn, err := n.stream.Dial(target, n.timeout)
 	if err != nil {
+		golog.Errorf("could not get connection dialed [%s]: %v", target, err)
 		return nil, err
 	}
 
@@ -460,6 +461,7 @@ func (n *NetworkTransport) genericRPC(id raft.ServerID, target raft.ServerAddres
 
 	// Send the RPC
 	if err = sendRPC(conn, rpcType, args); err != nil {
+		golog.Errorf("when sending RPC to [%s]: %v", id, err)
 		return err
 	}
 
@@ -467,6 +469,9 @@ func (n *NetworkTransport) genericRPC(id raft.ServerID, target raft.ServerAddres
 	canReturn, err := decodeResponse(conn, resp)
 	if canReturn {
 		n.returnConn(conn)
+	}
+	if err != nil {
+		golog.Errorf("when receiving response from [%s]: %v", id, err)
 	}
 	return err
 }
@@ -668,12 +673,14 @@ func decodeResponse(conn *netConn, resp interface{}) (bool, error) {
 	var rpcError string
 	if err := conn.dec.Decode(&rpcError); err != nil {
 		conn.Release()
+		golog.Errorf("failed to decode rpc error if any [%s]: %v", conn.target, err)
 		return false, err
 	}
 
 	// Decode the response
 	if err := conn.dec.Decode(resp); err != nil {
 		conn.Release()
+		golog.Errorf("failed to decode rpc response message [%s]: %v", conn.target, err)
 		return false, err
 	}
 

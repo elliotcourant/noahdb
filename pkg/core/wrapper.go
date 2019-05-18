@@ -45,6 +45,7 @@ func (t *transportWrapperItem) Accept() (net.Conn, error) {
 }
 
 func (t *transportWrapperItem) Close() error {
+	golog.Warnf("closing transport wrapper item")
 	close(t.acceptChannel)
 	t.closeCallback()
 	return t.listener.Close()
@@ -55,6 +56,7 @@ func (t *transportWrapperItem) Addr() net.Addr {
 }
 
 func (t *transportWrapperItem) Dial(address string, timeout time.Duration) (net.Conn, error) {
+	golog.Warnf("dialing [%s] via transport wrapper item", address)
 	return t.listener.Dial(address, timeout)
 }
 

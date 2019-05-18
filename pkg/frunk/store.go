@@ -248,6 +248,7 @@ func New(ln Listener, c *StoreConfig) *Store {
 		sequenceCacheSync: new(sync.Mutex),
 		sequenceCache:     map[string]*pgproto.SequenceResponse{},
 		sequenceChunks:    map[string]*SequenceChunk{},
+		HeartbeatTimeout:  time.Millisecond * 500,
 	}
 }
 
@@ -291,7 +292,7 @@ func (s *Store) Open(enableSingle bool) error {
 	config := s.raftConfig()
 	config.LocalID = raft.ServerID(s.raftID)
 	config.Logger = logger.NewLogger()
-	//config.Logger = log.New(os.Stderr, "[raft] ", log.LstdFlags)
+	// config.Logger = log.New(os.Stderr, "[raft] ", log.LstdFlags)
 
 	// Create the snapshot store. This allows Raft to truncate the log.
 	snapshots, err := raft.NewFileSnapshotStore(s.raftDir, retainSnapshotCount, os.Stderr)

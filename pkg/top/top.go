@@ -78,15 +78,15 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 
 	go func() {
 		for {
-			time.Sleep(1 * time.Minute)
+			time.Sleep(30 * time.Second)
 			if colony == nil {
 				golog.Infof("still strapping my boots")
 			} else {
-				leaderId, err := colony.LeaderID()
+				addr, leaderId, err := colony.LeaderID()
 				if err != nil {
 					golog.Errorf("could not get leader ID: %s", err)
 				} else {
-					golog.Infof("current state [%s] current leader: %s", colony.State(), leaderId)
+					golog.Infof("current state [%s] current leader: %s | %s", colony.State(), leaderId, addr)
 				}
 			}
 		}

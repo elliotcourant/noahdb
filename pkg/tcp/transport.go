@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
+	"github.com/readystock/golog"
 	"net"
 	"time"
 )
@@ -77,7 +78,7 @@ func (t *Transport) Dial(addr string, timeout time.Duration) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	golog.Warnf("sending raft startup message to [%s]", addr)
 	if err := front.Send(&pgproto.RaftStartupMessage{}); err != nil {
 		return nil, err
 	}
