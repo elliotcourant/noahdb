@@ -173,7 +173,7 @@ func NewPgTransportWithConfig(
 	}
 
 	trans.setupStreamContext()
-
+	go trans.listen()
 	return trans
 }
 
@@ -286,7 +286,36 @@ func (p *PgTransport) handleConnection(connectionContext context.Context, conn n
 	RESPONSE:
 		select {
 		case response := <-responseChannel:
+			var msg pgproto.Message
+			switch rsp := response.Response.(type) {
+			case raft.AppendEntriesResponse:
+				msg = &pgproto.AppendEntriesResponse{
+					Error:                 response.Error,
+					AppendEntriesResponse: rsp,
+				}
+			case raft.RequestVoteResponse:
+				msg = &pgproto.RequestVoteResponse{
+					Error:               response.Error,
+					RequestVoteResponse: rsp,
+				}
+			case raft.InstallSnapshotResponse:
+				msg = &pgproto.InstallSnapshotResponse{
+					Error:                   response.Error,
+					InstallSnapshotResponse: rsp,
+				}
+			case nil:
+				msg = &pgproto.ErrorResponse{
+					Message: response.Error.Error(),
+				}
+			}
 
+			if _, err := conn.Write(msg.Encode(nil)); err != nil {
+				p.logger.Error("failed to send response to [%v]: %v", conn.RemoteAddr(), err)
+				return
+			}
+		case <-p.shutdownChannel:
+			p.logger.Warn("closing transport due to shutdown")
+			return
 		}
 	}
 }
