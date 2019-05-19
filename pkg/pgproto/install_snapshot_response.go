@@ -35,7 +35,7 @@ func (response *InstallSnapshotResponse) Decode(src []byte) error {
 }
 
 func (response *InstallSnapshotResponse) Encode(dst []byte) []byte {
-	dst = append(dst, RaftAppendEntriesResponse)
+	dst = append(dst, RaftInstallSnapshotResponse)
 	sp := len(dst)
 	dst = pgio.AppendInt32(dst, -1)
 

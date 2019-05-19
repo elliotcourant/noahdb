@@ -11,9 +11,12 @@ type RaftWire struct {
 	cr *chunkreader.ChunkReader
 	w  io.Writer
 
-	appendEntries   AppendEntriesRequest
-	requestVote     RequestVoteRequest
-	installSnapshot InstallSnapshotRequest
+	appendEntriesRequest    AppendEntriesRequest
+	appendEntriesResponse   AppendEntriesResponse
+	requestVoteRequest      RequestVoteRequest
+	requestVoteResponse     RequestVoteResponse
+	installSnapshotRequest  InstallSnapshotRequest
+	installSnapshotResponse InstallSnapshotResponse
 
 	bodyLen    int
 	msgType    byte
@@ -44,12 +47,25 @@ func (b *RaftWire) Receive() (RaftMessage, error) {
 
 	var msg RaftMessage
 	switch b.msgType {
+
+	// Append entries
 	case RaftAppendEntriesRequest:
-		msg = &b.appendEntries
+		msg = &b.appendEntriesRequest
+	case RaftAppendEntriesResponse:
+		msg = &b.appendEntriesResponse
+
+	// Request vote
 	case RaftRequestVoteRequest:
-		msg = &b.requestVote
+		msg = &b.requestVoteRequest
+	case RaftRequestVoteResponse:
+		msg = &b.requestVoteResponse
+
+	// Install snapshot
 	case RaftInstallSnapshotRequest:
-		msg = &b.installSnapshot
+		msg = &b.installSnapshotRequest
+	case RaftInstallSnapshotResponse:
+		msg = &b.installSnapshotResponse
+
 	default:
 		return nil, fmt.Errorf("unknown raft message type: %c", b.msgType)
 	}

@@ -273,6 +273,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:f17dfd7df684b802076e8b0b316f27788763f647f8dbee368c98b2cb933d8657"
+  name = "github.com/kataras/golog"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "03be101463868edc5a81f094fc68a5f6c1b5503a"
+
+[[projects]]
+  branch = "master"
   digest = "1:163dcd10b3706f00c405ef6a9813fabdf5df3772715865dc42b835e54c1af08c"
   name = "github.com/kataras/pio"
   packages = [
@@ -697,7 +705,7 @@
 
 [[projects]]
   branch = "release-1.14"
-  digest = "0:"
+  digest = "1:78f6a824d205c6cb0d011cce241407646b773cb57ee27e8c7e027753b4111075"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -740,7 +748,7 @@
   revision = ""
 
 [[projects]]
-  digest = "1:c252bde8a0ed5f932da37c59413b4b305028eb053ef5d5bce58f8848f5c2b617"
+  digest = "0:"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -849,6 +857,7 @@
     "github.com/jackc/pgx/stdlib",
     "github.com/juju/errors",
     "github.com/kataras/go-errors",
+    "github.com/kataras/golog",
     "github.com/lib/pq",
     "github.com/mattn/go-sqlite3",
     "github.com/pkg/errors",
@@ -864,7 +873,7 @@
     "github.com/stretchr/testify/assert",
     "gopkg.in/doug-martin/goqu.v5",
     "gopkg.in/doug-martin/goqu.v5/adapters/postgres",
-    "k8s.io/apimachinery/pkg/api/errors",
+    "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/plugin/pkg/client/auth",

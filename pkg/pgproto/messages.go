@@ -80,9 +80,10 @@ const (
 	*/
 
 	// RaftRPCResponse is a generic tag
-	RaftRPCResponse           = 'r'
-	RaftAppendEntriesResponse = 'Y'
-	RaftRequestVoteResponse   = 'V'
+	RaftRPCResponse             = 'r'
+	RaftAppendEntriesResponse   = 'Y'
+	RaftRequestVoteResponse     = 'V'
+	RaftInstallSnapshotResponse = 'M'
 
 	/*
 		RPC Backend Messages
