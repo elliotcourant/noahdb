@@ -56,7 +56,7 @@ func (ctx *base) CoordinatorID() uint64 {
 
 // Close shuts down the colony.
 func (ctx *base) Close() {
-	ctx.db.Close(true)
+	ctx.db.Close(false)
 }
 
 // IsLeader returns true if the current coordinator is the leader of the cluster.

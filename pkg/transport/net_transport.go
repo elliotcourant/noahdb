@@ -217,7 +217,7 @@ func NewNetworkTransportWithConfig(
 		maxPool:               config.MaxPool,
 		shutdownCh:            make(chan struct{}),
 		stream:                config.Stream,
-		timeout:               0,
+		timeout:               30 * time.Second,
 		TimeoutScale:          DefaultTimeoutScale,
 		serverAddressProvider: config.ServerAddressProvider,
 	}
