@@ -13,7 +13,7 @@ type AppendEntriesRequest struct {
 
 func (AppendEntriesRequest) Frontend() {}
 
-func (AppendEntriesRequest) RaftFrontend() {}
+func (AppendEntriesRequest) Raft() {}
 
 func (appendEntries *AppendEntriesRequest) Decode(src []byte) error {
 	*appendEntries = AppendEntriesRequest{}

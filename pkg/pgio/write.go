@@ -37,6 +37,15 @@ func AppendInt64(buf []byte, n int64) []byte {
 	return AppendUint64(buf, uint64(n))
 }
 
+func AppendBool(buf []byte, b bool) []byte {
+	var val byte
+	if val = byte(0); b {
+		val = byte(1)
+	}
+	buf = append(buf, val)
+	return buf
+}
+
 func SetInt32(buf []byte, n int32) {
 	binary.BigEndian.PutUint32(buf, uint32(n))
 }

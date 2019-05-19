@@ -13,7 +13,7 @@ type RequestVoteRequest struct {
 
 func (RequestVoteRequest) Frontend() {}
 
-func (RequestVoteRequest) RaftFrontend() {}
+func (RequestVoteRequest) Raft() {}
 
 func (requestVote *RequestVoteRequest) Decode(src []byte) error {
 	*requestVote = RequestVoteRequest{}

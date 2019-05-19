@@ -80,7 +80,8 @@ const (
 	*/
 
 	// RaftRPCResponse is a generic tag
-	RaftRPCResponse = 'r'
+	RaftRPCResponse           = 'r'
+	RaftAppendEntriesResponse = 'Y'
 
 	/*
 		RPC Backend Messages

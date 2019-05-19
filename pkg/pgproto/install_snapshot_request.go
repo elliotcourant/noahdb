@@ -20,7 +20,7 @@ func (installSnapshot *InstallSnapshotRequest) Reader() io.Reader {
 
 func (InstallSnapshotRequest) Frontend() {}
 
-func (InstallSnapshotRequest) RaftFrontend() {}
+func (InstallSnapshotRequest) Raft() {}
 
 func (installSnapshot *InstallSnapshotRequest) Decode(src []byte) error {
 	*installSnapshot = InstallSnapshotRequest{}

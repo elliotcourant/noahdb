@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-type RaftBackend struct {
+type RaftWire struct {
 	cr *chunkreader.ChunkReader
 	w  io.Writer
 
@@ -20,17 +20,17 @@ type RaftBackend struct {
 	partialMsg bool
 }
 
-func NewRaftBackend(r io.Reader, w io.Writer) (*RaftBackend, error) {
+func NewRaftWire(r io.Reader, w io.Writer) (*RaftWire, error) {
 	cr := chunkreader.NewChunkReader(r)
-	return &RaftBackend{cr: cr, w: w}, nil
+	return &RaftWire{cr: cr, w: w}, nil
 }
 
-func (b *RaftBackend) Send(msg RaftBackendMessage) error {
+func (b *RaftWire) Send(msg RaftMessage) error {
 	_, err := b.w.Write(msg.Encode(nil))
 	return err
 }
 
-func (b *RaftBackend) Receive() (RaftFrontendMessage, error) {
+func (b *RaftWire) Receive() (RaftMessage, error) {
 	if !b.partialMsg {
 		header, err := b.cr.Next(5)
 		if err != nil {
@@ -42,7 +42,7 @@ func (b *RaftBackend) Receive() (RaftFrontendMessage, error) {
 		b.partialMsg = true
 	}
 
-	var msg RaftFrontendMessage
+	var msg RaftMessage
 	switch b.msgType {
 	case RaftAppendEntriesRequest:
 		msg = &b.appendEntries
