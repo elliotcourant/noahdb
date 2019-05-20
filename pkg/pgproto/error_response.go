@@ -31,6 +31,8 @@ type ErrorResponse struct {
 
 func (*ErrorResponse) Backend() {}
 
+func (ErrorResponse) Raft() {}
+
 func (dst *ErrorResponse) Decode(src []byte) error {
 	*dst = ErrorResponse{}
 

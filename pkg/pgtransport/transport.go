@@ -3,8 +3,10 @@ package pgtransport
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
+	"github.com/readystock/golog"
 	"io"
 	"net"
 	"os"
@@ -392,36 +394,45 @@ func (p *PgTransport) genericRPC(id raft.ServerID, target raft.ServerAddress, ar
 }
 
 func (p *PgTransport) receiveResponse(conn *pgConn, response interface{}) error {
-	var canReturnTrue = true
-	var canReturn *bool
-
-	defer func(p *PgTransport, canReturn *bool, conn *pgConn) {
-		if canReturn == nil || !*canReturn {
-			conn.Release()
-		} else if *canReturn {
-			p.returnConn(conn)
-		}
-	}(p, canReturn, conn)
-
 	message, err := conn.wire.Receive()
 	if err != nil {
+		if err != io.EOF {
+
+		}
 		p.logger.Error("could not receive message from [%v]: %v", conn.conn.RemoteAddr(), err)
 		return err
 	}
 
-	canReturn = &canReturnTrue
+	defer p.returnConn(conn)
 
 	return func(message pgproto.RaftMessage, response interface{}) (err error) {
 		switch msg := message.(type) {
 		case *pgproto.AppendEntriesResponse:
 			err = msg.Error
-			response = &msg.AppendEntriesResponse
+			if r, ok := response.(*raft.AppendEntriesResponse); ok {
+				*r = msg.AppendEntriesResponse
+			} else {
+				p.logger.Warn("received %T but was expecting to received %T", msg, response)
+			}
 		case *pgproto.RequestVoteResponse:
 			err = msg.Error
-			response = &msg.RequestVoteResponse
+			if r, ok := response.(*raft.RequestVoteResponse); ok {
+				*r = msg.RequestVoteResponse
+			} else {
+				p.logger.Warn("received %T but was expecting to received %T", msg, response)
+			}
+			response = msg.RequestVoteResponse
 		case *pgproto.InstallSnapshotResponse:
 			err = msg.Error
-			response = &msg.InstallSnapshotResponse
+			if r, ok := response.(*raft.InstallSnapshotResponse); ok {
+				*r = msg.InstallSnapshotResponse
+			} else {
+				p.logger.Warn("received %T but was expecting to received %T", msg, response)
+			}
+			response = msg.InstallSnapshotResponse
+		case *pgproto.ErrorResponse:
+			err = errors.New(msg.Message)
+			response = nil
 		default:
 			err = fmt.Errorf("could handle response message type [%v]", msg)
 			response = nil
@@ -524,6 +535,7 @@ func (p *PgTransport) getStreamContext() context.Context {
 
 func (p *PgTransport) listen() {
 	for {
+		golog.Verbosef("listening for transport connections")
 		conn, err := p.stream.Accept()
 		if err != nil {
 			if p.IsShutdown() {
@@ -532,7 +544,9 @@ func (p *PgTransport) listen() {
 			p.logger.Error("failed to accept connection: %v", err)
 			continue
 		}
-		p.logger.Trace("%v accepted connection from: %v", p.LocalAddr(), conn.RemoteAddr())
+		p.logger.Debug("%v accepted connection from: %v", p.LocalAddr(), conn.RemoteAddr())
+
+		go p.handleConnection(p.getStreamContext(), conn)
 	}
 }
 
@@ -553,7 +567,9 @@ func (p *PgTransport) handleConnection(connectionContext context.Context, conn n
 
 		request, err := wire.Receive()
 		if err != nil {
-			p.logger.Error("failed to receive message from [%v]: %v", conn.RemoteAddr(), err)
+			if err != io.EOF {
+				p.logger.Error("failed to receive message from [%v]: %v", conn.RemoteAddr(), err)
+			}
 			return
 		}
 
@@ -565,7 +581,7 @@ func (p *PgTransport) handleConnection(connectionContext context.Context, conn n
 		isHeartbeat := false
 		switch req := request.(type) {
 		case *pgproto.AppendEntriesRequest:
-			rpc.Command = req.AppendEntriesRequest
+			rpc.Command = &req.AppendEntriesRequest
 
 			// Check if this is a heartbeat
 			if req.Term != 0 && req.Leader != nil &&
@@ -574,9 +590,9 @@ func (p *PgTransport) handleConnection(connectionContext context.Context, conn n
 				isHeartbeat = true
 			}
 		case *pgproto.RequestVoteRequest:
-			rpc.Command = req.RequestVoteRequest
+			rpc.Command = &req.RequestVoteRequest
 		case *pgproto.InstallSnapshotRequest:
-			rpc.Command = req.InstallSnapshotRequest
+			rpc.Command = &req.InstallSnapshotRequest
 			rpc.Reader = req.Reader()
 		default:
 			p.logger.Error("did not recognize request type [%v] from [%v]: %v", req, conn.RemoteAddr(), err)
@@ -606,22 +622,22 @@ func (p *PgTransport) handleConnection(connectionContext context.Context, conn n
 	RESPONSE:
 		select {
 		case response := <-responseChannel:
-			var msg pgproto.Message
+			var msg pgproto.RaftMessage
 			switch rsp := response.Response.(type) {
-			case raft.AppendEntriesResponse:
+			case *raft.AppendEntriesResponse:
 				msg = &pgproto.AppendEntriesResponse{
 					Error:                 response.Error,
-					AppendEntriesResponse: rsp,
+					AppendEntriesResponse: *rsp,
 				}
-			case raft.RequestVoteResponse:
+			case *raft.RequestVoteResponse:
 				msg = &pgproto.RequestVoteResponse{
 					Error:               response.Error,
-					RequestVoteResponse: rsp,
+					RequestVoteResponse: *rsp,
 				}
-			case raft.InstallSnapshotResponse:
+			case *raft.InstallSnapshotResponse:
 				msg = &pgproto.InstallSnapshotResponse{
 					Error:                   response.Error,
-					InstallSnapshotResponse: rsp,
+					InstallSnapshotResponse: *rsp,
 				}
 			case nil:
 				msg = &pgproto.ErrorResponse{
@@ -629,7 +645,7 @@ func (p *PgTransport) handleConnection(connectionContext context.Context, conn n
 				}
 			}
 
-			if _, err := conn.Write(msg.Encode(nil)); err != nil {
+			if err := wire.Send(msg); err != nil {
 				p.logger.Error("failed to send response to [%v]: %v", conn.RemoteAddr(), err)
 				return
 			}
@@ -740,11 +756,13 @@ func (p *pgPipeline) processResponses() {
 				case *pgproto.AppendEntriesResponse:
 					future.resp = &msg.AppendEntriesResponse
 					future.respond(msg.Error)
+				case *pgproto.ErrorResponse:
+					future.resp = nil
+					future.respond(errors.New(msg.Message))
 				default:
 					err = fmt.Errorf("received an invalid response from [%v]: %v", p.conn.conn.RemoteAddr(), msg)
 					p.logger.Error(err.Error())
 					future.respond(err)
-					return
 				}
 			}(future)
 		case <-p.shutdownChannel:

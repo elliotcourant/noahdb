@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/logger"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
-	"github.com/elliotcourant/noahdb/pkg/transport"
+	"github.com/elliotcourant/noahdb/pkg/pgtransport"
 	"io"
 	"io/ioutil"
 	"log"
@@ -174,7 +174,7 @@ type Store struct {
 
 	raft   *raft.Raft // The consensus mechanism.
 	ln     Listener
-	raftTn *transport.NetworkTransport
+	raftTn *pgtransport.PgTransport
 	raftID string    // Node ID.
 	dbConf *DBConfig // SQLite database config.
 	dbPath string    // Path to underlying SQLite file, if not in-memory.
@@ -285,7 +285,7 @@ func (s *Store) Open(enableSingle bool) error {
 	newNode := !pathExists(filepath.Join(s.raftDir, "raft.db"))
 
 	// Create Raft-compatible network layer.
-	s.raftTn = transport.NewNetworkTransport(NewTransport(s.ln),
+	s.raftTn = pgtransport.NewPgTransport(NewTransport(s.ln),
 		connectionPoolCount, connectionTimeout, nil)
 
 	// Get the Raft configuration for this store.
@@ -1069,6 +1069,9 @@ func (s *Store) raftConfig() *raft.Config {
 	if s.HeartbeatTimeout != 0 {
 		config.HeartbeatTimeout = s.HeartbeatTimeout
 	}
+	// config.ElectionTimeout = time.Second * 5
+	// config.LeaderLeaseTimeout = time.Second * 5
+	// config.HeartbeatTimeout = time.Second * 5
 	return config
 }
 

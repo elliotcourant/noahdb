@@ -68,11 +68,12 @@ type Logger interface {
 }
 
 func NewLogger() Logger {
+	l := golog.NewWithDepth(6)
+	l.SetLevel("trace")
 	return &lggr{
-		gologger: golog.NewWithDepth(6),
+		gologger: l,
 	}
 }
-
 
 type lggr struct {
 	gologger *golog.Logger

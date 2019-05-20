@@ -78,6 +78,7 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 	if err != nil {
 		switch err {
 		case pgproto.RaftStartupMessageError:
+			golog.Verbosef("forwarding connection from [%v] to raft", wire.conn.RemoteAddr())
 			wrapper.ForwardToRaft(wire.conn, nil)
 			return nil
 		case pgproto.RpcStartupMessageError:
