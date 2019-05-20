@@ -37,6 +37,11 @@ coverage:
 strings:
 	@echo generating strings...
 	@go get -u -a golang.org/x/tools/cmd/stringer
+
+	@stringer -type ClusterState -output pkg/frunk/cluster_state.string.go pkg/frunk/store.go
+	@stringer -type ConsistencyLevel -output pkg/frunk/consistency_level.string.go pkg/frunk/store.go
+	@stringer -type BackupFormat -output pkg/frunk/backup_format.string.go pkg/frunk/store.go
+
 	@stringer -type Context -output pkg/ast/context.string.go pkg/ast/context.go
 	@stringer -type ObjectType -output pkg/ast/object_type.string.go pkg/ast/object_type.go
 	@stringer -type SortByDir -output pkg/ast/sort_by_dir.string.go pkg/ast/sort_by_dir.go

@@ -748,7 +748,7 @@
   revision = ""
 
 [[projects]]
-  digest = "0:"
+  digest = "1:c252bde8a0ed5f932da37c59413b4b305028eb053ef5d5bce58f8848f5c2b617"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
