@@ -5,14 +5,15 @@ PGERROR_DIRECTORY = ./pkg/pgerror
 BUILD_DIRECTORY = ./bin
 PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
+DOCKER_TAG = edge
 
 docker:
-	docker build -t noahdb/node:local .
+	docker build -t noahdb/node:$(DOCKER_TAG) .
 
 kube: docker
 	kubectl delete deployment.apps/noahdb
 	kubectl delete --all pods --namespace=default
-	kubectl run noahdb --image=noahdb/node:local --port=5433 --image-pull-policy=Never --serviceaccount=noah-operator
+	kubectl run noahdb --image=noahdb/node:$(DOCKER_TAG) --port=5433 --image-pull-policy=Never --serviceaccount=noah-operator
 
 default: dependencies test
 
@@ -20,7 +21,7 @@ dependencies: generated
 	dep ensure
 
 test:
-	go test -v ./...
+	go test -race -v ./...
 
 setup_build_dir:
 	mkdir -p $(BUILD_DIRECTORY)
