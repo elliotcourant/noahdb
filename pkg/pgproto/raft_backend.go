@@ -24,8 +24,6 @@ func NewRaftWire(r io.Reader, w io.Writer) (*RaftWire, error) {
 
 func (b *RaftWire) Send(msg RaftMessage) error {
 	time.Sleep(1 * time.Millisecond)
-	// j, _ := json.Marshal(msg)
-	// golog.Verbosef("sending %T message: %s", msg, string(j))
 	_, err := b.w.Write(msg.Encode(nil))
 	return err
 }
@@ -77,9 +75,6 @@ func (b *RaftWire) Receive() (RaftMessage, error) {
 	b.partialMsg = false
 
 	err = msg.Decode(msgBody)
-	time.Sleep(1 * time.Millisecond)
-	// j, _ := json.Marshal(msg)
-	// golog.Verbosef("received %T message: %s", msg, string(j))
 
 	return msg, err
 }

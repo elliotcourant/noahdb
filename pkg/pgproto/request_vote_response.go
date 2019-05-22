@@ -13,6 +13,8 @@ type RequestVoteResponse struct {
 	Error error
 }
 
+func (RequestVoteResponse) Backend() {}
+
 func (RequestVoteResponse) Raft() {}
 
 func (response *RequestVoteResponse) Decode(src []byte) error {

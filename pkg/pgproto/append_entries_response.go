@@ -13,6 +13,8 @@ type AppendEntriesResponse struct {
 	Error error
 }
 
+func (AppendEntriesResponse) Backend() {}
+
 func (AppendEntriesResponse) Raft() {}
 
 func (response *AppendEntriesResponse) Decode(src []byte) error {

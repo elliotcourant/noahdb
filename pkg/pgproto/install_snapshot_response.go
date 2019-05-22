@@ -13,6 +13,8 @@ type InstallSnapshotResponse struct {
 	Error error
 }
 
+func (InstallSnapshotResponse) Backend() {}
+
 func (InstallSnapshotResponse) Raft() {}
 
 func (response *InstallSnapshotResponse) Decode(src []byte) error {

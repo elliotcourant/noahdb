@@ -5,6 +5,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
+	"io"
 	"net"
 )
 
@@ -26,15 +27,15 @@ func NewRpcServer(colony core.Colony, transport core.TransportWrapper) error {
 		go func(colony core.Colony, conn net.Conn) {
 			defer conn.Close()
 			if err := serveRpcConnection(colony, conn); err != nil {
-				golog.Errorf("failed serving rpc connection from [%s]: %v", conn.RemoteAddr(), err)
+				if err != io.EOF {
+					golog.Errorf("failed serving rpc connection from [%s]: %v", conn.RemoteAddr(), err)
+				}
 			}
 		}(colony, conn)
 	}
 }
 
 func serveRpcConnection(colony core.Colony, conn net.Conn) error {
-	// golog.Verbosef("received rpc connection from [%s]", conn.RemoteAddr().String())
-
 	backend, err := pgproto.NewRpcBackend(conn, conn)
 	if err != nil {
 		return err
