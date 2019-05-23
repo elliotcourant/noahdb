@@ -75,7 +75,7 @@ func (ctx *base) Setup() {
 		return
 	}
 
-	setupScript, err := static.GetEmbeddedFile("/internal_sql.sql")
+	setupScript, err := static.GetEmbeddedFile("/00_internal_sql.sql")
 	if err != nil {
 		panic(err)
 	}

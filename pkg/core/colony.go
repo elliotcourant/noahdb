@@ -93,23 +93,40 @@ func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans Transport
 	}
 
 	if len(joins) > 0 {
+		attempts := 1
+	RETRY_JOIN:
 		for i, joinAddr := range joins {
 			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr)
 			rpcDriver, err := rpcer.NewRPCDriver(id, trans.Addr(), joinAddr)
 			if err != nil {
 				golog.Warnf("could not connect to join address [%s]: %v", joinAddr, err)
+				continue
 			}
 			if rpcDriver == nil {
 				golog.Warnf("failed to create frontend for address [%s]", joinAddr)
+				continue
 			}
 			if err := rpcDriver.Join(); err != nil {
 				golog.Warnf("could not join address [%s]: %v", joinAddr, err)
+				continue
 			} else {
 				golog.Infof("successfully joined at address [%s]", joinAddr)
-				break
+				goto WAIT_FOR_SETUP
 			}
 		}
+
+		if attempts < 3 {
+			golog.Infof("was not able to join any of the nodes provided, will try again in 10 seconds; attempt: %d", attempts)
+			time.Sleep(10 * time.Second)
+			attempts++
+			goto RETRY_JOIN
+		} else {
+			golog.Fatalf("failed to join any of the node found after %d attempt(s)", attempts)
+		}
+
 	}
+
+WAIT_FOR_SETUP:
 
 	openTimeout, err := time.ParseDuration("10s")
 	if err != nil {

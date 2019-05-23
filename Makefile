@@ -5,15 +5,14 @@ PGERROR_DIRECTORY = ./pkg/pgerror
 BUILD_DIRECTORY = ./bin
 PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
-DOCKER_TAG = edge
+DOCKER_TAG = local
 
 docker:
 	docker build -t noahdb/node:$(DOCKER_TAG) .
 
 kube: docker
-	kubectl delete deployment.apps/noahdb
-	kubectl delete --all pods --namespace=default
-	kubectl run noahdb --image=noahdb/node:$(DOCKER_TAG) --port=5433 --image-pull-policy=Never --serviceaccount=noah-operator
+	kubectl delete -f noahdb.yaml --wait --ignore-not-found=true
+	kubectl apply -f noahdb.yaml
 
 default: dependencies test
 
@@ -39,9 +38,8 @@ strings:
 	@echo generating strings...
 	@go get -u -a golang.org/x/tools/cmd/stringer
 
-	@stringer -type ClusterState -output pkg/frunk/cluster_state.string.go pkg/frunk/store.go
-	@stringer -type ConsistencyLevel -output pkg/frunk/consistency_level.string.go pkg/frunk/store.go
-	@stringer -type BackupFormat -output pkg/frunk/backup_format.string.go pkg/frunk/store.go
+	@stringer -type commandType -output pkg/frunk/command.string.go pkg/frunk/command.go
+	@stringer -type ClusterState,ConsistencyLevel,BackupFormat -output pkg/frunk/store.string.go pkg/frunk/store.go
 
 	@stringer -type Context -output pkg/ast/context.string.go pkg/ast/context.go
 	@stringer -type ObjectType -output pkg/ast/object_type.string.go pkg/ast/object_type.go

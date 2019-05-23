@@ -3,6 +3,7 @@ package top
 import (
 	"fmt"
 	"github.com/readystock/golinq"
+	"github.com/readystock/golog"
 	"io/ioutil"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,9 +48,24 @@ func getAutoJoinAddresses() ([]string, error) {
 	}
 
 	joinAddresses := make([]string, 0)
+	items := make([]v1.Pod, 0)
+	linq.From(pods.Items).OrderBy(func(i interface{}) interface{} {
+		pod, ok := i.(v1.Pod)
+		if !ok {
+			return "z"
+		} else {
+			return pod.Name
+		}
+	}).ToSlice(&items)
 
-	for _, pod := range pods.Items {
+	for _, pod := range items {
 		if pod.Name == host {
+			// This is a bit weird, but basically if this is the first node in the cluster
+			// alphabetically then we want to have it try to be the leader.
+			if len(joinAddresses) == 0 {
+				golog.Warnf("this node should be the default leader for the cluster")
+				return joinAddresses, nil
+			}
 			continue
 		}
 		addr := pod.Status.PodIP
@@ -67,6 +83,7 @@ func getAutoJoinAddresses() ([]string, error) {
 		if !hasNoahPort {
 			continue
 		}
+		golog.Debugf("found pod [%s] address: %s", pod.Name, pod.Status.PodIP)
 		joinAddresses = append(joinAddresses, fmt.Sprintf("%s:%d", addr, 5433))
 	}
 	return joinAddresses, nil

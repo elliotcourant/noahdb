@@ -49,24 +49,24 @@ jobs:
         - make coverage
       after_success:
         - bash <(curl -s https://codecov.io/bash)
-    - stage: Build & Publish Docker Image
-      if: branch = master
-      services:
-        - docker
-      before_script:
-        - go get -v -d google.golang.org/grpc
-        - go get -v -d -t github.com/golang/protobuf/...
-        - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
-        - mkdir -p "$HOME"/protoc
-        - unzip /tmp/protoc.zip -d "$HOME"/protoc
-        - mkdir -p "$HOME"/src && ln -s "$HOME"/protoc "$HOME"/src/protobuf
-        - go get -u github.com/golang/protobuf/protoc-gen-go
-        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
-        - dep ensure
-        - make generated
-      script:
-        - make docker
-        - echo $DOCKER_PASSWORD | docker login -u=$DOCKER_USERNAME --password-stdin
-        - docker tag noahdb/node:edge noahdb/node:edge
-        - docker push noahdb/node:edge
+#    - stage: Build & Publish Docker Image
+#      if: branch = master
+#      services:
+#        - docker
+#      before_script:
+#        - go get -v -d google.golang.org/grpc
+#        - go get -v -d -t github.com/golang/protobuf/...
+#        - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
+#        - mkdir -p "$HOME"/protoc
+#        - unzip /tmp/protoc.zip -d "$HOME"/protoc
+#        - mkdir -p "$HOME"/src && ln -s "$HOME"/protoc "$HOME"/src/protobuf
+#        - go get -u github.com/golang/protobuf/protoc-gen-go
+#        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+#        - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
+#        - dep ensure
+#        - make generated
+#      script:
+#        - make docker
+#        - echo $DOCKER_PASSWORD | docker login -u=$DOCKER_USERNAME --password-stdin
+#        - docker tag noahdb/node:local noahdb/node:local
+#        - docker push noahdb/node:local

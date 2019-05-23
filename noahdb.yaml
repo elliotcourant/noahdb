@@ -1,0 +1,86 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: noahdb-operator
+  labels:
+    app: noahdb
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: noahdb-binding
+  labels:
+    app: noahdb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: noahdb-operator
+    namespace: default
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: noahdb-storage
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 3Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: noahdb-storage-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: noahdb
+  labels:
+    app: noahdb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: noahdb
+  template:
+    metadata:
+      labels:
+        app: noahdb
+    spec:
+      serviceAccountName: noahdb-operator
+      automountServiceAccountToken: true
+      volumes:
+        - name: node-storage
+          persistentVolumeClaim:
+            claimName: noahdb-storage-claim
+      containers:
+        - name: noahdb
+          image: noahdb/node:local
+          ports:
+            - containerPort: 5433
+              name: noahdb
+            - containerPort: 5432
+              name: postgres
+          volumeMounts:
+            - mountPath: "/data"
+              name: node-storage

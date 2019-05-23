@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-/node/bin/postgres -D /node/pgdata &
-
-/node/bin/noahdb start -dA
+/node/bin/postgres -D /data/db &
+# test
+/node/bin/noahdb start -dA -s /data/db/cluster
