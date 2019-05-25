@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
 )
@@ -31,6 +32,7 @@ type CommandResult struct {
 	session sessionContext
 	err     error
 	typ     completionMsgType
+	tag     string
 }
 
 func CreateSyncCommandResult(session sessionContext) *CommandResult {
@@ -39,9 +41,10 @@ func CreateSyncCommandResult(session sessionContext) *CommandResult {
 	return result
 }
 
-func CreateExecuteCommandResult(session sessionContext) *CommandResult {
+func CreateExecuteCommandResult(session sessionContext, stmt ast.Stmt) *CommandResult {
 	result := NewCommandResult(session)
 	result.typ = commandComplete
+	result.tag = stmt.StatementTag()
 	return result
 }
 
@@ -90,6 +93,12 @@ func (result *CommandResult) Close() error {
 	// Send a completion message, specific to the type of result.
 	switch result.typ {
 	case commandComplete:
+		tag := result.tag
+		if err := result.session.Backend().Send(&pgproto.CommandComplete{
+			CommandTag: tag,
+		}); err != nil {
+			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
+		}
 		// panic("not handling command complete yet.")
 
 		// tag := cookTag(

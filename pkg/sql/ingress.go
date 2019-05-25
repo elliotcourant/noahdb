@@ -31,7 +31,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			result := &commands.CommandResult{}
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
-				result = commands.CreateExecuteCommandResult(s)
+				result = commands.CreateExecuteCommandResult(s, cmd.Statement)
 				err = s.ExecuteStatement(cmd, result)
 				// val := types.Int4{}
 				// val.Set(1)

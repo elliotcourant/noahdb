@@ -18,6 +18,7 @@ type dataNodeContext struct {
 }
 
 type DataNodeContext interface {
+	GetDataNode(id uint64) (DataNode, error)
 	GetDataNodes() ([]DataNode, error)
 	GetDataNodesForShard(uint64) ([]DataNode, error)
 	GetDataNodeForDataNodeShard(uint64) (DataNode, error)
@@ -57,6 +58,26 @@ func (ctx *dataNodeContext) NewDataNode(address, password, port string) (DataNod
 		Port:       int32(portInt),
 		Healthy:    true,
 	}, err
+}
+
+func (ctx *dataNodeContext) GetDataNode(id uint64) (DataNode, error) {
+	compiledQuery, _, _ := getDataNodesQuery.
+		Where(goqu.Ex{
+			"data_node_id": id,
+		}).
+		Limit(1).ToSql()
+	response, err := ctx.db.Query(compiledQuery)
+	if err != nil {
+		return DataNode{}, err
+	}
+	nodes, err := ctx.dataNodesFromRows(response)
+	if err != nil {
+		return DataNode{}, err
+	}
+	if len(nodes) == 0 {
+		return DataNode{}, fmt.Errorf("could not find data node with ID [%d]", id)
+	}
+	return nodes[0], nil
 }
 
 func (ctx *dataNodeContext) GetDataNodes() ([]DataNode, error) {

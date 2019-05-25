@@ -1,12 +1,16 @@
 package core
 
 import (
+	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/golog"
 	"gopkg.in/doug-martin/goqu.v5"
 	// Use the postgres adapter for building queries.
+	"database/sql"
 	_ "gopkg.in/doug-martin/goqu.v5/adapters/postgres"
+
+	_ "github.com/lib/pq"
 )
 
 var (
@@ -128,6 +132,32 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 			}).Sql
 		if _, err := ctx.db.Exec(newDataNodeShard); err != nil {
 			return err
+		}
+
+		dataNodeMeta, err := ctx.DataNodes().GetDataNode(dataNode.DataNodeID)
+		if err != nil {
+			golog.Criticalf("failed to retrieve metadata for data node [%d]: %v", dataNode.DataNodeID, err)
+			continue
+		}
+
+		dataNodeAddress := fmt.Sprintf("%s:%d", dataNodeMeta.GetAddress(), dataNodeMeta.GetPort())
+		golog.Debugf("trying to connect to data node [%s] at %s to init shards", dataNode.DataNodeID, dataNodeAddress)
+
+		connStr := fmt.Sprintf("postgres://postgres@%s/postgres?sslmode=disable", dataNodeAddress)
+		db, err := sql.Open("postgres", connStr)
+		if err != nil {
+			golog.Criticalf("failed to connect to data node [%d] address %s: %v", dataNode.DataNodeID, dataNodeAddress, err)
+			continue
+		}
+
+		deleteExistingShard := fmt.Sprintf("DROP DATABASE IF EXISTS noahdb_%d", id)
+		_, _ = db.Exec(deleteExistingShard)
+
+		createShardQuery := fmt.Sprintf("CREATE DATABASE noahdb_%d", id)
+		_, err = db.Exec(createShardQuery)
+		if err != nil {
+			golog.Criticalf("failed to create data node shard [%d] on data node [%d] address %s: %v", id, dataNode.DataNodeID, dataNodeAddress, err)
+			continue
 		}
 
 		updateShardStatus := goqu.

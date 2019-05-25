@@ -6,6 +6,7 @@ import (
 	"github.com/readystock/golog"
 	"net"
 	"sync"
+	"time"
 )
 
 type poolContext struct {
@@ -13,23 +14,33 @@ type poolContext struct {
 }
 
 type poolItem struct {
-	id   uint64
-	pool sync.Pool
+	id    uint64
+	mutex sync.Mutex
+	pool  []*frontendConnection
 }
 
 func (p *poolItem) addConnection(frontend *pgproto.Frontend) {
-	p.pool.Put(frontend)
+	p.releaseConnection(&frontendConnection{
+		Frontend: frontend,
+		pool:     p,
+	})
+}
+
+func (p *poolItem) releaseConnection(conn *frontendConnection) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	p.pool = append(p.pool, conn)
 }
 
 func (p *poolItem) GetConnection() PoolConnection {
-	item := p.pool.Get()
-	if item == nil {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if len(p.pool) == 0 {
 		return nil
 	}
-	return &frontendConnection{
-		Frontend: item.(*pgproto.Frontend),
-		pool:     p,
-	}
+	item := p.pool[0]
+	p.pool = p.pool[1:]
+	return item
 }
 
 type frontendInterface interface {
@@ -47,7 +58,8 @@ func (f *frontendConnection) Release() {
 	if f.Frontend == nil {
 		return
 	}
-	f.pool.pool.Put(f)
+	golog.Verbosef("releasing connection from data node shard [%d], pool size: %d", f.pool.id, len(f.pool.pool))
+	f.pool.releaseConnection(f)
 }
 
 type PoolConnection interface {
@@ -67,7 +79,14 @@ func (ctx *base) Pool() PoolContext {
 
 func (ctx *base) StartPool() {
 	go func() {
+		for {
+			time.Sleep(30 * time.Second)
+			if !ctx.IsLeader() {
+				continue
+			}
 
+			// dataNodeShards, err := ctx.DataNodes().GetDataNodes()
+		}
 	}()
 }
 
@@ -76,75 +95,98 @@ func (ctx *poolContext) GetConnectionForDataNodeShard(id uint64) (PoolConnection
 	defer ctx.poolSync.Unlock()
 	pItem, ok := ctx.pool[id]
 	if !ok {
+		golog.Tracef("data node shard [%d] is not in pool, creating connection", id)
 		pItem = &poolItem{
-			id:   id,
-			pool: sync.Pool{},
+			id:    id,
+			mutex: sync.Mutex{},
+			pool:  make([]*frontendConnection, 0),
 		}
 		ctx.pool[id] = pItem
 
-		dataNode, err := ctx.DataNodes().GetDataNodeForDataNodeShard(id)
+		conn, err := ctx.NewConnection(id)
 		if err != nil {
+			golog.Errorf("could not create connection to data node shard [%d]: %v", id, err)
 			return nil, err
 		}
 
-		addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", dataNode.Address, dataNode.Port))
-		if err != nil {
-			golog.Errorf("could not resolve address for data node [%d]: %s", dataNode.DataNodeID, err.Error())
-			return nil, err
-		}
-
-		conn, err := net.DialTCP("tcp", nil, addr)
-		if err != nil {
-			golog.Errorf("could not connect to data node [%d]: %s", dataNode.DataNodeID, err.Error())
-			return nil, err
-		}
-
-		frontend, err := pgproto.NewFrontend(conn, conn)
-		if err != nil {
-			golog.Errorf("could not setup frontend for data node [%d]: %s", dataNode.DataNodeID, err.Error())
-			return nil, err
-		}
-
-		if err := frontend.Send(&pgproto.StartupMessage{
-			ProtocolVersion: pgproto.ProtocolVersionNumber,
-			Parameters: map[string]string{
-				"user":     "postgres",
-				"database": fmt.Sprintf("partition_%d", id),
-			},
-		}); err != nil {
-			golog.Errorf("could not send startup message to data node [%d]: %s", dataNode.DataNodeID, err.Error())
-			return nil, err
-		}
-
-		if err := func() error {
-			for {
-				response, err := frontend.Receive()
-				if err != nil {
-					return err
-				}
-
-				switch msg := response.(type) {
-				case *pgproto.Authentication:
-					panic("authentication is not implemented")
-				case *pgproto.ParameterStatus:
-				case *pgproto.ParameterDescription:
-				case *pgproto.ReadyForQuery:
-					return nil // We are good to go, exit the loop
-				case *pgproto.ErrorResponse:
-					return fmt.Errorf("from backend: %s", msg.Message)
-				default:
-					golog.Warnf("unexpected message from backend %v", msg)
-				}
-			}
-		}(); err != nil {
-			return nil, err
-		}
-
-		ctx.pool[id].addConnection(frontend)
+		ctx.pool[id].addConnection(conn)
 	}
 	poolConn := pItem.GetConnection()
 	if poolConn == nil {
-		return nil, fmt.Errorf("could not retrieve connection for data node shard ID [%d]", id)
+		conn, err := ctx.NewConnection(id)
+		if err != nil {
+			golog.Errorf("could not create connection to data node shard [%d]: %v", id, err)
+			return nil, err
+		}
+		return &frontendConnection{
+			Frontend: conn,
+			pool:     pItem,
+		}, nil
 	}
 	return poolConn, nil
+}
+
+func (ctx *poolContext) NewConnection(id uint64) (*pgproto.Frontend, error) {
+	dataNode, err := ctx.DataNodes().GetDataNodeForDataNodeShard(id)
+	if err != nil {
+		return nil, err
+	}
+
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", dataNode.Address, dataNode.Port))
+	if err != nil {
+		golog.Errorf("could not resolve address for data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		return nil, err
+	}
+
+	conn, err := net.DialTCP("tcp", nil, addr)
+	if err != nil {
+		golog.Errorf("could not connect to data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		return nil, err
+	}
+
+	frontend, err := pgproto.NewFrontend(conn, conn)
+	if err != nil {
+		golog.Errorf("could not setup frontend for data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		return nil, err
+	}
+
+	if err := frontend.Send(&pgproto.StartupMessage{
+		ProtocolVersion: pgproto.ProtocolVersionNumber,
+		Parameters: map[string]string{
+			"user":     "postgres",
+			"database": fmt.Sprintf("noahdb_%d", id),
+		},
+	}); err != nil {
+		golog.Errorf("could not send startup message to data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		return nil, err
+	}
+
+	if err := func() error {
+		for {
+			response, err := frontend.Receive()
+			if err != nil {
+				return err
+			}
+
+			switch msg := response.(type) {
+			case *pgproto.Authentication:
+				if msg.Type != pgproto.AuthTypeOk {
+					panic("authentication is not implemented")
+				}
+			case *pgproto.ParameterStatus:
+			case *pgproto.ParameterDescription:
+			case *pgproto.BackendKeyData:
+			case *pgproto.ReadyForQuery:
+				return nil // We are good to go, exit the loop
+			case *pgproto.ErrorResponse:
+				return fmt.Errorf("from backend: %s", msg.Message)
+			default:
+				golog.Warnf("unexpected message from backend %T", msg)
+			}
+		}
+	}(); err != nil {
+		return nil, err
+	}
+
+	return frontend, nil
 }

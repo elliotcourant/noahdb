@@ -161,6 +161,7 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 					return e
 				}
 			}
+
 			if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
 				if e := wire.StatementBuffer().Push(commands.SendError{
 					Err: err,
