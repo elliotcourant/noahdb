@@ -78,3 +78,23 @@ func (rpc *RpcDriver) Join() error {
 		return fmt.Errorf("could not handle response message when joining: %v", msg)
 	}
 }
+
+func (rpc *RpcDriver) Discover() (string, error) {
+	if err := rpc.front.Send(&pgproto.DiscoveryRequest{}); err != nil {
+		return "", err
+	}
+
+	response, err := rpc.front.Receive()
+	if err != nil {
+		return "", err
+	}
+
+	switch msg := response.(type) {
+	case *pgproto.DiscoveryResponse:
+		return msg.LeaderAddr, nil
+	case *pgproto.ErrorResponse:
+		return "", fmt.Errorf("could not discover: %s", msg.Message)
+	default:
+		return "", fmt.Errorf("could not handle response message when discovering: %v", msg)
+	}
+}

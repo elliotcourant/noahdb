@@ -8,6 +8,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/elliotcourant/noahdb/pkg/util"
+	"github.com/hashicorp/raft"
 	"github.com/readystock/golog"
 	"net"
 	"os"
@@ -92,19 +93,39 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		}
 	}()
 
-	// If we are auto joining and no join address have been specified
-	if autoJoin && joinAddresses == "" {
-		potentialJoins, err := getAutoJoinAddresses()
-		if err != nil {
-			// If something went wrong inside the auto join address function, we likely
-			// would not be able to continue
-			panic(err)
+	joins := make([]raft.Server, 0)
+
+	// // If we are auto joining and no join address have been specified
+	// if autoJoin && joinAddresses == "" {
+	// 	potentialJoins, err := core.getAutoJoinAddresses()
+	// 	if err != nil {
+	// 		// If something went wrong inside the auto join address function, we likely
+	// 		// would not be able to continue
+	// 		panic(err)
+	// 	}
+	// 	golog.Infof("found %d potential auto-join addresses", len(potentialJoins))
+	// 	joins = potentialJoins
+	// } else {
+	//
+	// }
+
+	if joinAddresses != "" {
+		addresses := strings.Split(joinAddresses, ",")
+		for _, addr := range addresses {
+			if parsedAddress, err := util.ResolveLocalAddress(addr); err != nil {
+				golog.Errorf("could not parse join address [%s]: %v", addr, err)
+				panic(err)
+			} else {
+				joins = append(joins, raft.Server{
+					ID:       raft.ServerID(parsedAddress),
+					Address:  raft.ServerAddress(parsedAddress),
+					Suffrage: raft.Voter,
+				})
+			}
 		}
-		golog.Infof("found %d potential auto-join addresses", len(potentialJoins))
-		joinAddresses = strings.Join(potentialJoins, ",")
 	}
 
-	err = colony.InitColony(dataDirectory, joinAddresses, trans)
+	err = colony.InitColony(dataDirectory, joins, trans)
 	if err != nil {
 		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
 	} else if colony == nil {

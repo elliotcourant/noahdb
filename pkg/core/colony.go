@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
+	"github.com/hashicorp/raft"
 	"github.com/readystock/golog"
 	"net"
 	"os"
@@ -42,14 +43,14 @@ type Colony interface {
 
 	Neighbors() ([]*frunk.Server, error)
 
-	InitColony(dataDirectory, joinAddresses string, trans TransportWrapper) error
+	InitColony(dataDirectory string, joinAddresses []raft.Server, trans TransportWrapper) error
 }
 
 func NewColony() Colony {
 	return &base{}
 }
 
-func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans TransportWrapper) error {
+func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, trans TransportWrapper) error {
 	hostname, err := os.Hostname()
 	if err != nil {
 		panic(err)
@@ -65,23 +66,62 @@ func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans Transport
 		ID:  id,
 	})
 
-	joinAllowed, err := frunk.JoinAllowed(dataDirectory)
-	if err != nil {
-		return err
+	potentialNeighbors, err := getAutoJoinAddresses()
+
+	foundLeader := false
+
+	autoJoins := make([]raft.Server, 0)
+
+	// If we find other nodes in the cluster already, then we want to reach out to those nodes
+	// and see if any of them are established. If we find one that is, send a join request to the
+	// leader.
+	for _, neighbor := range potentialNeighbors {
+		rpcConn, err := rpcer.NewRPCDriver(id, trans.Addr(), string(neighbor.Address))
+		if err != nil {
+			golog.Errorf("failed to connect to potential neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
+			continue
+		}
+
+		leaderAddr, err := rpcConn.Discover()
+		if err != nil {
+			golog.Errorf("failed to discover via neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
+			continue
+		}
+
+		if leaderAddr == "" {
+			golog.Warnf("neighbor [%s] at address [%s] is not established and has no leader", neighbor.ID, neighbor.Address)
+			continue
+		}
+
+		foundLeader = true
+		autoJoins = append(autoJoins, raft.Server{
+			ID:       neighbor.ID,
+			Address:  neighbor.Address,
+			Suffrage: raft.Voter,
+		})
 	}
 
-	var joins []string
-	if joinAllowed {
-		joins, err = determineJoinAddresses(joinAddresses)
-		if err != nil {
-			return err
-		}
-	} else {
-		return err
+	if foundLeader {
+
 	}
+
+	// joinAllowed, err := frunk.JoinAllowed(dataDirectory)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// var joins []string
+	// if joinAllowed {
+	// 	joins, err = determineJoinAddresses(joinAddresses)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	// 	return err
+	// }
 
 	// Now, open store.
-	if err := fr.Open(len(joins) == 0); err != nil {
+	if err := fr.Open(!foundLeader); err != nil {
 		golog.Fatalf("failed to open store: %s", err.Error())
 	}
 
@@ -92,22 +132,22 @@ func (ctx *base) InitColony(dataDirectory, joinAddresses string, trans Transport
 		pool:     map[uint64]*poolItem{},
 	}
 
-	if len(joins) > 0 {
+	if len(joinAddresses) > 0 {
 		attempts := 1
 	RETRY_JOIN:
-		for i, joinAddr := range joins {
-			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr)
-			rpcDriver, err := rpcer.NewRPCDriver(id, trans.Addr(), joinAddr)
+		for i, joinAddr := range joinAddresses {
+			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr.Address)
+			rpcDriver, err := rpcer.NewRPCDriver(id, trans.Addr(), string(joinAddr.Address))
 			if err != nil {
-				golog.Warnf("could not connect to join address [%s]: %v", joinAddr, err)
+				golog.Warnf("could not connect to join address [%s]: %v", joinAddr.Address, err)
 				continue
 			}
 			if rpcDriver == nil {
-				golog.Warnf("failed to create frontend for address [%s]", joinAddr)
+				golog.Warnf("failed to create frontend for address [%s]", joinAddr.Address)
 				continue
 			}
 			if err := rpcDriver.Join(); err != nil {
-				golog.Warnf("could not join address [%s]: %v", joinAddr, err)
+				golog.Warnf("could not join address [%s]: %v", joinAddr.Address, err)
 				continue
 			} else {
 				golog.Infof("successfully joined at address [%s]", joinAddr)

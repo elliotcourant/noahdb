@@ -168,6 +168,11 @@ const (
 	Unknown
 )
 
+type Peer struct {
+	ID   string
+	Addr string
+}
+
 // Store is a SQLite database, where all changes are made via Raft consensus.
 type Store struct {
 	raftDir string
@@ -254,7 +259,7 @@ func New(ln Listener, c *StoreConfig) *Store {
 
 // Open opens the store. If enableSingle is set, and there are no existing peers,
 // then this node becomes the first node, and therefore leader, of the cluster.
-func (s *Store) Open(enableSingle bool) error {
+func (s *Store) Open(enableSingle bool, peers ...raft.Server) error {
 	s.closedMu.Lock()
 	defer s.closedMu.Unlock()
 	if s.closed {
@@ -317,15 +322,17 @@ func (s *Store) Open(enableSingle bool) error {
 		return fmt.Errorf("new raft: %s", err)
 	}
 
-	if enableSingle && newNode {
+	if newNode {
 		s.logger.Printf("bootstrap needed")
-		configuration := raft.Configuration{
-			Servers: []raft.Server{
-				{
-					ID:      config.LocalID,
-					Address: s.raftTn.LocalAddr(),
-				},
+		servers := []raft.Server{
+			{
+				ID:      config.LocalID,
+				Address: s.raftTn.LocalAddr(),
 			},
+		}
+		servers = append(servers, peers...)
+		configuration := raft.Configuration{
+			Servers: servers,
 		}
 		ra.BootstrapCluster(configuration)
 	} else {

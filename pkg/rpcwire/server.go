@@ -59,6 +59,17 @@ func serveRpcConnection(colony core.Colony, conn net.Conn) error {
 		}
 
 		switch message := msg.(type) {
+		case *pgproto.DiscoveryRequest:
+			if colony == nil {
+				backend.Send(&pgproto.DiscoveryResponse{})
+			} else {
+				addr, _, err := colony.LeaderID()
+				if err != nil || addr == "" {
+					backend.Send(&pgproto.DiscoveryResponse{})
+				} else {
+					backend.Send(&pgproto.DiscoveryResponse{LeaderAddr: addr})
+				}
+			}
 		case *pgproto.JoinRequest:
 			if err := wire.handleJoin(message); err != nil {
 				backend.Send(&pgproto.ErrorResponse{Message: err.Error()})

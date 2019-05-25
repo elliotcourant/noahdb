@@ -49,6 +49,8 @@ func (b *RpcBackend) Receive() (RpcFrontendMessage, error) {
 
 	var msg RpcFrontendMessage
 	switch b.msgType {
+	case RpcDiscoveryRequest:
+		msg = &DiscoveryRequest{}
 	case RpcJoinRequest:
 		msg = &b.join
 	default:

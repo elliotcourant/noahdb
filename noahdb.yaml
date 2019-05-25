@@ -42,6 +42,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: noahdb-storage-claim
+  labels:
+    app: noahdb
 spec:
   storageClassName: manual
   accessModes:
@@ -51,12 +53,32 @@ spec:
       storage: 1Gi
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: noahdb
+  labels:
+    app: noahdb
+spec:
+  type: LoadBalancer
+  externalIPs:
+    - 192.168.64.20
+  selector:
+    app: noahdb
+  ports:
+    - protocol: TCP
+      port: 5433
+      targetPort: 5433
+      name: noahdb
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: noahdb
   labels:
     app: noahdb
+    node: noahdb
 spec:
   replicas: 3
   selector:
@@ -76,6 +98,11 @@ spec:
       containers:
         - name: noahdb
           image: noahdb/node:local
+          lifecycle:
+            preStop:
+              exec:
+                # SIGTERM triggers a quick exit; gracefully terminate instead
+                command: ["echo","ITS THE END OF THE WORLD"]
           ports:
             - containerPort: 5433
               name: noahdb

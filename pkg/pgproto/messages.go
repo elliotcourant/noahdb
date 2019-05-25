@@ -92,6 +92,7 @@ const (
 	// RpcSequenceResponse indicates sequence metadata.
 	RpcSequenceResponse = 'S'
 	RpcJoinRequest      = 'j'
+	RpcDiscoveryRequest = 'm'
 
 	// Both
 	PgCopyData = 'd'

@@ -1,7 +1,8 @@
-package top
+package core
 
 import (
 	"fmt"
+	"github.com/hashicorp/raft"
 	"github.com/readystock/golinq"
 	"github.com/readystock/golog"
 	"io/ioutil"
@@ -11,16 +12,20 @@ import (
 	"k8s.io/client-go/rest"
 	"os"
 	"strings"
+	"time"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-func getAutoJoinAddresses() ([]string, error) {
+func getAutoJoinAddresses() ([]raft.Server, error) {
 	// Check to see if we are currently running inside of Kubernetes
 	_, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST")
 	if !ok {
 		return nil, fmt.Errorf("auto-join is only supported when running within kubernetes")
 	}
+
+	golog.Debugf("waiting a few seconds to give Kubernetes a chance to start any other pods")
+	time.Sleep(5 * time.Second)
 
 	host := os.Getenv("HOSTNAME")
 
@@ -47,7 +52,7 @@ func getAutoJoinAddresses() ([]string, error) {
 		return nil, err
 	}
 
-	joinAddresses := make([]string, 0)
+	joinAddresses := make([]raft.Server, 0)
 	items := make([]v1.Pod, 0)
 	linq.From(pods.Items).OrderBy(func(i interface{}) interface{} {
 		pod, ok := i.(v1.Pod)
@@ -60,14 +65,9 @@ func getAutoJoinAddresses() ([]string, error) {
 
 	for _, pod := range items {
 		if pod.Name == host {
-			// This is a bit weird, but basically if this is the first node in the cluster
-			// alphabetically then we want to have it try to be the leader.
-			if len(joinAddresses) == 0 {
-				golog.Warnf("this node should be the default leader for the cluster")
-				return joinAddresses, nil
-			}
 			continue
 		}
+
 		addr := pod.Status.PodIP
 		container, ok := linq.From(pod.Spec.Containers).FirstWith(func(i interface{}) bool {
 			container, ok := i.(v1.Container)
@@ -76,15 +76,23 @@ func getAutoJoinAddresses() ([]string, error) {
 		if !ok {
 			continue
 		}
-		hasNoahPort := linq.From(container.Ports).AnyWith(func(i interface{}) bool {
+		containerPort, hasNoahPort := linq.From(container.Ports).FirstWith(func(i interface{}) bool {
 			port, ok := i.(v1.ContainerPort)
-			return ok && port.ContainerPort == 5433
-		})
-		if !hasNoahPort {
+			return ok && port.Name == "noahdb"
+		}).(v1.ContainerPort)
+
+		if !hasNoahPort || addr == "" {
 			continue
 		}
-		golog.Debugf("found pod [%s] address: %s", pod.Name, pod.Status.PodIP)
-		joinAddresses = append(joinAddresses, fmt.Sprintf("%s:%d", addr, 5433))
+
+		processedAddress := fmt.Sprintf("%s:%d", addr, containerPort.ContainerPort)
+
+		golog.Debugf("found pod [%s] address: %s", pod.Name, processedAddress)
+		joinAddresses = append(joinAddresses, raft.Server{
+			ID:       raft.ServerID(pod.Name),
+			Address:  raft.ServerAddress(processedAddress),
+			Suffrage: raft.Voter,
+		})
 	}
 	return joinAddresses, nil
 }
