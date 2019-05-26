@@ -2,6 +2,7 @@ package sql
 
 import (
 	"fmt"
+	"github.com/readystock/golinq"
 	"github.com/readystock/golog"
 	"strings"
 
@@ -247,7 +248,63 @@ func (stmt *createStmtPlanner) handleColumns(s *session) error {
 
 				stmt.columns[i] = column
 			case ast.Constraint:
+				// Its possible for primary keys, foreign keys and identities to be defined
+				// somewhere other than the column line itself, if this happens we still want to
+				// handle it gracefully.
+				switch col.Contype {
+				case ast.CONSTR_PRIMARY:
+					if hasPrimaryKey {
+						return fmt.Errorf("cannot have more than 1 primary key per table")
+					}
 
+					if len(col.Keys.Items) != 1 {
+						return fmt.Errorf("currently noah only supports single column primary keys")
+					}
+
+					// We want to search columns based on the column name.
+					key := strings.ToLower(col.Keys.Items[0].(ast.String).Str)
+
+					colIndex := linq.From(stmt.columns).IndexOf(func(i interface{}) bool {
+						column, ok := i.(core.Column)
+						return ok && column.ColumnName == key
+					})
+
+					if colIndex < 0 {
+						return fmt.Errorf("could not use column [%s] as primary key, it is not defined in the create statement", key)
+					}
+
+					if err := verifyPrimaryKeyColumnType(stmt.columns[colIndex]); err != nil {
+						return err
+					}
+
+					stmt.columns[colIndex].PrimaryKey = true
+					stmt.columns[colIndex].Nullable = false
+					hasPrimaryKey = true
+				case ast.CONSTR_FOREIGN:
+					if len(col.FkAttrs.Items) != 1 {
+						return fmt.Errorf("only 1 column can be used in a foreign key constraint")
+					}
+
+					key := strings.ToLower(col.FkAttrs.Items[0].(ast.String).Str)
+
+					colIndex := linq.From(stmt.columns).IndexOf(func(i interface{}) bool {
+						column, ok := i.(core.Column)
+						return ok && column.ColumnName == key
+					})
+
+					if err := verifyForeignKeyColumn(&stmt.columns[colIndex], col); err != nil {
+						return err
+					}
+
+					if stmt.columns[colIndex].ShardKey {
+						if hasShardKey {
+							return fmt.Errorf("cannot have multiple foreign keys referencing the tenants table")
+						}
+						hasShardKey = true
+					}
+				default:
+					return fmt.Errorf("could not handle contraint type [%s]", col.Contype)
+				}
 			default:
 				panic(fmt.Sprintf("could not parse column item ast of type: %T", col))
 			}

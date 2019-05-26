@@ -79,7 +79,7 @@
 
 [[constraint]]
   name = "github.com/readystock/golinq"
-  version = "3.0.0"
+  branch = "master"
 
 [[constraint]]
   branch = "master"

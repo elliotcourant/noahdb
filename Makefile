@@ -42,6 +42,7 @@ strings:
 	@stringer -type ClusterState,ConsistencyLevel,BackupFormat -output pkg/frunk/store.string.go pkg/frunk/store.go
 
 	@stringer -type Context -output pkg/ast/context.string.go pkg/ast/context.go
+	@stringer -type ConstrType -output pkg/ast/constr_type.string.go pkg/ast/constr_type.go
 	@stringer -type ObjectType -output pkg/ast/object_type.string.go pkg/ast/object_type.go
 	@stringer -type SortByDir -output pkg/ast/sort_by_dir.string.go pkg/ast/sort_by_dir.go
 	@stringer -type StmtType -output pkg/ast/stmt_type.string.go pkg/ast/stmt_type.go
