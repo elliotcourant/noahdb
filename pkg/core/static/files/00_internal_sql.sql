@@ -20,7 +20,7 @@ CREATE TABLE type_aliases (
 
 CREATE TABLE settings (
     setting_id    BIGINT PRIMARY KEY,
-    setting_key  TEXT    NOT NULL UNIQUE,
+    setting_key   TEXT    NOT NULL UNIQUE,
     type_id       BIGINT  NOT NULL REFERENCES types (type_id),
     int_value     BIGINT  NULL,
     boolean_value BOOLEAN NULL,
@@ -255,10 +255,18 @@ VALUES (16, 'bool', false),
 INSERT INTO type_aliases (alias_id, type_id, alias_name)
 VALUES (1, 16, 'boolean'),
        (2, 20, 'bigint'),
-       (3, 21, 'smallint'),
-       (4, 23, 'int'),
-       (5, 23, 'integer'),
-       (6, 25, 'string');
+       (3, 1016, '_bigint'),
+       (4, 21, 'smallint'),
+       (5, 1005, '_smallint'),
+       (6, 23, 'int'),
+       (7, 1007, '_int'),
+       (8, 23, 'integer'),
+       (9, 1007, '_integer'),
+       (10, 25, 'string'),
+       (11, 1184, 'timestamp with time zone'),
+       (12, 1185, '_timestamp with time zone'),
+       (13, 1266, 'time with time zone'),
+       (14, 1270, '_time with time zone');
 
 INSERT INTO settings (setting_id, setting_key, type_id, int_value, boolean_value, text_value)
 VALUES (1, 'replication_mode', 20, 0, null, null),

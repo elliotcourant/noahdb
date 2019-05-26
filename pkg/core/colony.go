@@ -21,6 +21,7 @@ type Colony interface {
 	Tables() TableContext
 	Schema() SchemaContext
 	Setting() SettingContext
+	Types() TypeContext
 	Users() UserContext
 	Pool() PoolContext
 	Query(string) (*frunk.QueryResponse, error)
