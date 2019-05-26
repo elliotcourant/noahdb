@@ -7,10 +7,10 @@ import (
 )
 
 type insertStmtPlanner struct {
-	tree   ast.InsertStmt
+	tree ast.InsertStmt
 }
 
-func NewInsertStatementPlan(tree ast.InsertStmt) *insertStmtPlanner {
+func newInsertStatementPlan(tree ast.InsertStmt) *insertStmtPlanner {
 	return &insertStmtPlanner{
 		tree: tree,
 	}

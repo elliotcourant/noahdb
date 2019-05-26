@@ -15,7 +15,7 @@ type selectStmtPlanner struct {
 	tree   ast.SelectStmt
 }
 
-func NewSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
+func newSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
 	return &selectStmtPlanner{
 		tree: tree,
 	}

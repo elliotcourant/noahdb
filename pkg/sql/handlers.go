@@ -62,11 +62,11 @@ func getStatementHandler(tree ast.Stmt) (interface{}, error) {
 	// case ast.CreateRangeStmt:
 	// case ast.CreateRoleStmt:
 	case ast.CreateSchemaStmt:
-		return NewCreateSchemaStatementPlan(stmt), nil
+		return newCreateSchemaStatementPlan(stmt), nil
 	// case ast.CreateSeqStmt:
 	// case ast.CreateStatsStmt:
 	case ast.CreateStmt:
-		return NewCreateStatementPlan(stmt), nil
+		return newCreateStatementPlan(stmt), nil
 	// case ast.CreateSubscriptionStmt:
 	// case ast.CreateTableAsStmt:
 	// case ast.CreateTableSpaceStmt:
@@ -96,7 +96,7 @@ func getStatementHandler(tree ast.Stmt) (interface{}, error) {
 	// case nodes.ImportForeignSchemaStmt:
 	// case nodes.IndexStmt:
 	case ast.InsertStmt:
-		return NewInsertStatementPlan(stmt), nil
+		return newInsertStatementPlan(stmt), nil
 	// case nodes.ListenStmt:
 	// case nodes.LoadStmt:
 	// case nodes.LockStmt:
@@ -110,7 +110,7 @@ func getStatementHandler(tree ast.Stmt) (interface{}, error) {
 	// case nodes.RuleStmt:
 	// case nodes.SecLabelStmt:
 	case ast.SelectStmt:
-		return NewSelectStatementPlan(stmt), nil
+		return newSelectStatementPlan(stmt), nil
 	// case nodes.SetOperationStmt:
 	// case ast.TransactionStmt:
 	// 	return CreateTransactionStatement(stmt), nil

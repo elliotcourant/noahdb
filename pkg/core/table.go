@@ -26,12 +26,37 @@ type TableContext interface {
 	GetColumns(int32) ([]Column, error)
 	GetShardColumn(int32) (Column, error)
 	GetTablesInSchema(schema string, names ...string) ([]Table, error)
+	GetTenantTable() (Table, bool, error)
 }
 
 func (ctx *base) Tables() TableContext {
 	return &tableContext{
 		ctx,
 	}
+}
+
+func (ctx *tableContext) GetTenantTable() (Table, bool, error) {
+	compiledSql, _, _ := getTablesQuery.
+		Where(goqu.Ex{
+			"table_type": TableType_Tenant,
+		}).
+		Limit(1).
+		ToSql()
+
+	rows, err := ctx.db.Query(compiledSql)
+	if err != nil {
+		return Table{}, false, err
+	}
+
+	result, err := ctx.tablesFromRows(rows)
+	if err != nil {
+		return Table{}, false, err
+	}
+	// No tenants table exists.
+	if len(result) == 0 {
+		return Table{}, false, nil
+	}
+	return result[0], true, nil
 }
 
 func (ctx *tableContext) GetTables(names ...string) ([]Table, error) {

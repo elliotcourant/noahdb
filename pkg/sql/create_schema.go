@@ -10,7 +10,7 @@ type createSchemaStmtPlanner struct {
 	tree   ast.CreateSchemaStmt
 }
 
-func NewCreateSchemaStatementPlan(tree ast.CreateSchemaStmt) *createSchemaStmtPlanner {
+func newCreateSchemaStatementPlan(tree ast.CreateSchemaStmt) *createSchemaStmtPlanner {
 	return &createSchemaStmtPlanner{
 		tree: tree,
 	}

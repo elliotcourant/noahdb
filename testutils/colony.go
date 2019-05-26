@@ -14,6 +14,7 @@ import (
 )
 
 func NewTestColonyEx(listenAddr string, joinAddresses ...string) (core.Colony, func()) {
+	golog.SetLevel("trace")
 	tempdir, err := ioutil.TempDir("", "core-temp")
 	if err != nil {
 		panic(err)
