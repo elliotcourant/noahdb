@@ -72,6 +72,9 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	dataNodeShards := make([]uint64, 0)
 	switch plan.ShardID {
 	case 0: // If this query does not target a specific shard.
+		// If we are performing a read then the planner should have accommodated for the read being
+		// sent to any shard, otherwise a shard would be specified. So we can send this query to
+		// any random node.
 		if _, ok := plan.Types[PlanType_READ]; ok {
 			// Get a single node to execute the read query.
 			id, err := s.Colony().DataNodes().GetRandomDataNodeShardID()
@@ -79,6 +82,18 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 				return ExpandedPlan{}, err
 			}
 			dataNodeShards = append(dataNodeShards, id)
+			break
+		}
+
+		// If we are performing a write, and there is no shard ID then that means the write must be
+		// performed on ALL shards in the cluster.
+		if _, ok := plan.Types[PlanType_WRITE]; ok {
+			ids, err := s.Colony().DataNodes().GetDataNodeShardIDs()
+			if err != nil {
+				return ExpandedPlan{}, err
+			}
+			dataNodeShards = append(dataNodeShards, ids...)
+			break
 		}
 	default:
 		tempDataNodeShardIds, err := s.Colony().DataNodes().GetDataNodeShardIDsForShard(plan.ShardID)
@@ -93,10 +108,14 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 		if _, ok := plan.Types[PlanType_READ]; ok {
 			// Get any readable node for the given shard ID
 			dataNodeShards = append(dataNodeShards, tempDataNodeShardIds[0])
-		} else if _, ok := plan.Types[PlanType_WRITE]; ok {
+			break
+		}
+
+		if _, ok := plan.Types[PlanType_WRITE]; ok {
 			// Get all the nodes that are writable for the given shard ID
 			dataNodeShards = tempDataNodeShardIds
 			readOnly = false
+			break
 		}
 	}
 
@@ -108,11 +127,9 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 			DataNodeShardID: id,
 		}
 		if readPlan, ok := plan.Types[PlanType_READ]; ok {
-			task.Query,
-				task.Type = readPlan.Query, readPlan.Type
+			task.Query, task.Type = readPlan.Query, readPlan.Type
 		} else if writePlan, ok := plan.Types[PlanType_WRITE]; ok {
-			task.Query,
-				task.Type = writePlan.Query, writePlan.Type
+			task.Query, task.Type = writePlan.Query, writePlan.Type
 		}
 		tasks[i] = task
 	}

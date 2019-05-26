@@ -35,7 +35,7 @@ func TestShardContext_GetWriteDataNodeShards(t *testing.T) {
 	defer cleanup()
 	shards, err := colony.Shards().GetWriteDataNodeShards(1)
 	assert.NoError(t, err)
-	assert.Empty(t, shards)
+	assert.NotEmpty(t, shards)
 }
 
 func TestShardContext_BalanceOrphanedShards(t *testing.T) {

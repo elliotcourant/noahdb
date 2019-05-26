@@ -19,9 +19,12 @@ CREATE TABLE type_aliases (
 );
 
 CREATE TABLE settings (
-    setting_id BIGINT PRIMARY KEY,
-    type_id    BIGINT NOT NULL REFERENCES types (type_id),
-    value      BLOB
+    setting_id    BIGINT PRIMARY KEY,
+    setting_key  TEXT    NOT NULL UNIQUE,
+    type_id       BIGINT  NOT NULL REFERENCES types (type_id),
+    int_value     BIGINT  NULL,
+    boolean_value BOOLEAN NULL,
+    text_value    TEXT    NULL
 );
 
 CREATE TABLE data_nodes (
@@ -256,3 +259,11 @@ VALUES (1, 16, 'boolean'),
        (4, 23, 'int'),
        (5, 23, 'integer'),
        (6, 25, 'string');
+
+INSERT INTO settings (setting_id, setting_key, type_id, int_value, boolean_value, text_value)
+VALUES (1, 'replication_mode', 20, 0, null, null),
+       (2, 'replication_factor', 20, 1, null, null),
+       (3, 'max_pool_size', 20, 5, null, null),
+       (4, 'min_pool_size', 20, 0, null, null),
+       (5, 'pool_refresh_interval', 1186, null, null, '30 seconds'),
+       (6, 'number_of_shards', 20, 3, null, null);

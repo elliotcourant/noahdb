@@ -10,6 +10,7 @@ type createStmtPlanner struct {
 }
 
 func NewCreateStatementPlan(tree ast.CreateStmt) *createStmtPlanner {
+	// ast.VariableShowStmt{}
 	return &createStmtPlanner{
 		tree: tree,
 	}
@@ -25,5 +26,20 @@ func (stmt *createStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 	if len(tables) > 0 && !stmt.tree.IfNotExists {
 		return InitialPlan{}, false, fmt.Errorf("table with name [%s] already exists", tableName)
 	}
-	return InitialPlan{}, false, nil
+
+	compiledQuery, err := stmt.tree.Deparse(ast.Context_None)
+	if err != nil {
+		return InitialPlan{}, false, fmt.Errorf("could not recompile query: %v", err)
+	}
+
+	return InitialPlan{
+		Target:  PlanTarget_STANDARD,
+		ShardID: 0,
+		Types: map[PlanType]InitialPlanTask{
+			PlanType_WRITE: {
+				Query: compiledQuery,
+				Type:  stmt.tree.StatementType(),
+			},
+		},
+	}, true, nil
 }

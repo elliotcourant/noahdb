@@ -12,6 +12,6 @@ func TestDataNodeContext_GetRandomDataNode(t *testing.T) {
 	t.Run("get random node", func(t *testing.T) {
 		dataNode, err := colony.DataNodes().GetRandomDataNodeShardID()
 		assert.NoError(t, err)
-		assert.Empty(t, dataNode)
+		assert.NotEmpty(t, dataNode)
 	})
 }

@@ -23,6 +23,7 @@ type DataNodeContext interface {
 	GetDataNodesForShard(uint64) ([]DataNode, error)
 	GetDataNodeForDataNodeShard(uint64) (DataNode, error)
 	GetRandomDataNodeShardID() (uint64, error)
+	GetDataNodeShardIDs() ([]uint64, error)
 	GetDataNodeShardIDsForShard(uint64) ([]uint64, error)
 	NewDataNode(address string, password string, port string) (DataNode, error)
 }
@@ -87,6 +88,24 @@ func (ctx *dataNodeContext) GetDataNodes() ([]DataNode, error) {
 		return nil, err
 	}
 	return ctx.dataNodesFromRows(response)
+}
+
+func (ctx *dataNodeContext) GetDataNodeShardIDs() ([]uint64, error) {
+	compiledQuery, _, _ := goqu.
+		From("data_nodes").
+		Select("data_node_shards.data_node_shard_id").
+		InnerJoin(
+			goqu.I("data_node_shards"),
+			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
+		Where(goqu.Ex{
+			"data_nodes.healthy": true,
+		}).
+		ToSql()
+	response, err := ctx.db.Query(compiledQuery)
+	if err != nil {
+		return nil, err
+	}
+	return idArray(response)
 }
 
 func (ctx *dataNodeContext) GetRandomDataNodeShardID() (uint64, error) {

@@ -14,14 +14,19 @@ func TestNewCreateStatementPlan(t *testing.T) {
 	defer cleanup()
 	time.Sleep(1 * time.Second)
 
-	t.Run("create simple table", func(t *testing.T) {
-		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
-		if err != nil {
-			panic(err)
-		}
-		defer db.Close()
+	db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
 
+	t.Run("create simple table", func(t *testing.T) {
 		_, err = db.Exec(`CREATE TABLE accounts (id BIGSERIAL, name TEXT UNIQUE);`)
+		assert.NoError(t, err)
+	})
+
+	t.Run("create tenants table", func(t *testing.T) {
+		_, err = db.Exec(`CREATE TABLE accounts (id BIGSERIAL, name TEXT UNIQUE) TABLESPACE "noah.tenants";`)
 		assert.NoError(t, err)
 	})
 }

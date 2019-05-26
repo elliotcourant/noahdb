@@ -20,6 +20,7 @@ type Colony interface {
 	DataNodes() DataNodeContext
 	Tables() TableContext
 	Schema() SchemaContext
+	Setting() SettingContext
 	Users() UserContext
 	Pool() PoolContext
 	Query(string) (*frunk.QueryResponse, error)

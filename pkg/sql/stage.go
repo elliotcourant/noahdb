@@ -62,6 +62,10 @@ func (s *session) stageQueryToResult(statement ast.Stmt) error {
 		return InitialPlan{}, fmt.Errorf("could not generate plan for statement")
 	}()
 
+	if err != nil {
+		return err
+	}
+
 	expandedPlan, err := s.expandQueryPlan(plan)
 	golog.Debugf("planning and expanding of statement took %s", time.Since(planAndExpandTimestamp))
 	if err != nil {

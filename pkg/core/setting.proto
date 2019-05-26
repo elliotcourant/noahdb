@@ -2,11 +2,33 @@ syntax = "proto3";
 
 package core;
 
-enum SettingKey {
-    SearchPath = 0;
+enum SettingKeyOptions {
+    UnknownKey = 0;
+    ReplicationMode = 1;
+    ReplicationFactor = 2;
+    MaxPoolSize = 3;
+    MinPoolSize = 4;
+    PoolRefreshInterval = 5;
+    NumberOfShards = 6;
+}
+
+enum ReplicationModeOptions {
+    None = 0;
+    Query = 1;
+    Logical = 2;
 }
 
 message Setting {
-    uint64 SettingID = 1;
+    SettingKeyOptions SettingID = 1;
     string SettingKey = 2;
+    uint32 TypeID = 3;
+    oneof IValue {
+        int64 IntegerValue = 4;
+    }
+    oneof BValue {
+        bool BooleanValue = 5;
+    }
+    oneof TValue {
+        string TextValue = 6;
+    }
 }

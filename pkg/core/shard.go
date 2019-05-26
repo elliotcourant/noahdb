@@ -142,7 +142,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		}
 
 		dataNodeAddress := fmt.Sprintf("%s:%d", dataNodeMeta.GetAddress(), dataNodeMeta.GetPort())
-		golog.Debugf("trying to connect to data node [%s] at %s to init shards", dataNode.DataNodeID, dataNodeAddress)
+		golog.Debugf("trying to connect to data node [%d] at %s to init shards", dataNode.DataNodeID, dataNodeAddress)
 
 		connStr := fmt.Sprintf("postgres://postgres@%s/postgres?sslmode=disable", dataNodeAddress)
 		db, err := sql.Open("postgres", connStr)
