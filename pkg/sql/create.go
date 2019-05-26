@@ -10,8 +10,9 @@ import (
 )
 
 type createStmtPlanner struct {
-	table core.Table
-	tree  ast.CreateStmt
+	table   core.Table
+	columns []core.Column
+	tree    ast.CreateStmt
 }
 
 // NewCreateStatementPlan creates a new planner for create statements.
@@ -111,25 +112,67 @@ func (stmt *createStmtPlanner) handleTableType() error {
 }
 
 func (stmt *createStmtPlanner) handleColumns(s *session) error {
-	// verifyPrimaryKeyColumnType := func(column core.Column, typ core.Type) error {
-	// 	switch typ {
-	// 	case core.Type_int8, core.Type_int4, core.Type_int2:
-	// 		// We only allow for these two types to be primary keys at this time.
-	// 		return nil
-	// 	default:
-	// 		// At the moment noah only supports integer column sharding.
-	// 		return fmt.Errorf("column [%s] cannot be a primary key, a primary key must be an integer column", column.ColumnName)
-	// 	}
-	// }
+	verifyPrimaryKeyColumnType := func(column core.Column) error {
+		switch column.Type {
+		case core.Type_int8, core.Type_int4, core.Type_int2:
+			// We only allow for these types to be primary keys at this time.
+			return nil
+		default:
+			// At the moment noah only supports integer column sharding.
+			return fmt.Errorf("column [%s] cannot be a primary key, a primary key must be an integer column", column.ColumnName)
+		}
+	}
+
+	verifyForeignKeyColumn := func(column *core.Column, constraint ast.Constraint) error {
+		if len(constraint.PkAttrs.Items) != 1 {
+			return fmt.Errorf("currently noahdb only supports single column foreign keys")
+		}
+
+		referenceTableName := strings.ToLower(*constraint.Pktable.Relname)
+		key := strings.ToLower(constraint.PkAttrs.Items[0].(ast.String).Str)
+
+		referenceTable, ok, err := s.Colony().Tables().GetTable(referenceTableName)
+		if err != nil {
+			return fmt.Errorf("could not create constraint referencing table [%s]: %v", referenceTableName, err)
+		}
+		if !ok {
+			return fmt.Errorf("could not create constraint referencing table [%s], it does not exist", referenceTableName)
+		}
+
+		referencePrimaryKey, ok, err := s.Colony().Tables().GetPrimaryKeyColumnByName(referenceTableName)
+		if err != nil {
+			return fmt.Errorf("could not verify primary key on reference table [%s]: %v", referenceTableName, err)
+		}
+		if !ok {
+			return fmt.Errorf("could not create foreign key referencing table [%s], the table does not have a primary key", referenceTableName)
+		}
+
+		if key != referencePrimaryKey.ColumnName {
+			return fmt.Errorf("referenced table [%s] has primary key [%s], cannot create a reference to column [%s]", referenceTableName, referencePrimaryKey.ColumnName, key)
+		}
+
+		column.ForeignColumnID = referencePrimaryKey.ColumnID
+
+		// If this column is reference the tenant table, then this column is the shard key
+		// for this new table.
+		if referenceTable.TableType == core.TableType_Tenant {
+			column.ShardKey = true
+		}
+		return nil
+	}
 
 	if stmt.tree.TableElts.Items != nil && len(stmt.tree.TableElts.Items) > 0 {
-		// columns := make([]core.Column, len(stmt.tree.TableElts.Items))
+		stmt.columns = make([]core.Column, len(stmt.tree.TableElts.Items))
 
-		for _, tableItem := range stmt.tree.TableElts.Items {
+		hasPrimaryKey, hasShardKey := false, false
+
+		for i, tableItem := range stmt.tree.TableElts.Items {
 			switch col := tableItem.(type) {
 			case ast.ColumnDef:
 				column := core.Column{
 					ColumnName: *col.Colname,
+					Sort:       int32(i),
+					Nullable:   !col.IsNotNull,
 				}
 
 				if col.TypeName != nil &&
@@ -147,7 +190,62 @@ func (stmt *createStmtPlanner) handleColumns(s *session) error {
 
 					golog.Verbosef("table [%s] column [%s] type [%s]", stmt.table.TableName, column.ColumnName, typeName)
 
+					// Handle serial types
+					switch typeName {
+					case "bigserial":
+						typeName = "bigint"
+						column.Serial = true
+					case "serial":
+						typeName = "int"
+						column.Serial = true
+					}
+
+					col.TypeName.Names.Items = []ast.Node{ast.String{Str: typeName}}
+
+					pgType, ok, err := s.Colony().Types().GetTypeByName(typeName)
+					if err != nil {
+						return err
+					} else if !ok {
+						return fmt.Errorf("could not resolve type [%s]", typeName)
+					}
+					column.Type = pgType
 				}
+
+				// Check to see if this column is the primary key, primary keys will be used for tables
+				// like account tables. If someone tries to create a table without a primary key an
+				// error will be returned at this time.
+				if col.Constraints.Items != nil && len(col.Constraints.Items) > 0 {
+					for _, c := range col.Constraints.Items {
+						constraint := c.(ast.Constraint)
+						switch constraint.Contype {
+						case ast.CONSTR_PRIMARY:
+							if hasPrimaryKey {
+								return fmt.Errorf("cannot have more than 1 primary key per table")
+							}
+
+							if err := verifyPrimaryKeyColumnType(column); err != nil {
+								return err
+							}
+
+							column.Nullable = false
+
+							hasPrimaryKey, column.PrimaryKey = true, true
+						case ast.CONSTR_FOREIGN:
+							if err := verifyForeignKeyColumn(&column, constraint); err != nil {
+								return err
+							}
+
+							if column.ShardKey {
+								if hasShardKey {
+									return fmt.Errorf("cannot have multiple foreign keys referencing the tenants table")
+								}
+								hasShardKey = true
+							}
+						}
+					}
+				}
+
+				stmt.columns[i] = column
 			case ast.Constraint:
 
 			default:

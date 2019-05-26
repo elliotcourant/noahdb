@@ -21,12 +21,12 @@ func TestNewCreateStatementPlan(t *testing.T) {
 	defer db.Close()
 
 	t.Run("create simple table", func(t *testing.T) {
-		_, err = db.Exec(`CREATE TABLE accounts (id BIGSERIAL, name TEXT UNIQUE);`)
+		_, err = db.Exec(`CREATE TABLE accounts (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE);`)
 		assert.NoError(t, err)
 	})
 
 	t.Run("create tenants table", func(t *testing.T) {
-		_, err = db.Exec(`CREATE TABLE accounts (id BIGSERIAL, name TEXT UNIQUE) TABLESPACE "noah.tenants";`)
+		_, err = db.Exec(`CREATE TABLE accounts (id BIGSERIAL PRIMARY KEY, name TEXT NULL UNIQUE) TABLESPACE "noah.tenants";`)
 		assert.NoError(t, err)
 	})
 }

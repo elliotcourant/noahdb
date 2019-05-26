@@ -71,15 +71,16 @@ CREATE TABLE tables (
 );
 
 CREATE TABLE columns (
-    column_id   BIGINT PRIMARY KEY,
-    table_id    INT     NOT NULL REFERENCES tables (table_id) ON DELETE CASCADE,
-    type_id     INT     NOT NULL REFERENCES types (type_id) ON DELETE RESTRICT,
-    sort        INT     NOT NULL,
-    column_name TEXT    NOT NULL,
-    primary_key BOOLEAN NOT NULL,
-    nullable    BOOLEAN NOT NULL,
-    shard_key   BOOLEAN NOT NULL,
-    serial      BOOLEAN NOT NULL,
+    column_id         BIGINT PRIMARY KEY,
+    table_id          INT     NOT NULL REFERENCES tables (table_id) ON DELETE CASCADE,
+    type_id           INT     NOT NULL REFERENCES types (type_id) ON DELETE RESTRICT,
+    sort              INT     NOT NULL,
+    column_name       TEXT    NOT NULL,
+    primary_key       BOOLEAN NOT NULL,
+    nullable          BOOLEAN NOT NULL,
+    shard_key         BOOLEAN NOT NULL,
+    serial            BOOLEAN NOT NULL,
+    foreign_reference BIGINT  NULL REFERENCES columns (column_id) ON DELETE SET NULL,
     UNIQUE (table_id, column_name)
 );
 
