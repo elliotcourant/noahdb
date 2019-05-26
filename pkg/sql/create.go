@@ -18,7 +18,6 @@ type createStmtPlanner struct {
 
 // NewCreateStatementPlan creates a new planner for create statements.
 func newCreateStatementPlan(tree ast.CreateStmt) *createStmtPlanner {
-	// ast.VariableShowStmt{}
 	return &createStmtPlanner{
 		table: core.Table{},
 		tree:  tree,
@@ -57,6 +56,11 @@ func (stmt *createStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 
 	if err := stmt.handleColumns(s); err != nil {
 		return InitialPlan{}, false, err
+	}
+
+	stmt.table, stmt.columns, err = s.Colony().Tables().NewTable(stmt.table, stmt.columns)
+	if err != nil {
+		return InitialPlan{}, false, fmt.Errorf("could not create table internally: %v", err)
 	}
 
 	compiledQuery, err := stmt.tree.Deparse(ast.Context_None)

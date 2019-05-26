@@ -62,7 +62,7 @@ func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, t
 	fr := frunk.New(trans.RaftTransport(), &frunk.StoreConfig{
 		DBConf: &frunk.DBConfig{
 			DSN:    "",
-			Memory: true,
+			Memory: false,
 		},
 		Dir: dataDirectory,
 		ID:  id,

@@ -5,6 +5,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/goqu"
+	"strings"
 )
 
 var (
@@ -22,6 +23,7 @@ type tableContext struct {
 }
 
 type TableContext interface {
+	NewTable(table Table, columns []Column) (Table, []Column, error)
 	GetTable(name string) (Table, bool, error)
 	GetTables(...string) ([]Table, error)
 	GetColumns(tableId uint64) ([]Column, error)
@@ -35,6 +37,76 @@ func (ctx *base) Tables() TableContext {
 	return &tableContext{
 		ctx,
 	}
+}
+
+func (ctx *tableContext) NewTable(table Table, columns []Column) (Table, []Column, error) {
+	// exists, err := ctx.Exists(table.TableName)
+	tableId, err := ctx.db.NextSequenceValueById(tableIdSequencePath)
+	if err != nil {
+		return Table{}, nil, err
+	}
+	table.TableID = tableId
+
+	for i := range columns {
+		colId, err := ctx.db.NextSequenceValueById(columnIdSequencePath)
+		if err != nil {
+			return Table{}, nil, err
+		}
+		columns[i].TableID, columns[i].ColumnID = tableId, colId
+	}
+
+	insertTableSql := goqu.
+		From("tables").
+		Insert(goqu.Record{
+			"table_id":   table.TableID,
+			"schema_id":  1,
+			"table_name": table.TableName,
+			"table_type": table.TableType,
+		}).Sql
+
+	columnSql := make([]string, len(columns))
+	for i, col := range columns {
+		fcid := &col.ForeignColumnID
+		if *fcid == 0 {
+			fcid = nil
+		}
+		columnSql[i] = goqu.
+			From("columns").
+			Insert(goqu.Record{
+				"column_id":         col.ColumnID,
+				"table_id":          col.TableID,
+				"type_id":           col.Type,
+				"sort":              col.Sort,
+				"column_name":       col.ColumnName,
+				"primary_key":       col.PrimaryKey,
+				"nullable":          col.Nullable,
+				"shard_key":         col.ShardKey,
+				"serial":            col.Serial,
+				"foreign_column_id": fcid,
+			}).Sql
+	}
+
+	compiledSql := strings.Join(append([]string{insertTableSql}, columnSql...), ";\n")
+
+	_, err = ctx.db.Exec(compiledSql)
+	return table, columns, err
+}
+
+func (ctx *tableContext) Exists(name string) (bool, error) {
+	compiledSql, _, _ := goqu.
+		From("tables").
+		Select(
+			goqu.COUNT("tables.table_id"),
+		).
+		Where(goqu.Ex{
+			"tables.table_name": name,
+		}).
+		ToSql()
+	rows, err := ctx.db.Query(compiledSql)
+	if err != nil {
+		return false, err
+	}
+	return exists(rows)
 }
 
 func (ctx *tableContext) GetTenantTable() (Table, bool, error) {

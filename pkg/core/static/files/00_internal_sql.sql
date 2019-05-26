@@ -55,8 +55,6 @@ CREATE TABLE data_node_shards (
     FOREIGN KEY (shard_id) REFERENCES shards (shard_id)
 );
 
-
-
 CREATE TABLE schemas (
     schema_id   INT PRIMARY KEY,
     schema_name TEXT NOT NULL UNIQUE
@@ -80,9 +78,12 @@ CREATE TABLE columns (
     nullable          BOOLEAN NOT NULL,
     shard_key         BOOLEAN NOT NULL,
     serial            BOOLEAN NOT NULL,
-    foreign_reference BIGINT  NULL REFERENCES columns (column_id) ON DELETE SET NULL,
+    foreign_column_id BIGINT  NULL REFERENCES columns (column_id) ON DELETE SET NULL,
     UNIQUE (table_id, column_name)
 );
+
+INSERT INTO schemas (schema_id, schema_name)
+VALUES (1, 'public');
 
 INSERT INTO types (type_id, type_name, extension_type)
 VALUES (16, 'bool', false),

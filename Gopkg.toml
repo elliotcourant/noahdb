@@ -51,7 +51,7 @@
 
 [[constraint]]
   name = "github.com/hashicorp/raft"
-  branch = "master"
+  revision = "2c551690b5c0eb05ef7f4ad72ed01f7f6ce3fcb6"
 
 [[constraint]]
   name = "github.com/jackc/pgx"

@@ -151,8 +151,21 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 			continue
 		}
 
+		dbname := fmt.Sprintf("noahdb_%d", id)
+
+		kickActiveUsers := fmt.Sprintf(`
+		SELECT 
+			pg_terminate_backend(pg_stat_activity.pid)
+		FROM pg_stat_activity
+		WHERE pg_stat_activity.datname = '%s'
+		AND pid <> pg_backend_pid();`, dbname)
+		_, _ = db.Exec(kickActiveUsers)
+
 		deleteExistingShard := fmt.Sprintf("DROP DATABASE IF EXISTS noahdb_%d", id)
-		_, _ = db.Exec(deleteExistingShard)
+		_, err = db.Exec(deleteExistingShard)
+		if err != nil {
+			golog.Criticalf("could not drop existing shard db: %v", err)
+		}
 
 		createShardQuery := fmt.Sprintf("CREATE DATABASE noahdb_%d", id)
 		_, err = db.Exec(createShardQuery)

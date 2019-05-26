@@ -216,12 +216,11 @@
   version = "v0.5.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:40657eacd4111537c1ec1c4ef4938e7fbd4755ee9ab25941c0e1003a46c030be"
+  digest = "1:1b3d4bce23e1d8ac8067f00c40594cc4433652f0fcfd78a1aa89ffc3dde8a6fb"
   name = "github.com/hashicorp/raft"
   packages = ["."]
   pruneopts = "UT"
-  revision = "5865fa0ede52bb893c447cd2b8c19ab33c347d01"
+  revision = "2c551690b5c0eb05ef7f4ad72ed01f7f6ce3fcb6"
 
 [[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
