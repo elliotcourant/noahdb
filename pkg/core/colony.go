@@ -128,9 +128,11 @@ func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, t
 	*ctx = base{
 		db:       fr,
 		trans:    trans,
-		poolSync: sync.Mutex{},
+		poolSync: sync.RWMutex{},
 		pool:     map[uint64]*poolItem{},
 	}
+
+	ctx.Pool().StartPool()
 
 	if len(joinAddresses) > 0 {
 		attempts := 1

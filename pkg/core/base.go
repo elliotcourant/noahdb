@@ -13,7 +13,7 @@ type base struct {
 	db *frunk.Store
 
 	trans    TransportWrapper
-	poolSync sync.Mutex
+	poolSync sync.RWMutex
 	pool     map[uint64]*poolItem
 
 	joinCluster func() error

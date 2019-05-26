@@ -41,6 +41,7 @@ type shardContext struct {
 type ShardContext interface {
 	NewShard() (Shard, error)
 	GetShards() ([]Shard, error)
+	GetDataNodeShards() ([]DataNodeShard, error)
 	GetWriteDataNodeShards(uint64) ([]DataNodeShard, error)
 	BalanceOrphanShards() error
 	GetDataNodesPressure(max int) ([]DataNodePressure, error)
@@ -214,6 +215,16 @@ func (ctx *shardContext) GetShards() ([]Shard, error) {
 		return nil, err
 	}
 	return ctx.shardsFromRows(response)
+}
+
+func (ctx *shardContext) GetDataNodeShards() ([]DataNodeShard, error) {
+	sql, _, _ := getWriteDataNodeShardsQuery.
+		ToSql()
+	response, err := ctx.db.Query(sql)
+	if err != nil {
+		return nil, err
+	}
+	return ctx.dataNodeShardsFromRows(response)
 }
 
 func (ctx *shardContext) GetWriteDataNodeShards(id uint64) ([]DataNodeShard, error) {

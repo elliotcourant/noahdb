@@ -43,12 +43,20 @@ func (p *poolItem) GetConnection() PoolConnection {
 	return item
 }
 
+func (p *poolItem) Size() int {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	return len(p.pool)
+}
+
 type frontendInterface interface {
 	Send(pgproto.FrontendMessage) error
 	Receive() (pgproto.BackendMessage, error)
+	Close()
 }
 
 type frontendConnection struct {
+	conn net.Conn
 	*pgproto.Frontend
 
 	pool *poolItem
@@ -62,12 +70,18 @@ func (f *frontendConnection) Release() {
 	f.pool.releaseConnection(f)
 }
 
+func (f *frontendConnection) Close() {
+	f.conn.Close()
+	f.Frontend = nil
+}
+
 type PoolConnection interface {
 	frontendInterface
 	Release()
 }
 
 type PoolContext interface {
+	StartPool()
 	GetConnectionForDataNodeShard(id uint64) (PoolConnection, error)
 }
 
@@ -77,7 +91,8 @@ func (ctx *base) Pool() PoolContext {
 	}
 }
 
-func (ctx *base) StartPool() {
+func (ctx *poolContext) StartPool() {
+	desiredPoolSize := 5
 	go func() {
 		for {
 			time.Sleep(30 * time.Second)
@@ -85,15 +100,58 @@ func (ctx *base) StartPool() {
 				continue
 			}
 
-			// dataNodeShards, err := ctx.DataNodes().GetDataNodes()
+			dataNodeShards, err := ctx.Shards().GetDataNodeShards()
+			if err != nil {
+				golog.Errorf("could not retrieve data node shards for pool check: %v", err)
+				continue
+			}
+
+			for _, dataNodeShard := range dataNodeShards {
+				pool, err := ctx.getPoolForDataNodeShard(dataNodeShard.DataNodeShardID)
+				if err != nil {
+					golog.Errorf("could not retrieve pool for data node shard [%d], could not verify health: %v", dataNodeShard.DataNodeShardID, err)
+					continue
+				}
+
+				size := pool.Size()
+
+				if size == desiredPoolSize {
+					golog.Verbosef("data node shard [%d] pool full, size: %d", dataNodeShard.DataNodeShardID, size)
+					continue
+				}
+
+				if size < desiredPoolSize {
+					// If the pool is not full then we should try to top it off.
+					golog.Verbosef("data node shard [%d] pool not full, size: %d", dataNodeShard.DataNodeShardID, size)
+					for i := size; i < desiredPoolSize; i++ {
+						conn, err := ctx.newConnection(dataNodeShard.DataNodeShardID, pool)
+						if err != nil {
+							golog.Errorf("could not create connection to add to pool: %v", err)
+							continue
+						}
+						// We've now created a new connection, release it to the pool for use.
+						conn.Release()
+					}
+				} else {
+					// If the pool is over flowing then grab some connections and throw them out.
+					for i := size; i > desiredPoolSize; i-- {
+						conn := pool.GetConnection()
+						if conn != nil {
+							conn.Close()
+						}
+					}
+				}
+
+				golog.Verbosef("data node shard [%d] new pool size: %d", dataNodeShard.DataNodeShardID, pool.Size())
+			}
 		}
 	}()
 }
 
-func (ctx *poolContext) GetConnectionForDataNodeShard(id uint64) (PoolConnection, error) {
-	ctx.poolSync.Lock()
-	defer ctx.poolSync.Unlock()
+func (ctx *poolContext) getPoolForDataNodeShard(id uint64) (*poolItem, error) {
+	ctx.poolSync.RLock()
 	pItem, ok := ctx.pool[id]
+	ctx.poolSync.RUnlock()
 	if !ok {
 		golog.Tracef("data node shard [%d] is not in pool, creating connection", id)
 		pItem = &poolItem{
@@ -101,32 +159,33 @@ func (ctx *poolContext) GetConnectionForDataNodeShard(id uint64) (PoolConnection
 			mutex: sync.Mutex{},
 			pool:  make([]*frontendConnection, 0),
 		}
+		ctx.poolSync.Lock()
 		ctx.pool[id] = pItem
+		ctx.poolSync.Unlock()
 
-		conn, err := ctx.NewConnection(id)
-		if err != nil {
-			golog.Errorf("could not create connection to data node shard [%d]: %v", id, err)
-			return nil, err
-		}
+		// conn, err := ctx.NewConnection(id)
+		// if err != nil {
+		// 	golog.Errorf("could not create connection to data node shard [%d]: %v", id, err)
+		// 	return nil, err
+		// }
+		// ctx.pool[id].addConnection(conn)
+	}
+	return pItem, nil
+}
 
-		ctx.pool[id].addConnection(conn)
+func (ctx *poolContext) GetConnectionForDataNodeShard(id uint64) (PoolConnection, error) {
+	pItem, err := ctx.getPoolForDataNodeShard(id)
+	if err != nil {
+		return nil, err
 	}
 	poolConn := pItem.GetConnection()
 	if poolConn == nil {
-		conn, err := ctx.NewConnection(id)
-		if err != nil {
-			golog.Errorf("could not create connection to data node shard [%d]: %v", id, err)
-			return nil, err
-		}
-		return &frontendConnection{
-			Frontend: conn,
-			pool:     pItem,
-		}, nil
+		return ctx.newConnection(id, pItem)
 	}
 	return poolConn, nil
 }
 
-func (ctx *poolContext) NewConnection(id uint64) (*pgproto.Frontend, error) {
+func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConnection, error) {
 	dataNode, err := ctx.DataNodes().GetDataNodeForDataNodeShard(id)
 	if err != nil {
 		return nil, err
@@ -188,5 +247,9 @@ func (ctx *poolContext) NewConnection(id uint64) (*pgproto.Frontend, error) {
 		return nil, err
 	}
 
-	return frontend, nil
+	return &frontendConnection{
+		Frontend: frontend,
+		pool:     pool,
+		conn:     conn,
+	}, nil
 }

@@ -2,33 +2,20 @@ package pgwire_test
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/elliotcourant/noahdb/testutils"
 	_ "github.com/lib/pq"
 	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
-	"net"
 	"testing"
 	"time"
 )
 
-func LibPqConnectionString(address net.Addr) string {
-	addr, err := net.ResolveTCPAddr(address.Network(), address.String())
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		addr.IP.String(), addr.Port, "noah", "password", "postgres")
-}
-
 func TestLibPqStartup(t *testing.T) {
-	t.Skip("shits broke atm")
 	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
 	time.Sleep(1 * time.Second)
 	func() {
-		db, err := sql.Open("postgres", LibPqConnectionString(colony.Addr()))
+		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
 		if err != nil {
 			panic(err)
 		}
@@ -59,7 +46,7 @@ func Test_HandleParse_BadSyntax(t *testing.T) {
 	defer cleanup()
 	time.Sleep(1 * time.Second)
 	func() {
-		db, err := sql.Open("postgres", LibPqConnectionString(colony.Addr()))
+		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
 		if err != nil {
 			panic(err)
 		}
