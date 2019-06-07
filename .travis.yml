@@ -43,7 +43,8 @@ jobs:
         - go get -u github.com/golang/protobuf/protoc-gen-go
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
-        - make dependencies
+        - go mod vendor
+        - make generated
       script:
         - make test
         - make coverage

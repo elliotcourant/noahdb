@@ -2,9 +2,9 @@ package queryutil
 
 import (
 	"fmt"
+	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/types"
-	"github.com/readystock/golinq"
 	"reflect"
 	"strconv"
 	"strings"

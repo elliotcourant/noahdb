@@ -14,10 +14,7 @@ kube: docker
 	kubectl delete -f noahdb.yaml --wait --ignore-not-found=true
 	kubectl apply -f noahdb.yaml
 
-default: dependencies test
-
-dependencies: generated
-	dep ensure
+default: generated test
 
 test:
 	go test -race -v ./...
@@ -25,10 +22,10 @@ test:
 setup_build_dir:
 	mkdir -p $(BUILD_DIRECTORY)
 
-build: dependencies setup_build_dir
+build: generated setup_build_dir
 	go build -o $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME) $(PACKAGE)
 
-fresh: dependencies setup_build_dir
+fresh: generated setup_build_dir
 	go build -a -x -v -o $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME) $(PACKAGE)
 
 coverage:

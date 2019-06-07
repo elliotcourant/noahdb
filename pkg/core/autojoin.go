@@ -2,8 +2,8 @@ package core
 
 import (
 	"fmt"
+	"github.com/ahmetb/go-linq"
 	"github.com/hashicorp/raft"
-	"github.com/readystock/golinq"
 	"github.com/readystock/golog"
 	"io/ioutil"
 	"k8s.io/api/core/v1"

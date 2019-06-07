@@ -2,10 +2,10 @@ package sql
 
 import (
 	"fmt"
+	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
-	"github.com/readystock/golinq"
 	"github.com/readystock/golog"
 	"strings"
 )

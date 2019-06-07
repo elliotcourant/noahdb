@@ -2,7 +2,7 @@ package sql
 
 import (
 	"fmt"
-	"github.com/readystock/golinq"
+	"github.com/ahmetb/go-linq"
 	"github.com/readystock/golog"
 	"strings"
 

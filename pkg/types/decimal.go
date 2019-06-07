@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"github.com/cockroachdb/apd"
+	"github.com/cockroachdb/apd/v2"
 	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/kataras/go-errors"
 )
