@@ -13,7 +13,7 @@ import (
 func TestLibPqStartup(t *testing.T) {
 	colony, cleanup := testutils.NewTestColony()
 	defer cleanup()
-	time.Sleep(1 * time.Second)
+	time.Sleep(5 * time.Second)
 	func() {
 		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
 		if err != nil {
