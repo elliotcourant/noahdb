@@ -5,7 +5,7 @@ noahdb is a distributed multi-tenant new-sql database.
 - General
     - [Requirements](/docs/README.md#requirements)
     - Installation
-    - Build From Source
+    - [Building](/docs/Building.md)
     - Configuration
     - Examples
 - Documentation
@@ -39,6 +39,8 @@ Protoc however, is a required tool if you want to do a clean build of noahdb.
     
 - Protoc (https://github.com/protocolbuffers/protobuf)
     - Download: http://google.github.io/proto-lens/installing-protoc.html
+    
+- Docker (for running tests)
     
 At the moment noahdb cannot be compiled on Windows, it must be compiled on Mac OS X or Linux.
 
