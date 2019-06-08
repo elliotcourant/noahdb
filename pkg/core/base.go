@@ -87,7 +87,7 @@ func (ctx *base) Setup() {
 	}
 
 	// Check to see if there is a local postgres instnace we can use.
-	initialPostgresAddress := "127.0.0.1"
+	initialPostgresAddress := os.Getenv("PGADDRESS")
 	initialPostgresPort := os.Getenv("PGPORT")
 	initialPostgresPassword := os.Getenv("PGPASS")
 	if _, err := ctx.DataNodes().NewDataNode(initialPostgresAddress, initialPostgresPassword, initialPostgresPort); err != nil {

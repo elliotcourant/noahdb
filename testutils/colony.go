@@ -1,19 +1,99 @@
 package testutils
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/hashicorp/raft"
 	"github.com/readystock/golog"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
+	"strings"
+	"testing"
+	"time"
+
+	_ "github.com/lib/pq"
 )
 
-func NewTestColonyEx(listenAddr string, joinAddresses ...string) (core.Colony, func()) {
+func NewTestColonyEx(t *testing.T, listenAddr string, joinAddresses ...string) (core.Colony, func()) {
+	// Create a postgres docker image to connect to.
+	ctx := context.Background()
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		panic(err)
+	}
+
+	containerName := strings.ReplaceAll(fmt.Sprintf("noahdb-test-database-%s-%d", strings.ToLower(t.Name()), time.Now().Unix()), "/", "_")
+
+	imageName := "docker.io/library/postgres:10"
+
+	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	if err != nil {
+		panic(err)
+	}
+	io.Copy(os.Stdout, out)
+
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: imageName,
+		Env: []string{
+			fmt.Sprintf("POSTGRES_PASSWORD=%s", t.Name()),
+		},
+	}, &container.HostConfig{
+		PublishAllPorts: true,
+	}, nil, containerName)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.ID)
+
+	info, err := cli.ContainerInspect(ctx, resp.ID)
+	if err != nil {
+		golog.Errorf("could not inspect container: %v", err)
+	}
+
+	postgresPort := info.NetworkSettings.Ports["5432/tcp"][0].HostPort
+	postgresAddress := fmt.Sprintf("0.0.0.0:%s", postgresPort)
+	golog.Info(postgresAddress)
+
+	os.Setenv("PGADDRESS", "0.0.0.0")
+	os.Setenv("PGPORT", postgresPort)
+	os.Setenv("PGPASS", t.Name())
+
+	attempts := 0
+	for {
+		time.Sleep(2 * time.Second)
+		address := fmt.Sprintf("%s:%s", "0.0.0.0", postgresPort)
+		connStr := fmt.Sprintf("postgres://postgres:%s@%s/postgres?sslmode=disable", t.Name(), address)
+		db, err := sql.Open("postgres", connStr)
+		if err != nil {
+			golog.Warnf("failed to connect to test postgres container address [%s]: %v", address, err)
+			attempts++
+			if attempts > 3 {
+				t.Errorf("could not connect to postgres container in 3 attempts: %v", err)
+				panic(err)
+			}
+			continue
+		}
+
+		db.Close()
+		break
+	}
+
+	golog.SetLevel("trace")
 	tempdir, err := ioutil.TempDir("", "core-temp")
 	if err != nil {
 		panic(err)
@@ -67,14 +147,26 @@ func NewTestColonyEx(listenAddr string, joinAddresses ...string) (core.Colony, f
 	// }
 
 	return colony, func() {
+		timeout := time.Second * 5
+		if err := cli.ContainerStop(ctx, resp.ID, &timeout); err != nil {
+			t.Fail()
+			golog.Criticalf("failed to stop docker container at the end of test [%s]: %v", t.Name(), err)
+		}
+		if err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{
+			RemoveVolumes: true,
+			Force:         true,
+		}); err != nil {
+			t.Fail()
+			golog.Criticalf("failed to remove docker container at the end of test [%s]: %v", t.Name(), err)
+		}
 		if err := os.RemoveAll(tempdir); err != nil {
 			panic(err)
 		}
 	}
 }
 
-func NewTestColony(joinAddresses ...string) (core.Colony, func()) {
-	return NewTestColonyEx(":", joinAddresses...)
+func NewTestColony(t *testing.T, joinAddresses ...string) (core.Colony, func()) {
+	return NewTestColonyEx(t, ":", joinAddresses...)
 }
 
 func ConnectionString(address net.Addr) string {

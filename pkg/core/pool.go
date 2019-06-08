@@ -1,10 +1,13 @@
 package core
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -230,7 +233,21 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 			switch msg := response.(type) {
 			case *pgproto.Authentication:
 				if msg.Type != pgproto.AuthTypeOk {
-					panic("authentication is not implemented")
+					if msg.Type == pgproto.AuthTypeMD5Password {
+						md5s := func(s string) string {
+							//nolint
+							h := md5.Sum([]byte(s))
+							return hex.EncodeToString(h[:])
+						}
+						secret := "md5" + md5s(md5s(os.Getenv("PGPASS")+"postgres")+string(msg.Salt[:]))
+						if err := frontend.Send(&pgproto.PasswordMessage{
+							Password: secret,
+						}); err != nil {
+							return fmt.Errorf("could not authenticate: %v", err)
+						}
+					} else {
+						panic(fmt.Sprintf("cannot handle authentication type: %d", msg.Type))
+					}
 				}
 			case *pgproto.ParameterStatus:
 			case *pgproto.ParameterDescription:

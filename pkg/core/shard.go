@@ -6,6 +6,8 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/golog"
 	"gopkg.in/doug-martin/goqu.v5"
+	"os"
+
 	// Use the postgres adapter for building queries.
 	"database/sql"
 	_ "gopkg.in/doug-martin/goqu.v5/adapters/postgres"
@@ -144,7 +146,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		dataNodeAddress := fmt.Sprintf("%s:%d", dataNodeMeta.GetAddress(), dataNodeMeta.GetPort())
 		golog.Debugf("trying to connect to data node [%d] at %s to init shards", dataNode.DataNodeID, dataNodeAddress)
 
-		connStr := fmt.Sprintf("postgres://postgres@%s/postgres?sslmode=disable", dataNodeAddress)
+		connStr := fmt.Sprintf("postgres://postgres:%s@%s/postgres?sslmode=disable", os.Getenv("PGPASS"), dataNodeAddress)
 		db, err := sql.Open("postgres", connStr)
 		if err != nil {
 			golog.Criticalf("failed to connect to data node [%d] address %s: %v", dataNode.DataNodeID, dataNodeAddress, err)
@@ -165,6 +167,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		_, err = db.Exec(deleteExistingShard)
 		if err != nil {
 			golog.Criticalf("could not drop existing shard db: %v", err)
+			continue
 		}
 
 		createShardQuery := fmt.Sprintf("CREATE DATABASE noahdb_%d", id)

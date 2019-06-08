@@ -10,7 +10,7 @@ import (
 )
 
 func TestShardContext_NewShard(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	newShard, err := colony.Shards().NewShard()
 	assert.NoError(t, err)
@@ -18,7 +18,7 @@ func TestShardContext_NewShard(t *testing.T) {
 }
 
 func TestShardContext_GetShards(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	newShard, err := colony.Shards().NewShard()
 	assert.NoError(t, err)
@@ -31,7 +31,7 @@ func TestShardContext_GetShards(t *testing.T) {
 }
 
 func TestShardContext_GetWriteDataNodeShards(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	shards, err := colony.Shards().GetWriteDataNodeShards(1)
 	assert.NoError(t, err)
@@ -40,7 +40,7 @@ func TestShardContext_GetWriteDataNodeShards(t *testing.T) {
 
 func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 	t.Run("balance orphaned shards", func(t *testing.T) {
-		colony, cleanup := testutils.NewTestColony()
+		colony, cleanup := testutils.NewTestColony(t)
 		defer cleanup()
 		newShard, err := colony.Shards().NewShard()
 		assert.NoError(t, err)
@@ -51,7 +51,7 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 
 	t.Run("balance multiple orphaned shards", func(t *testing.T) {
 
-		colony, cleanup := testutils.NewTestColony()
+		colony, cleanup := testutils.NewTestColony(t)
 		defer cleanup()
 
 		existingNodes, err := colony.DataNodes().GetDataNodes()

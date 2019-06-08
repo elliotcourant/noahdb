@@ -7,7 +7,7 @@ import (
 )
 
 func TestDataNodeContext_GetRandomDataNode(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("get random node", func(t *testing.T) {
 		dataNode, err := colony.DataNodes().GetRandomDataNodeShardID()

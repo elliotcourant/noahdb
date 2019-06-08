@@ -8,7 +8,7 @@ import (
 )
 
 func TestSettingContext_GetSetting(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("get setting simple", func(t *testing.T) {
 		setting, ok, err := colony.Setting().GetSetting(core.SettingKeyOptions_MaxPoolSize)

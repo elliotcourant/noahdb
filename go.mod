@@ -4,11 +4,16 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.39.0 // indirect
+	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/ahmetb/go-linq v3.0.1-0.20190607004138-9bb035d35ab0+incompatible
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/c2fo/testify v0.0.0-20150827203832-fba96363964a // indirect
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.2-0.20190505045354-5843f9b6a583
+	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/docker/docker v1.13.1
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901
 	github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb
 	github.com/gogo/protobuf v1.2.1 // indirect
@@ -32,8 +37,9 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.1.1
 	github.com/mattn/go-sqlite3 v1.10.0
+	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/readystock/golog v0.0.0-20190202061142-367e363f6eaf
+	github.com/readystock/golog v0.0.0-20190607203752-a4e42fd11eb0
 	github.com/readystock/goqu v5.0.0+incompatible
 	github.com/readystock/pgx v3.1.0+incompatible
 	github.com/rqlite/rqlite v0.0.0-20190521032246-2e3f4e2eb8ee

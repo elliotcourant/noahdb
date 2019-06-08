@@ -11,7 +11,7 @@ import (
 )
 
 func TestLibPqStartup(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	time.Sleep(5 * time.Second)
 	func() {
@@ -42,7 +42,7 @@ func TestLibPqStartup(t *testing.T) {
 }
 
 func Test_HandleParse_BadSyntax(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	time.Sleep(1 * time.Second)
 	func() {

@@ -6,13 +6,12 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
 
 func TestNewCreateStatementPlan(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
-	time.Sleep(1 * time.Second)
+	//time.Sleep(1 * time.Second)
 
 	db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
 	if err != nil {

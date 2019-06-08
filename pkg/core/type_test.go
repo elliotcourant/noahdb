@@ -8,7 +8,7 @@ import (
 )
 
 func TestTypeContext_GetTypeByName(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 
 	assertValidType := func(t *testing.T, name string, expected core.Type) {

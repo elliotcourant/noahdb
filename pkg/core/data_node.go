@@ -115,8 +115,12 @@ func (ctx *dataNodeContext) GetRandomDataNodeShardID() (uint64, error) {
 		InnerJoin(
 			goqu.I("data_node_shards"),
 			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
+		InnerJoin(
+			goqu.I("shards"),
+			goqu.On(goqu.I("shards.shard_id").Eq(goqu.I("data_node_shards.shard_id")))).
 		Where(goqu.Ex{
 			"data_nodes.healthy": true,
+			"shards.state":       ShardState_Stable,
 		}).
 		Order(goqu.L("RANDOM()").Asc()).
 		Limit(1).

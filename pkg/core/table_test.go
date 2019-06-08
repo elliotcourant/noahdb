@@ -8,7 +8,7 @@ import (
 )
 
 func TestTableContext_NewTable(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("get imaginary tables", func(t *testing.T) {
 		table := core.Table{
@@ -36,7 +36,7 @@ func TestTableContext_NewTable(t *testing.T) {
 }
 
 func TestTableContext_GetTables(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("get imaginary tables", func(t *testing.T) {
 		tables, err := colony.Tables().
@@ -47,7 +47,7 @@ func TestTableContext_GetTables(t *testing.T) {
 }
 
 func TestTableContext_GetTablesInSchema(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("get tables in imaginary schema", func(t *testing.T) {
 		tables, err := colony.Tables().GetTablesInSchema("imaginary", "test")

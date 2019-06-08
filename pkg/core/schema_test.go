@@ -8,7 +8,7 @@ import (
 )
 
 func TestSchemaContext_Exists(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("doesn't exist", func(t *testing.T) {
 		ok, err := colony.Schema().Exists("imaginary")
@@ -19,7 +19,7 @@ func TestSchemaContext_Exists(t *testing.T) {
 
 func TestSchemaContext_NewSchema(t *testing.T) {
 	t.Skip("working on schemas")
-	colony, cleanup := testutils.NewTestColony()
+	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("create a new schema", func(t *testing.T) {
 		name := "public"
@@ -34,7 +34,7 @@ func TestSchemaContext_NewSchema(t *testing.T) {
 func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
 	t.Skip("multi server is broken atm.")
 	t.Run("create a new schema", func(t *testing.T) {
-		colony1, cleanup1 := testutils.NewTestColony()
+		colony1, cleanup1 := testutils.NewTestColony(t)
 		defer cleanup1()
 		name := "public"
 		schema, err := colony1.Schema().NewSchema(name)
@@ -42,7 +42,7 @@ func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
 		assert.NotEmpty(t, schema)
 		assert.True(t, schema.SchemaID > 0)
 		assert.Equal(t, name, schema.SchemaName)
-		colony2, cleanup2 := testutils.NewTestColony(colony1.Addr().String())
+		colony2, cleanup2 := testutils.NewTestColony(t, colony1.Addr().String())
 		defer cleanup2()
 		time.Sleep(4 * time.Second)
 		exists, err := colony2.Schema().Exists(name)
