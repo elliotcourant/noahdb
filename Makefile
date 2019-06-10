@@ -61,7 +61,7 @@ protos:
 
 embedded:
 	@echo generating embedded files...
-#	@go get -u -a github.com/elliotcourant/statik@master
+	@go get -u -a github.com/elliotcourant/statik@master
 	@statik -src=$(CORE_DIRECTORY)/static/files -dest $(CORE_DIRECTORY) -f -p static
 
 generated: strings protos embedded
