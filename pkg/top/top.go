@@ -125,7 +125,11 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		}
 	}
 
-	err = colony.InitColony(dataDirectory, joins, trans)
+	err = colony.InitColony(core.ColonyConfig{
+		DataDirectory: dataDirectory,
+		JoinAddresses: joins,
+		Transport:     trans,
+	})
 	if err != nil {
 		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
 	} else if colony == nil {

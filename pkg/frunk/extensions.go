@@ -2,6 +2,7 @@ package frunk
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // Get returns a byte array for a given key from BoltDB.
@@ -53,5 +54,16 @@ func (s *Store) Exec(query string) (*ExecuteResponse, error) {
 		Timings: false,
 		Atomic:  true,
 	}
-	return s.ExecuteEx(executeRequest)
+	result, err := s.ExecuteEx(executeRequest)
+	if err != nil {
+		return nil, err
+	}
+	if len(result.Results) > 0 {
+		for _, resultSet := range result.Results {
+			if resultSet.Error != "" {
+				return nil, fmt.Errorf(resultSet.Error)
+			}
+		}
+	}
+	return result, err
 }

@@ -31,6 +31,8 @@ CREATE TABLE data_nodes (
     data_node_id BIGINT PRIMARY KEY,
     address      TEXT    NOT NULL,
     port         INT     NOT NULL,
+    user         TEXT    NOT NULL,
+    password     TEXT    NOT NULL,
     healthy      BOOLEAN NOT NULL
 );
 

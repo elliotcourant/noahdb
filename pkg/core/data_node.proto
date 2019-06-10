@@ -6,5 +6,7 @@ message DataNode {
     uint64 DataNodeID = 1;
     string Address = 2;
     int32 Port = 3;
-    bool Healthy = 4;
+    string User = 4;
+    string Password = 5;
+    bool Healthy = 6;
 }

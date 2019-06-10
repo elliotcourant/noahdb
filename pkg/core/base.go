@@ -5,7 +5,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/golog"
 	"net"
-	"os"
 	"sync"
 )
 
@@ -66,7 +65,7 @@ func (ctx *base) IsLeader() bool {
 }
 
 // Setup initializes the internal store with any necessary data needed.
-func (ctx *base) Setup() {
+func (ctx *base) Setup(config ColonyConfig) {
 	if !ctx.IsLeader() {
 		return
 	}
@@ -86,23 +85,26 @@ func (ctx *base) Setup() {
 		panic(err)
 	}
 
-	// Check to see if there is a local postgres instnace we can use.
-	initialPostgresAddress := os.Getenv("PGADDRESS")
-	initialPostgresPort := os.Getenv("PGPORT")
-	initialPostgresPassword := os.Getenv("PGPASS")
-	if _, err := ctx.DataNodes().NewDataNode(initialPostgresAddress, initialPostgresPassword, initialPostgresPort); err != nil {
-		panic(err)
-	}
-
-	initialShards := 3
-	for i := 0; i < initialShards; i++ {
-		if _, err := ctx.Shards().NewShard(); err != nil {
+	if len(config.LocalPostgresAddress) > 0 && len(config.LocalPostgresUser) > 0 {
+		// Check to see if there is a local postgres instance we can use.
+		if _, err := ctx.DataNodes().NewDataNode(
+			config.LocalPostgresAddress,
+			config.LocalPostgresPort,
+			config.LocalPostgresUser,
+			config.LocalPostgresPassword); err != nil {
 			panic(err)
 		}
-	}
 
-	if err := ctx.Shards().BalanceOrphanShards(); err != nil {
-		panic(err)
+		initialShards := 3
+		for i := 0; i < initialShards; i++ {
+			if _, err := ctx.Shards().NewShard(); err != nil {
+				panic(err)
+			}
+		}
+
+		if err := ctx.Shards().BalanceOrphanShards(); err != nil {
+			panic(err)
+		}
 	}
 }
 

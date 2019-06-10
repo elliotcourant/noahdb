@@ -13,6 +13,16 @@ import (
 	"time"
 )
 
+type ColonyConfig struct {
+	DataDirectory         string
+	JoinAddresses         []raft.Server
+	Transport             TransportWrapper
+	LocalPostgresAddress  string
+	LocalPostgresPort     int
+	LocalPostgresUser     string
+	LocalPostgresPassword string
+}
+
 // Colony is a wrapper for all of the core data that noahdb needs to operate.
 type Colony interface {
 	Shards() ShardContext
@@ -45,26 +55,26 @@ type Colony interface {
 
 	Neighbors() ([]*frunk.Server, error)
 
-	InitColony(dataDirectory string, joinAddresses []raft.Server, trans TransportWrapper) error
+	InitColony(config ColonyConfig) error
 }
 
 func NewColony() Colony {
 	return &base{}
 }
 
-func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, trans TransportWrapper) error {
+func (ctx *base) InitColony(config ColonyConfig) error {
 	hostname, err := os.Hostname()
 	if err != nil {
 		panic(err)
 	}
-	id := fmt.Sprintf("%s:%d", hostname, trans.Port())
+	id := fmt.Sprintf("%s:%d", hostname, config.Transport.Port())
 
-	fr := frunk.New(trans.RaftTransport(), &frunk.StoreConfig{
+	fr := frunk.New(config.Transport.RaftTransport(), &frunk.StoreConfig{
 		DBConf: &frunk.DBConfig{
 			DSN:    "",
 			Memory: false,
 		},
-		Dir: dataDirectory,
+		Dir: config.DataDirectory,
 		ID:  id,
 	})
 
@@ -78,7 +88,7 @@ func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, t
 	// and see if any of them are established. If we find one that is, send a join request to the
 	// leader.
 	for _, neighbor := range potentialNeighbors {
-		rpcConn, err := rpcer.NewRPCDriver(id, trans.Addr(), string(neighbor.Address))
+		rpcConn, err := rpcer.NewRPCDriver(id, config.Transport.Addr(), string(neighbor.Address))
 		if err != nil {
 			golog.Errorf("failed to connect to potential neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
 			continue
@@ -129,19 +139,19 @@ func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, t
 
 	*ctx = base{
 		db:       fr,
-		trans:    trans,
+		trans:    config.Transport,
 		poolSync: sync.RWMutex{},
 		pool:     map[uint64]*poolItem{},
 	}
 
 	ctx.Pool().StartPool()
 
-	if len(joinAddresses) > 0 {
+	if len(config.JoinAddresses) > 0 {
 		attempts := 1
-	RETRY_JOIN:
-		for i, joinAddr := range joinAddresses {
+	RetryJoin:
+		for i, joinAddr := range config.JoinAddresses {
 			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr.Address)
-			rpcDriver, err := rpcer.NewRPCDriver(id, trans.Addr(), string(joinAddr.Address))
+			rpcDriver, err := rpcer.NewRPCDriver(id, config.Transport.Addr(), string(joinAddr.Address))
 			if err != nil {
 				golog.Warnf("could not connect to join address [%s]: %v", joinAddr.Address, err)
 				continue
@@ -155,7 +165,7 @@ func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, t
 				continue
 			} else {
 				golog.Infof("successfully joined at address [%s]", joinAddr)
-				goto WAIT_FOR_SETUP
+				goto WaitForSetup
 			}
 		}
 
@@ -163,14 +173,14 @@ func (ctx *base) InitColony(dataDirectory string, joinAddresses []raft.Server, t
 			golog.Infof("was not able to join any of the nodes provided, will try again in 10 seconds; attempt: %d", attempts)
 			time.Sleep(10 * time.Second)
 			attempts++
-			goto RETRY_JOIN
+			goto RetryJoin
 		} else {
 			golog.Fatalf("failed to join any of the node found after %d attempt(s)", attempts)
 		}
 
 	}
 
-WAIT_FOR_SETUP:
+WaitForSetup:
 
 	openTimeout, err := time.ParseDuration("10s")
 	if err != nil {
@@ -192,7 +202,7 @@ WAIT_FOR_SETUP:
 
 	// handle joins here
 
-	ctx.Setup()
+	ctx.Setup(config)
 
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/readystock/goqu"
-	"strconv"
 )
 
 var (
@@ -25,7 +24,7 @@ type DataNodeContext interface {
 	GetRandomDataNodeShardID() (uint64, error)
 	GetDataNodeShardIDs() ([]uint64, error)
 	GetDataNodeShardIDsForShard(uint64) ([]uint64, error)
-	NewDataNode(address string, password string, port string) (DataNode, error)
+	NewDataNode(address string, port int, user string, password string) (DataNode, error)
 }
 
 func (ctx *base) DataNodes() DataNodeContext {
@@ -34,13 +33,8 @@ func (ctx *base) DataNodes() DataNodeContext {
 	}
 }
 
-func (ctx *dataNodeContext) NewDataNode(address, password, port string) (DataNode, error) {
+func (ctx *dataNodeContext) NewDataNode(address string, port int, user, password string) (DataNode, error) {
 	id, err := ctx.db.NextSequenceValueById(dataNodeIdSequencePath)
-	if err != nil {
-		return DataNode{}, err
-	}
-
-	portInt, err := strconv.Atoi(port)
 	if err != nil {
 		return DataNode{}, err
 	}
@@ -49,14 +43,18 @@ func (ctx *dataNodeContext) NewDataNode(address, password, port string) (DataNod
 		Insert(goqu.Record{
 			"data_node_id": id,
 			"address":      address,
-			"port":         portInt,
+			"port":         port,
+			"user":         user,
+			"password":     password,
 			"healthy":      true,
 		}).Sql
 	_, err = ctx.db.Exec(compiledSql)
 	return DataNode{
 		DataNodeID: id,
 		Address:    address,
-		Port:       int32(portInt),
+		Port:       int32(port),
+		User:       user,
+		Password:   password,
 		Healthy:    true,
 	}, err
 }
@@ -195,6 +193,8 @@ func (ctx *dataNodeContext) dataNodesFromRows(response *frunk.QueryResponse) ([]
 			&node.DataNodeID,
 			&node.Address,
 			&node.Port,
+			&node.User,
+			&node.Password,
 			&node.Healthy); err != nil {
 			return nil, err
 		}
