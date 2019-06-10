@@ -7,7 +7,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
 	"net"
-	"os"
 	"sync"
 	"time"
 )
@@ -215,7 +214,7 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 	if err := frontend.Send(&pgproto.StartupMessage{
 		ProtocolVersion: pgproto.ProtocolVersionNumber,
 		Parameters: map[string]string{
-			"user":     "postgres",
+			"user":     dataNode.GetUser(),
 			"database": fmt.Sprintf("noahdb_%d", id),
 		},
 	}); err != nil {
@@ -235,11 +234,10 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 				if msg.Type != pgproto.AuthTypeOk {
 					if msg.Type == pgproto.AuthTypeMD5Password {
 						md5s := func(s string) string {
-							//nolint
 							h := md5.Sum([]byte(s))
 							return hex.EncodeToString(h[:])
 						}
-						secret := "md5" + md5s(md5s(os.Getenv("PGPASS")+"postgres")+string(msg.Salt[:]))
+						secret := "md5" + md5s(md5s(dataNode.GetPassword()+dataNode.GetUser())+string(msg.Salt[:]))
 						if err := frontend.Send(&pgproto.PasswordMessage{
 							Password: secret,
 						}); err != nil {

@@ -11,7 +11,7 @@ import (
 )
 
 func TestLibPqStartup(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony(t)
+	colony, cleanup := testutils.NewPgTestColony(t)
 	defer cleanup()
 	time.Sleep(5 * time.Second)
 	func() {

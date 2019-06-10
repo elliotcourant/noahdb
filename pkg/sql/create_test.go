@@ -9,9 +9,8 @@ import (
 )
 
 func TestNewCreateStatementPlan(t *testing.T) {
-	colony, cleanup := testutils.NewTestColony(t)
+	colony, cleanup := testutils.NewPgTestColony(t)
 	defer cleanup()
-	//time.Sleep(1 * time.Second)
 
 	db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
 	if err != nil {

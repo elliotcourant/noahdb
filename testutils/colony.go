@@ -39,7 +39,6 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	callbacks := make([]func(), 0)
 
 	if spawnPg {
-		containerName := strings.ReplaceAll(fmt.Sprintf("noahdb-test-database-%s-%d", strings.ToLower(t.Name()), time.Now().Unix()), "/", "_")
 
 		imageName := "docker.io/library/postgres:10"
 
@@ -49,10 +48,13 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		}
 		io.Copy(os.Stdout, out)
 
+		testNameCleaned := strings.ReplaceAll(strings.ToLower(t.Name()), "/", "_")
+		containerName := strings.ReplaceAll(fmt.Sprintf("noahdb-test-database-%s-%d", testNameCleaned, time.Now().Unix()), "/", "_")
+
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
 			Image: imageName,
 			Env: []string{
-				fmt.Sprintf("POSTGRES_PASSWORD=%s", t.Name()),
+				fmt.Sprintf("POSTGRES_PASSWORD=%s", testNameCleaned),
 			},
 		}, &container.HostConfig{
 			PublishAllPorts: true,
@@ -81,7 +83,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		for {
 			time.Sleep(2 * time.Second)
 			address := fmt.Sprintf("%s:%s", "0.0.0.0", postgresPort)
-			connStr := fmt.Sprintf("postgres://postgres:%s@%s/postgres?sslmode=disable", t.Name(), address)
+			connStr := fmt.Sprintf("postgres://postgres:%s@%s/postgres?sslmode=disable", testNameCleaned, address)
 			db, err := sql.Open("postgres", connStr)
 			if err != nil {
 				golog.Warnf("failed to connect to test postgres container address [%s]: %v", address, err)
@@ -93,6 +95,37 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 				continue
 			}
 
+			rows, err := db.Query("SELECT 1")
+			if err != nil {
+				golog.Warnf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
+				attempts++
+				if attempts > 3 {
+					t.Errorf("could not execute simple query to postgres container in 3 attempts: %v", err)
+					panic(err)
+				}
+				continue
+			}
+
+			for rows.Next() {
+				one := 0
+				rows.Scan(&one)
+				if one == 1 {
+					goto LeaveLoop
+				}
+			}
+
+		LeaveLoop:
+			if err := rows.Err(); err != nil {
+				golog.Warnf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
+				attempts++
+				if attempts > 3 {
+					t.Errorf("could not execute simple query to postgres container in 3 attempts: %v", err)
+					panic(err)
+				}
+				continue
+			}
+
+			rows.Close()
 			db.Close()
 			break
 		}
@@ -100,7 +133,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		tempPostgresAddress = "0.0.0.0"
 		tempPostgresPort = port
 		tempPostgresUser = "postgres"
-		tempPostgresPassword = t.Name()
+		tempPostgresPassword = testNameCleaned
 
 		callbacks = append(callbacks, func() {
 			timeout := time.Second * 5
