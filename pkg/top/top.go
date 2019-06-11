@@ -21,7 +21,7 @@ import (
 
 func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, autoJoin bool) {
 	golog.Debugf("starting noahdb")
-	l, err := util.ResolveLocalAddress(listenAddr)
+	l, err := util.ResolveAddress(listenAddr)
 	if err != nil {
 		panic(err)
 	}
@@ -112,7 +112,7 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 	if joinAddresses != "" {
 		addresses := strings.Split(joinAddresses, ",")
 		for _, addr := range addresses {
-			if parsedAddress, err := util.ResolveLocalAddress(addr); err != nil {
+			if parsedAddress, err := util.ResolveAddress(addr); err != nil {
 				golog.Errorf("could not parse join address [%s]: %v", addr, err)
 				panic(err)
 			} else {

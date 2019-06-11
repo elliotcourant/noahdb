@@ -18,11 +18,10 @@ func TestSchemaContext_Exists(t *testing.T) {
 }
 
 func TestSchemaContext_NewSchema(t *testing.T) {
-	t.Skip("working on schemas")
 	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	t.Run("create a new schema", func(t *testing.T) {
-		name := "public"
+		name := "asgasgasfda"
 		schema, err := colony.Schema().NewSchema(name)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, schema)
@@ -32,11 +31,10 @@ func TestSchemaContext_NewSchema(t *testing.T) {
 }
 
 func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
-	t.Skip("multi server is broken atm.")
 	t.Run("create a new schema", func(t *testing.T) {
 		colony1, cleanup1 := testutils.NewTestColony(t)
 		defer cleanup1()
-		name := "public"
+		name := "fajlgasfas"
 		schema, err := colony1.Schema().NewSchema(name)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, schema)

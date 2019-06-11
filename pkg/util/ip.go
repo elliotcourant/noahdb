@@ -43,7 +43,7 @@ func ExternalIP() (string, error) {
 	return "", fmt.Errorf("are you connected to the network?")
 }
 
-func ResolveLocalAddress(input string) (string, error) {
+func ResolveAddress(input string) (string, error) {
 	inputParsed, err := net.ResolveTCPAddr("tcp", input)
 	if err != nil {
 		return "", err

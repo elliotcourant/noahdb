@@ -12,7 +12,7 @@ func Test_ExternalIP(t *testing.T) {
 
 func Test_ResolvedLocalAddress(t *testing.T) {
 	input := ":5433"
-	addr, err := ResolveLocalAddress(input)
+	addr, err := ResolveAddress(input)
 	assert.NoError(t, err)
 	golog.Infof("resulting address: %s", addr)
 }

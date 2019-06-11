@@ -11,6 +11,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
+	"github.com/elliotcourant/noahdb/pkg/util"
 	"github.com/hashicorp/raft"
 	"github.com/readystock/golog"
 	"io"
@@ -193,9 +194,23 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		}
 	}()
 
+	joins := make([]raft.Server, 0)
+	for _, joinAddress := range joinAddresses {
+		if addr, err := util.ResolveAddress(joinAddress); err != nil {
+			golog.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
+			t.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
+		} else {
+			joins = append(joins, raft.Server{
+				Suffrage: raft.Voter,
+				ID:       raft.ServerID(addr),
+				Address:  raft.ServerAddress(addr),
+			})
+		}
+	}
+
 	config := core.ColonyConfig{
 		DataDirectory:         tempdir,
-		JoinAddresses:         make([]raft.Server, 0),
+		JoinAddresses:         joins,
 		Transport:             trans,
 		LocalPostgresUser:     tempPostgresUser,
 		LocalPostgresAddress:  tempPostgresAddress,
@@ -207,18 +222,6 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	if err != nil {
 		panic(err)
 	}
-
-	// if colony.IsLeader() {
-	// 	_, err = colony.DataNodes().NewDataNode("127.0.0.1", os.Getenv("PGPASSWORD"), os.Getenv("PGPORT"))
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	//
-	// 	_, err = colony.Shards().NewShard()
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// }
 
 	return colony, func() {
 		for _, callback := range callbacks {

@@ -85,7 +85,7 @@ CREATE TABLE columns (
 );
 
 INSERT INTO schemas (schema_id, schema_name)
-VALUES (1, 'public');
+VALUES (0, 'public');
 
 INSERT INTO types (type_id, type_name, extension_type)
 VALUES (16, 'bool', false),
