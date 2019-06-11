@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/raft"
 	"github.com/readystock/golog"
 	"io/ioutil"
+	v12 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -46,6 +47,20 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 	}
 
 	currentNameSpace := string(cn)
+
+	deployments, err := clientSet.AppsV1().Deployments(currentNameSpace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	noahDeploymentIndex := linq.From(deployments.Items).IndexOf(func(i interface{}) bool {
+		deployment, ok := i.(v12.Deployment)
+		return ok && deployment.Name == "noahdb"
+	})
+
+	if noahDeploymentIndex < 0 {
+		return nil, fmt.Errorf("could not find a noahdb deployment, auto-join not supported")
+	}
 
 	pods, err := clientSet.CoreV1().Pods(currentNameSpace).List(metav1.ListOptions{})
 	if err != nil {

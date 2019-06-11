@@ -7,11 +7,15 @@ PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
 DOCKER_TAG = local
 
+postgres:
+	docker build -t noahdb/postgres:local ./k8s/postgres
+
 docker:
 	docker build -t noahdb/node:$(DOCKER_TAG) .
 
 kube: docker
 	kubectl delete -f noahdb.yaml --wait --ignore-not-found=true
+	sleep 5
 	kubectl apply -f noahdb.yaml
 
 default: generated test
