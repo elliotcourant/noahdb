@@ -6,9 +6,9 @@ import (
 	"github.com/hashicorp/raft"
 	"github.com/readystock/golog"
 	"io/ioutil"
-	v12 "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	appsV1 "k8s.io/api/apps/v1"
+	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"os"
@@ -48,13 +48,13 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 
 	currentNameSpace := string(cn)
 
-	deployments, err := clientSet.AppsV1().Deployments(currentNameSpace).List(metav1.ListOptions{})
+	deployments, err := clientSet.AppsV1().Deployments(currentNameSpace).List(metaV1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	noahDeploymentIndex := linq.From(deployments.Items).IndexOf(func(i interface{}) bool {
-		deployment, ok := i.(v12.Deployment)
+		deployment, ok := i.(appsV1.Deployment)
 		return ok && deployment.Name == "noahdb"
 	})
 
@@ -62,15 +62,15 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 		return nil, fmt.Errorf("could not find a noahdb deployment, auto-join not supported")
 	}
 
-	pods, err := clientSet.CoreV1().Pods(currentNameSpace).List(metav1.ListOptions{})
+	pods, err := clientSet.CoreV1().Pods(currentNameSpace).List(metaV1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	joinAddresses := make([]raft.Server, 0)
-	items := make([]v1.Pod, 0)
+	items := make([]coreV1.Pod, 0)
 	linq.From(pods.Items).OrderBy(func(i interface{}) interface{} {
-		pod, ok := i.(v1.Pod)
+		pod, ok := i.(coreV1.Pod)
 		if !ok {
 			return "z"
 		} else {
@@ -85,16 +85,16 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 
 		addr := pod.Status.PodIP
 		container, ok := linq.From(pod.Spec.Containers).FirstWith(func(i interface{}) bool {
-			container, ok := i.(v1.Container)
+			container, ok := i.(coreV1.Container)
 			return ok && strings.HasPrefix(container.Image, "noahdb/node")
-		}).(v1.Container)
+		}).(coreV1.Container)
 		if !ok {
 			continue
 		}
 		containerPort, hasNoahPort := linq.From(container.Ports).FirstWith(func(i interface{}) bool {
-			port, ok := i.(v1.ContainerPort)
+			port, ok := i.(coreV1.ContainerPort)
 			return ok && port.Name == "noahdb"
-		}).(v1.ContainerPort)
+		}).(coreV1.ContainerPort)
 
 		if !hasNoahPort || addr == "" {
 			continue
