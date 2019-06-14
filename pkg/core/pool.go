@@ -3,6 +3,7 @@ package core
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
@@ -193,7 +194,7 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 		return nil, err
 	}
 
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", dataNode.Address, dataNode.Port))
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", dataNode.GetAddress(), dataNode.GetPort()))
 	if err != nil {
 		golog.Errorf("could not resolve address for data node [%d]: %s", dataNode.DataNodeID, err.Error())
 		return nil, err

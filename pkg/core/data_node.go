@@ -24,7 +24,7 @@ type DataNodeContext interface {
 	GetRandomDataNodeShardID() (uint64, error)
 	GetDataNodeShardIDs() ([]uint64, error)
 	GetDataNodeShardIDsForShard(uint64) ([]uint64, error)
-	NewDataNode(address string, port int, user string, password string) (DataNode, error)
+	NewDataNode(address string, port int32, user string, password string) (DataNode, error)
 }
 
 func (ctx *base) DataNodes() DataNodeContext {
@@ -33,7 +33,7 @@ func (ctx *base) DataNodes() DataNodeContext {
 	}
 }
 
-func (ctx *dataNodeContext) NewDataNode(address string, port int, user, password string) (DataNode, error) {
+func (ctx *dataNodeContext) NewDataNode(address string, port int32, user, password string) (DataNode, error) {
 	id, err := ctx.db.NextSequenceValueById(dataNodeIdSequencePath)
 	if err != nil {
 		return DataNode{}, err

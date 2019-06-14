@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/kataras/golog"
+	"github.com/readystock/golog"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

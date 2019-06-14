@@ -33,14 +33,13 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	if err != nil {
 		panic(err)
 	}
-	golog.Info("things")
 
-	tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword := "", 0, "", ""
+	tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword := "", int32(0), "", ""
+	testNameCleaned := strings.ReplaceAll(strings.ToLower(t.Name()), "/", "_")
 
 	callbacks := make([]func(), 0)
 
 	if spawnPg {
-
 		imageName := "docker.io/library/postgres:10"
 
 		out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
@@ -49,7 +48,6 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		}
 		io.Copy(os.Stdout, out)
 
-		testNameCleaned := strings.ReplaceAll(strings.ToLower(t.Name()), "/", "_")
 		containerName := strings.ReplaceAll(fmt.Sprintf("noahdb-test-database-%s-%d", testNameCleaned, time.Now().Unix()), "/", "_")
 
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
@@ -72,25 +70,29 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		if err != nil {
 			golog.Errorf("could not inspect container: %v", err)
 		}
+		netInfo := info.NetworkSettings.Ports["5432/tcp"][0]
+		postgresPort := netInfo.HostPort
+		postgresAddress := netInfo.HostIP
 
-		postgresPort := info.NetworkSettings.Ports["5432/tcp"][0].HostPort
-		port, err := strconv.Atoi(postgresPort)
+		port, err := strconv.ParseInt(postgresPort, 10, 32)
 		if err != nil {
 			golog.Fatalf("could not parse temp postgres port [%s]: %v", postgresPort, err)
 			panic(err)
 		}
+		address := fmt.Sprintf("%s:%s", postgresAddress, postgresPort)
+		golog.Warnf("USING [%s] AS POSTGRES TEMP DB", address)
 
 		attempts := 0
+		maxAttempts := 10
 		for {
-			time.Sleep(2 * time.Second)
-			address := fmt.Sprintf("%s:%s", "0.0.0.0", postgresPort)
+			time.Sleep(5 * time.Second)
 			connStr := fmt.Sprintf("postgres://postgres:%s@%s/postgres?sslmode=disable", testNameCleaned, address)
 			db, err := sql.Open("postgres", connStr)
 			if err != nil {
 				golog.Warnf("failed to connect to test postgres container address [%s]: %v", address, err)
 				attempts++
-				if attempts > 3 {
-					t.Errorf("could not connect to postgres container in 3 attempts: %v", err)
+				if attempts > maxAttempts {
+					t.Errorf("could not connect to postgres container in %d attempts: %v", maxAttempts, err)
 					panic(err)
 				}
 				continue
@@ -100,8 +102,8 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 			if err != nil {
 				golog.Warnf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
 				attempts++
-				if attempts > 3 {
-					t.Errorf("could not execute simple query to postgres container in 3 attempts: %v", err)
+				if attempts > maxAttempts {
+					t.Errorf("could not execute simple query to postgres container in %d attempts: %v", maxAttempts, err)
 					panic(err)
 				}
 				continue
@@ -119,8 +121,8 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 			if err := rows.Err(); err != nil {
 				golog.Warnf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
 				attempts++
-				if attempts > 3 {
-					t.Errorf("could not execute simple query to postgres container in 3 attempts: %v", err)
+				if attempts > maxAttempts {
+					t.Errorf("could not execute simple query to postgres container in %d attempts: %v", maxAttempts, err)
 					panic(err)
 				}
 				continue
@@ -132,7 +134,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		}
 
 		tempPostgresAddress = "0.0.0.0"
-		tempPostgresPort = port
+		tempPostgresPort = int32(port)
 		tempPostgresUser = "postgres"
 		tempPostgresPassword = testNameCleaned
 
@@ -153,12 +155,13 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	}
 
 	golog.SetLevel("trace")
-	tempdir, err := ioutil.TempDir("", "core-temp")
+	tempdir, err := ioutil.TempDir("", testNameCleaned)
 	if err != nil {
 		panic(err)
 	}
 
 	callbacks = append(callbacks, func() {
+		golog.Warnf("removing temporary directory at: %s", tempdir)
 		if err := os.RemoveAll(tempdir); err != nil {
 			panic(err)
 		}

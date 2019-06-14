@@ -18,9 +18,10 @@ type ColonyConfig struct {
 	JoinAddresses         []raft.Server
 	Transport             TransportWrapper
 	LocalPostgresAddress  string
-	LocalPostgresPort     int
+	LocalPostgresPort     int32
 	LocalPostgresUser     string
 	LocalPostgresPassword string
+	StartPool             bool
 }
 
 // Colony is a wrapper for all of the core data that noahdb needs to operate.
@@ -144,7 +145,9 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 		pool:     map[uint64]*poolItem{},
 	}
 
-	ctx.Pool().StartPool()
+	if config.StartPool {
+		ctx.Pool().StartPool()
+	}
 
 	if len(config.JoinAddresses) > 0 {
 		attempts := 1

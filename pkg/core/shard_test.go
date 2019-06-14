@@ -65,7 +65,7 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 		for i := 0; i < numberOfNodes; i++ {
 			// Noahdb does not check to see if a node is a duplicate. And shards on each "node"
 			// are unique so a single node can be treated as multiple nodes in somne cases.
-			_, _ = colony.DataNodes().NewDataNode(templateNode.Address, int(templateNode.Port), templateNode.User, templateNode.Password)
+			_, _ = colony.DataNodes().NewDataNode(templateNode.Address, templateNode.Port, templateNode.User, templateNode.Password)
 		}
 
 		for i := 0; i < numberOfShards; i++ {

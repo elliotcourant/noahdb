@@ -11,12 +11,15 @@ postgres:
 	docker build -t noahdb/postgres:local ./k8s/postgres
 
 docker:
-	docker build -t noahdb/node:$(DOCKER_TAG) .
+	docker build -t noahdb/node:$(DOCKER_TAG) -f ./k8s/node/Dockerfile .
+
+docker-test:
+	docker build -t noahdb/test:local -f ./k8s/node/Dockerfile.test .
 
 kube: docker
-	kubectl delete -f noahdb.yaml --wait --ignore-not-found=true
+	kubectl delete -f ./k8s/node/noahdb.yaml --wait --ignore-not-found=true
 	sleep 5
-	kubectl apply -f noahdb.yaml
+	kubectl apply -f ./k8s/node/noahdb.yaml
 
 default: generated test
 

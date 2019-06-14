@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/kataras/golog"
+	"github.com/readystock/golog"
 	"github.com/readystock/goqu"
 	"strconv"
 	"strings"

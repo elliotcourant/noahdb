@@ -26,8 +26,8 @@ USER postgres
 
 RUN /node/bin/initdb -D /data/db
 VOLUME /data/db
-COPY ./pg_hba.conf /data/db/pg_hba.conf
-COPY ./postgresql.conf /data/db/postgresql.conf
+COPY ./k8s/node/pg_hba.conf /data/db/pg_hba.conf
+COPY ./k8s/node/postgresql.conf /data/db/postgresql.conf
 COPY --from=builder /go/src/github.com/elliotcourant/noahdb/bin/noahdb /node/bin/noahdb
 
 EXPOSE 5433 5432

@@ -1,0 +1,40 @@
+FROM ubuntu:16.04 AS builder
+
+# Install golang
+RUN apt-get update
+RUN apt-get --assume-yes install \
+        wget \
+        curl \
+        build-essential \
+        apt-transport-https \
+        docker.io
+RUN wget https://dl.google.com/go/go1.12.2.linux-amd64.tar.gz
+RUN tar -xvf go1.12.2.linux-amd64.tar.gz
+RUN mv go /usr/local
+RUN mkdir /go
+
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.14.0/bin/linux/amd64/kubectl
+RUN chmod +x ./kubectl
+RUN mv ./kubectl /usr/local/bin/kubectl
+
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/go
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+# RUN echo "deb https://download.virtualbox.org/virtualbox/debian xenial contrib" >> /etc/apt/sources.list
+# RUN wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | apt-key add -
+# RUN wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | apt-key add -
+# RUN apt-get update
+# RUN apt-get --assume-yes install virtualbox-6.0
+
+RUN curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
+RUN install minikube /usr/local/bin
+
+RUN minikube version
+
+RUN minikube start --vm-driver=none
+
+RUN mkdir -p /go/src/github.com/elliotcourant/noahdb
+COPY ./ /go/src/github.com/elliotcourant/noahdb
+WORKDIR /go/src/github.com/elliotcourant/noahdb
+CMD ["go", "test", "-race", "-v",  "./..."]
