@@ -12,9 +12,9 @@ env:
     - PGPORT=5433
     - PGDATABASE=postgres
     - PGUSER=postgres
-    - PGPASSWORD=''
+    - PGPASSWORD='12345'
     - PGHOST=localhost
-    - PGX_TEST_DATABASE=postgres://postgres@127.0.0.1:5433/postgres
+    - PGX_TEST_DATABASE=postgres://postgres:12345@127.0.0.1:5433/postgres
     - GO111MODULE=on
 
 jobs:
@@ -22,20 +22,8 @@ jobs:
     - stage: Build & Test
       services:
         - docker
-        - postgresql
-      addons:
-        postgresql: "10"
-        apt:
-          packages:
-            - postgresql-10
-            - postgresql-client-10
       before_script:
-        - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
-        - sudo sed -i 's/#max_prepared_transactions.*/max_prepared_transactions = 100/' /etc/postgresql/*/main/postgresql.conf
-        - cat /etc/postgresql/10/main/postgresql.conf
-        - sudo service postgresql restart
-        - sleep 10
-        - psql -c 'create database travis_ci_test;' -U postgres
+        - docker run --publish 5432:5433 --env POSTGRES_PASSWORD=12345 -d postgres:10
         - go get -v -d google.golang.org/grpc
         - go get -v -d -t github.com/golang/protobuf/...
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip

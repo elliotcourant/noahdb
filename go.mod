@@ -32,7 +32,7 @@ require (
 	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect
 	github.com/juju/testing v0.0.0-20190429233213-dfc56b8c09fc // indirect
 	github.com/kataras/go-errors v0.0.3
-	github.com/kataras/golog v0.0.0-20180321173939-03be10146386
+	github.com/kataras/golog v0.0.0-20180321173939-03be10146386 // indirect
 	github.com/kataras/pio v0.0.0-20190103105442-ea782b38602d // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.1.1
