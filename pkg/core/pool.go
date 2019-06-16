@@ -3,7 +3,6 @@ package core
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
