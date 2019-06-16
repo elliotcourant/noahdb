@@ -34,7 +34,7 @@ jobs:
         - sudo sed -i 's/#max_prepared_transactions.*/max_prepared_transactions = 100/' /etc/postgresql/*/main/postgresql.conf
         - cat /etc/postgresql/10/main/postgresql.conf
         - sudo service postgresql restart
-        - sleep 1
+        - sleep 10
         - psql -c 'create database travis_ci_test;' -U postgres
         - go get -v -d google.golang.org/grpc
         - go get -v -d -t github.com/golang/protobuf/...
