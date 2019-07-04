@@ -33,6 +33,8 @@ type CommandResult struct {
 	err     error
 	typ     completionMsgType
 	tag     string
+
+	noDataMessage bool
 }
 
 func CreateSyncCommandResult(session sessionContext) *CommandResult {
@@ -45,6 +47,19 @@ func CreateExecuteCommandResult(session sessionContext, stmt ast.Stmt) *CommandR
 	result := NewCommandResult(session)
 	result.typ = commandComplete
 	result.tag = stmt.StatementTag()
+	return result
+}
+
+func CreatePreparedStatementResult(session sessionContext, stmt ast.Stmt) *CommandResult {
+	result := NewCommandResult(session)
+	result.typ = parseComplete
+	result.tag = stmt.StatementTag()
+	return result
+}
+
+func CreateDescribeStatementResult(session sessionContext) *CommandResult {
+	result := NewCommandResult(session)
+	result.typ = noCompletionMsg
 	return result
 }
 
@@ -80,6 +95,10 @@ func (result *CommandResult) CloseWithErr(e error) error {
 	return result.session.Backend().Send(&pgproto.ErrorResponse{
 		Message: e.Error(),
 	})
+}
+
+func (result *CommandResult) SetNoDataMessage(msg bool) {
+	result.noDataMessage = msg
 }
 
 func (result *CommandResult) Close() error {
@@ -131,7 +150,12 @@ func (result *CommandResult) Close() error {
 		// // The error is saved on conn.err.
 		// _ /* err */ = r.conn.Flush(r.pos)
 	case noCompletionMsg:
-		// nothing to do
+		// Only for describe statements.
+		if result.noDataMessage {
+			if err := result.session.Backend().Send(&pgproto.NoData{}); err != nil {
+				panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
+			}
+		}
 	default:
 		panic(fmt.Sprintf("unknown type: %v", result.typ))
 	}

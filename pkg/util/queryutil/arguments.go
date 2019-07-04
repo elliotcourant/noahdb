@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"reflect"
 	"strconv"
 )
 
 // PlaceholderTypes relates placeholder names to their resolved type.
-type PlaceholderTypes map[string]types.T
+type PlaceholderTypes map[int]core.Type
 
 // QueryArguments relates placeholder names to their provided query argument.
 //

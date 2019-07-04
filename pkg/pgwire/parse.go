@@ -6,6 +6,8 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
+	"github.com/elliotcourant/noahdb/pkg/types"
+	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/readystock/golog"
 )
 
@@ -17,25 +19,52 @@ func (wire *wireServer) handleParse(parseMessage *pgproto.Parse) error {
 
 	if len(parseTree.Statements) == 0 {
 		// no statements
+	} else if len(parseTree.Statements) > 1 {
+		return fmt.Errorf("cannot have more than 1 statement per message in extended query")
+	}
+
+	rawTypeHints := make([]types.OID, len(parseMessage.ParameterOIDs))
+	for i, raw := range parseMessage.ParameterOIDs {
+		rawTypeHints[i] = types.OID(raw)
 	}
 
 	// Convert the actual query sent to the statement interface
 	stmt, ok := parseTree.Statements[0].(ast.RawStmt).Stmt.(ast.Stmt)
 	if !ok {
-		return wire.StatementBuffer().Push(commands.SendError{
-			Err: fmt.Errorf("could not handle statement [%s]", parseMessage.Query),
-		})
+		return fmt.Errorf("could not handle statement [%s]", parseMessage.Query)
 	}
 
 	j, _ := json.Marshal(parseTree)
 	golog.Verbosef("received query: %s | %s", parseMessage.Query, string(j))
-	if err := wire.StatementBuffer().Push(commands.PrepareStatement{
-		Name:      parseMessage.Name,
-		Statement: stmt,
-	}); err != nil {
-		return wire.StatementBuffer().Push(commands.SendError{
-			Err: err,
-		})
+
+	placeholders := queryutil.GetArguments(stmt)
+
+	if len(rawTypeHints) > len(placeholders) {
+		return fmt.Errorf("received too many type hints: %d vs %d placeholders in query",
+			len(rawTypeHints), len(placeholders))
 	}
-	return wire.backend.Send(&pgproto.ParseComplete{})
+
+	var sqlTypeHints queryutil.PlaceholderTypes
+	if len(rawTypeHints) > 0 {
+		// Prepare the mapping of SQL placeholder names to types. Pre-populate it with
+		// the type hints received from the client, if any.
+		sqlTypeHints = make(queryutil.PlaceholderTypes, len(placeholders))
+		for i, t := range rawTypeHints {
+			if t == 0 {
+				continue
+			}
+			v, ok := wire.Colony().Types().GetTypeByOid(t)
+			if !ok {
+				return fmt.Errorf("unknown oid type: %v", t)
+			}
+			sqlTypeHints[i] = v
+		}
+	}
+
+	return wire.StatementBuffer().Push(commands.PrepareStatement{
+		Name:         parseMessage.Name,
+		Statement:    stmt,
+		TypeHints:    sqlTypeHints,
+		RawTypeHints: rawTypeHints,
+	})
 }

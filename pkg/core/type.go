@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/readystock/golog"
 	"github.com/readystock/goqu"
 	"strconv"
@@ -24,6 +25,8 @@ type typeContext struct {
 
 type TypeContext interface {
 	GetTypeByName(name string) (Type, bool, error)
+	GetTypeByOid(oid types.OID) (Type, bool)
+	// GetTypeInstance(typ Type) (types.Value, bool, error)
 }
 
 func (ctx *base) Types() TypeContext {
@@ -112,4 +115,14 @@ func (ctx *typeContext) GetTypeByName(name string) (Type, bool, error) {
 		return Type_unknown, false, nil
 	}
 	return Type(ids[0]), true, nil
+}
+
+func (ctx *typeContext) GetTypeByOid(oid types.OID) (Type, bool) {
+	i := int(oid)
+	t := Type(i)
+	s := strconv.Itoa(i)
+	if s == t.String() {
+		return t, false
+	}
+	return t, true
 }

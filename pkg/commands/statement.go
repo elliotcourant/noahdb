@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 )
@@ -29,6 +30,8 @@ type PrepareStatement struct {
 func (PrepareStatement) Command() {}
 
 type DescribeStatement struct {
+	Name string
+	Type pgwirebase.PrepareType
 }
 
 // Command Implements the command interface

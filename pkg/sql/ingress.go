@@ -3,7 +3,6 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
-	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
 	"io"
 	"reflect"
@@ -63,15 +62,15 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 				// // err = session.Backend().Send()
 			case commands.ExecutePortal:
 			case commands.PrepareStatement:
+				result = commands.CreatePreparedStatementResult(s, cmd.Statement)
 				err = s.ExecutePrepare(cmd, result)
 			case commands.DescribeStatement:
+				result = commands.CreateDescribeStatementResult(s)
+				err = s.ExecuteDescribe(cmd, result)
 			case commands.BindStatement:
 			case commands.DeletePreparedStatement:
 			case commands.SendError:
 				result = commands.CreateErrorResult(s, cmd.Err)
-				err = s.Backend().Send(&pgproto.ErrorResponse{
-					Message: cmd.Err.Error(),
-				})
 			case commands.Sync:
 				result = commands.CreateSyncCommandResult(s)
 			case commands.Flush:

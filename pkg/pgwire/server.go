@@ -152,43 +152,43 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 			return wire.Errorf(err.Error())
 		}
 
-		switch msg := message.(type) {
-		case *pgproto.Query:
-			if err := wire.handleSimpleQuery(msg); err != nil {
-				if e := wire.StatementBuffer().Push(commands.SendError{
-					Err: err,
-				}); e != nil {
-					return e
+		err = func(message pgproto.FrontendMessage) error {
+			switch msg := message.(type) {
+			case *pgproto.Query:
+				if err := wire.handleSimpleQuery(msg); err != nil {
+					return err
 				}
+				return wire.StatementBuffer().Push(commands.Sync{})
+			case *pgproto.Execute:
+			case *pgproto.Parse:
+				return wire.handleParse(msg)
+			case *pgproto.Describe:
+				return wire.handleDescribe(msg)
+			case *pgproto.Bind:
+			case *pgproto.Close:
+			case *pgproto.Terminate:
+				terminateChannel <- true
+				return nil
+			case *pgproto.Sync:
+			case *pgproto.Flush:
+			case *pgproto.CopyData:
+			default:
+				return wire.Errorf("could not handle message type [%s]", reflect.TypeOf(message).Elem().Name())
 			}
 
-			if err := wire.StatementBuffer().Push(commands.Sync{}); err != nil {
-				if e := wire.StatementBuffer().Push(commands.SendError{
-					Err: err,
-				}); e != nil {
-					return e
-				}
-			}
-		case *pgproto.Execute:
-		case *pgproto.Parse:
-			if err := wire.handleParse(msg); err != nil {
-				if e := wire.StatementBuffer().Push(commands.SendError{
-					Err: err,
-				}); e != nil {
-					return e
-				}
-			}
-		case *pgproto.Describe:
-		case *pgproto.Bind:
-		case *pgproto.Close:
-		case *pgproto.Terminate:
-			terminateChannel <- true
 			return nil
-		case *pgproto.Sync:
-		case *pgproto.Flush:
-		case *pgproto.CopyData:
-		default:
-			return wire.Errorf("could not handle message type [%s]", reflect.TypeOf(message).Elem().Name())
+		}(message)
+
+		if err != nil {
+			if e := wire.StatementBuffer().Push(commands.SendError{
+				Err: err,
+			}); e != nil {
+				return e
+			}
+
+			if e := wire.StatementBuffer().Push(commands.Sync{}); e != nil {
+				return e
+			}
 		}
 	}
 	return nil

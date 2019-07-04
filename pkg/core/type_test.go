@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/testutils"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -84,5 +85,39 @@ func TestTypeContext_GetTypeByName(t *testing.T) {
 
 	t.Run("get type array with bounds", func(t *testing.T) {
 		assertValidType(t, "[12]int8", core.Type_int8_array)
+	})
+}
+
+func TestTypeContext_GetTypeByOid(t *testing.T) {
+	colony, cleanup := testutils.NewTestColony(t)
+	defer cleanup()
+
+	assertCorrectType := func(oid types.OID, expected core.Type) {
+		result, ok := colony.Types().GetTypeByOid(oid)
+		if !assert.True(t, ok, "could not find matching type") {
+			t.FailNow()
+		}
+		if !assert.Equal(t, expected, result) {
+			t.FailNow()
+		}
+	}
+
+	assertMissingType := func(oid types.OID) {
+		_, ok := colony.Types().GetTypeByOid(oid)
+		if !assert.False(t, ok, "found matching type") {
+			t.FailNow()
+		}
+	}
+
+	t.Run("general oid to type", func(t *testing.T) {
+		assertCorrectType(types.BoolOID, core.Type_bool)
+		assertCorrectType(types.ByteaOID, core.Type_bytea)
+		assertCorrectType(types.CharOID, core.Type_char)
+		assertCorrectType(types.Int8OID, core.Type_int8)
+	})
+
+	t.Run("missing types", func(t *testing.T) {
+		assertMissingType(12512121)
+		assertMissingType(1)
 	})
 }
