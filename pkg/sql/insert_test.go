@@ -68,4 +68,54 @@ func TestNewInsertStatementPlan(t *testing.T) {
 
 		assert.NotEmpty(t, values)
 	})
+
+	t.Run("different inserts", func(t *testing.T) {
+		_, err = db.Exec(`CREATE TABLE different_table (id BIGSERIAL NOT NULL PRIMARY KEY, name TEXT UNIQUE);`)
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+
+		table, ok, err := colony.Tables().GetTable("different_table")
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+		assert.True(t, ok)
+		assert.NotEmpty(t, table)
+
+		t.Run("normal insert", func(t *testing.T) {
+			_, err = db.Exec(`INSERT INTO different_table (name) VALUES('test');`)
+			if !assert.NoError(t, err) {
+				panic(err)
+			}
+		})
+
+		t.Run("insert with returning clause", func(t *testing.T) {
+			rows, err := db.Query(`INSERT INTO different_table (name) VALUES('test another') RETURNING id;`)
+			if !assert.NoError(t, err) {
+				panic(err)
+			}
+
+			values := make([]uint64, 0)
+
+			for rows.Next() {
+				if err := rows.Err(); !assert.NoError(t, err) {
+					panic(err)
+				}
+
+				var value uint64
+				if err := rows.Scan(
+					&value,
+				); !assert.NoError(t, err) {
+					panic(err)
+				}
+				values = append(values, value)
+			}
+
+			if err := rows.Err(); !assert.NoError(t, err) {
+				panic(err)
+			}
+
+			assert.NotEmpty(t, values)
+		})
+	})
 }
