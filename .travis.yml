@@ -12,8 +12,8 @@ env:
     - PGPORT=5433
     - PGDATABASE=postgres
     - PGUSER=postgres
-    - PGPASSWORD='12345'
-    - PGHOST=localhost
+    - PGPASSWORD=12345
+    - PGHOST=0.0.0.0
     - PGX_TEST_DATABASE=postgres://postgres:12345@0.0.0.0:5433/postgres
     - GO111MODULE=on
 
@@ -22,8 +22,9 @@ jobs:
     - stage: Build & Test
       services:
         - docker
+        - postgresql
       before_script:
-        - docker run --publish 5432:5433 --env POSTGRES_PASSWORD=12345 -d postgres:10
+#        - docker run --publish 5432:5434 --env POSTGRES_PASSWORD=12345 -d postgres:10
         - go get -v -d google.golang.org/grpc
         - go get -v -d -t github.com/golang/protobuf/...
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
