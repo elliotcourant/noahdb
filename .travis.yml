@@ -32,6 +32,9 @@ jobs:
         - postgresql
       before_script:
 #        - docker run --publish 5432:5434 --env POSTGRES_PASSWORD=12345 -d postgres:10
+        - sudo service postgresql restart
+        - sleep 1
+        - psql -c 'create database travis_ci_test;' -U postgres
         - go get -v -d google.golang.org/grpc
         - go get -v -d -t github.com/golang/protobuf/...
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
