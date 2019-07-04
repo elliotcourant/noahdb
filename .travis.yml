@@ -16,12 +16,12 @@ addons:
 
 env:
   global:
-    - PGPORT=5433
+    - PGPORT=5432
     - PGDATABASE=postgres
     - PGUSER=postgres
     - PGPASSWORD=12345
     - PGHOST=localhost
-    - PGX_TEST_DATABASE=postgres://postgres:12345@localhost:5433/postgres
+    - PGX_TEST_DATABASE=postgres://postgres:12345@localhost:5432/postgres
     - GO111MODULE=on
 
 jobs:
@@ -32,8 +32,8 @@ jobs:
         - postgresql
       before_script:
 #        - docker run --publish 5432:5434 --env POSTGRES_PASSWORD=12345 -d postgres:10
-        - sudo service postgresql restart
-        - sleep 10
+#        - sudo service postgresql restart
+#        - sleep 10
         - psql -c 'create database travis_ci_test;' -U postgres
         - go get -v -d google.golang.org/grpc
         - go get -v -d -t github.com/golang/protobuf/...
