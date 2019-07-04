@@ -14,7 +14,7 @@ env:
     - PGUSER=postgres
     - PGPASSWORD='12345'
     - PGHOST=localhost
-    - PGX_TEST_DATABASE=postgres://postgres:12345@127.0.0.1:5433/postgres
+    - PGX_TEST_DATABASE=postgres://postgres:12345@0.0.0.0:5433/postgres
     - GO111MODULE=on
 
 jobs:
@@ -33,6 +33,7 @@ jobs:
         - go get -u github.com/golang/protobuf/protoc-gen-go
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
+        - docker ps
         - go mod vendor
         - make generated
       script:

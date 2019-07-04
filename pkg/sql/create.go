@@ -200,9 +200,11 @@ func (stmt *createStmtPlanner) handleColumns(s *session) error {
 					case "bigserial":
 						typeName = "bigint"
 						column.Serial = true
+						stmt.table.HasSequence = true
 					case "serial":
 						typeName = "int"
 						column.Serial = true
+						stmt.table.HasSequence = true
 					}
 
 					col.TypeName.Names.Items = []ast.Node{ast.String{Str: typeName}}

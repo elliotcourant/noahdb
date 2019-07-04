@@ -24,10 +24,12 @@ type tableContext struct {
 
 type TableContext interface {
 	NewTable(table Table, columns []Column) (Table, []Column, error)
+	NextSequenceID(table Table, column Column) (uint64, error)
 	GetTable(name string) (Table, bool, error)
 	GetTables(...string) ([]Table, error)
 	GetColumns(tableId uint64) ([]Column, error)
 	GetPrimaryKeyColumnByName(name string) (Column, bool, error)
+	GetSequenceColumnForTable(tableId uint64) (Column, bool, error)
 	GetShardColumn(uint64) (Column, error)
 	GetTablesInSchema(schema string, names ...string) ([]Table, error)
 	GetTenantTable() (Table, bool, error)
@@ -58,10 +60,11 @@ func (ctx *tableContext) NewTable(table Table, columns []Column) (Table, []Colum
 	insertTableSql := goqu.
 		From("tables").
 		Insert(goqu.Record{
-			"table_id":   table.TableID,
-			"schema_id":  1,
-			"table_name": table.TableName,
-			"table_type": table.TableType,
+			"table_id":     table.TableID,
+			"schema_id":    1,
+			"table_name":   table.TableName,
+			"table_type":   table.TableType,
+			"has_sequence": table.HasSequence,
 		}).Sql
 
 	columnSql := make([]string, len(columns))
@@ -90,6 +93,10 @@ func (ctx *tableContext) NewTable(table Table, columns []Column) (Table, []Colum
 
 	_, err = ctx.db.Exec(compiledSql)
 	return table, columns, err
+}
+
+func (ctx *tableContext) NextSequenceID(table Table, column Column) (uint64, error) {
+	return ctx.db.NextSequenceValueById(fmt.Sprintf("/schema/%d/table/%d/column/%d/sequence", table.SchemaID, column.TableID, column.ColumnID))
 }
 
 func (ctx *tableContext) Exists(name string) (bool, error) {
@@ -233,6 +240,26 @@ func (ctx *tableContext) GetShardColumn(tableId uint64) (Column, error) {
 	return columns[0], err
 }
 
+func (ctx *tableContext) GetSequenceColumnForTable(tableId uint64) (Column, bool, error) {
+	compiledSql, _, _ := getColumnsQuery.
+		Where(goqu.Ex{
+			"table_id": tableId,
+			"serial":   true,
+		}).Limit(1).ToSql()
+	rows, err := ctx.db.Query(compiledSql)
+	if err != nil {
+		return Column{}, false, err
+	}
+	columns, err := ctx.columnsFromRows(rows)
+	if len(columns) > 1 {
+		return Column{}, false, fmt.Errorf("tried to find one shard column, found %d", len(columns))
+	}
+	if len(columns) == 0 {
+		return Column{}, false, nil
+	}
+	return columns[0], true, err
+}
+
 func (ctx *tableContext) tablesFromRows(response *frunk.QueryResponse) ([]Table, error) {
 	rows := rqliter.NewRqlRows(response)
 	items := make([]Table, 0)
@@ -242,7 +269,8 @@ func (ctx *tableContext) tablesFromRows(response *frunk.QueryResponse) ([]Table,
 			&item.TableID,
 			&item.SchemaID,
 			&item.TableName,
-			&item.TableType); err != nil {
+			&item.TableType,
+			&item.HasSequence); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -258,6 +286,7 @@ func (ctx *tableContext) columnsFromRows(response *frunk.QueryResponse) ([]Colum
 	items := make([]Column, 0)
 	for rows.Next() {
 		item := Column{}
+		var foreignColumnId *uint64
 		if err := rows.Scan(
 			&item.ColumnID,
 			&item.TableID,
@@ -268,8 +297,11 @@ func (ctx *tableContext) columnsFromRows(response *frunk.QueryResponse) ([]Colum
 			&item.Nullable,
 			&item.ShardKey,
 			&item.Serial,
-			&item.ForeignColumnID); err != nil {
+			&foreignColumnId); err != nil {
 			return nil, err
+		}
+		if foreignColumnId != nil {
+			item.ForeignColumnID = *foreignColumnId
 		}
 		items = append(items, item)
 	}

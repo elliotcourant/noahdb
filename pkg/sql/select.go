@@ -59,8 +59,8 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 
 	if numberOfNoahTables != len(tableNames) {
 		// All the tables should be noah tables, or none of them should be.
-		return InitialPlan{}, false,
-			fmt.Errorf("all tables in a query must be normal tables, or noah tables")
+		return InitialPlan{}, false, nil
+		// fmt.Errorf("all tables in a query must be normal tables, or noah tables")
 	}
 
 	if numberOfNoahTables > 0 {

@@ -17,6 +17,7 @@ message Table {
     uint64 SchemaID = 2;
     string TableName = 3;
     TableType TableType = 4;
+    bool HasSequence = 5;
 }
 
 message Column {

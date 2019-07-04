@@ -88,6 +88,12 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 		// If we are performing a write, and there is no shard ID then that means the write must be
 		// performed on ALL shards in the cluster.
 		if _, ok := plan.Types[PlanType_WRITE]; ok {
+			readOnly = false
+		} else if _, ok := plan.Types[PlanType_READWRITE]; ok {
+			readOnly = false
+		}
+
+		if !readOnly {
 			ids, err := s.Colony().DataNodes().GetDataNodeShardIDs()
 			if err != nil {
 				return ExpandedPlan{}, err
@@ -112,9 +118,14 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 		}
 
 		if _, ok := plan.Types[PlanType_WRITE]; ok {
+			readOnly = false
+		} else if _, ok := plan.Types[PlanType_READWRITE]; ok {
+			readOnly = false
+		}
+
+		if !readOnly {
 			// Get all the nodes that are writable for the given shard ID
 			dataNodeShards = tempDataNodeShardIds
-			readOnly = false
 			break
 		}
 	}
@@ -126,11 +137,15 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 			ReadOnly:        readOnly,
 			DataNodeShardID: id,
 		}
+
 		if readPlan, ok := plan.Types[PlanType_READ]; ok {
 			task.Query, task.Type = readPlan.Query, readPlan.Type
 		} else if writePlan, ok := plan.Types[PlanType_WRITE]; ok {
 			task.Query, task.Type = writePlan.Query, writePlan.Type
+		} else if writePlan, ok := plan.Types[PlanType_READWRITE]; ok {
+			task.Query, task.Type = writePlan.Query, writePlan.Type
 		}
+
 		tasks[i] = task
 	}
 

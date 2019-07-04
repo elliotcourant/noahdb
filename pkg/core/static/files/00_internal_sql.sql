@@ -63,10 +63,11 @@ CREATE TABLE schemas (
 );
 
 CREATE TABLE tables (
-    table_id   INT PRIMARY KEY,
-    schema_id  INT  NOT NULL REFERENCES schemas (schema_id) ON DELETE CASCADE,
-    table_name TEXT NOT NULL,
-    table_type INT  NOT NULL,
+    table_id     INT PRIMARY KEY,
+    schema_id    INT     NOT NULL REFERENCES schemas (schema_id) ON DELETE CASCADE,
+    table_name   TEXT    NOT NULL,
+    table_type   INT     NOT NULL,
+    has_sequence BOOLEAN NOT NULL,
     UNIQUE (schema_id, table_name)
 );
 

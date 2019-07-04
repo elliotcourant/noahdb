@@ -75,6 +75,9 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 						canExit = true
 						return nil
 					case *pgproto.ErrorResponse:
+						if err := s.Backend().Send(message); err != nil {
+							return err
+						}
 						canExit = true
 						return nil
 					case *pgproto.ReadyForQuery:
