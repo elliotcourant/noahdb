@@ -48,7 +48,7 @@ type ExpandedPlanTask struct {
 func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	startTimestamp := time.Now()
 	defer func() {
-		golog.Verbosef("expanding of plan took %s", time.Since(startTimestamp))
+		golog.Verbosef("[%s] expanding of plan", time.Since(startTimestamp))
 	}()
 
 	if plan.Target == PlanTarget_INTERNAL {

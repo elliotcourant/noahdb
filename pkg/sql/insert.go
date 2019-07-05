@@ -67,15 +67,31 @@ func (stmt *insertStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 				if err != nil {
 					return InitialPlan{}, false, err
 				}
-				row = append(row, ast.A_Const{
+				stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists[i] = append(row, ast.A_Const{
 					Val: ast.Integer{
 						Ival: int64(newId),
 					},
 				})
-				stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists[i] = row
 			}
 		default:
+			for i, row := range stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists {
+				sequenceCell := row[sequenceInsertIndex]
+				if _, ok := sequenceCell.(ast.SetToDefault); !ok {
+					return InitialPlan{}, false, fmt.Errorf("cannot manually set value of serialized column [%s]", sequenceColumn.ColumnName)
+				}
 
+				// Generate a new ID.
+				newId, err := s.Colony().Tables().NextSequenceID(table, sequenceColumn)
+				if err != nil {
+					return InitialPlan{}, false, err
+				}
+
+				stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists[i][sequenceInsertIndex] = ast.A_Const{
+					Val: ast.Integer{
+						Ival: int64(newId),
+					},
+				}
+			}
 		}
 	}
 

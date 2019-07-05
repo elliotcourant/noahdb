@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
+	"github.com/readystock/golog"
 	"github.com/readystock/goqu"
 	"strings"
+	"time"
 )
 
 var (
@@ -96,6 +98,10 @@ func (ctx *tableContext) NewTable(table Table, columns []Column) (Table, []Colum
 }
 
 func (ctx *tableContext) NextSequenceID(table Table, column Column) (uint64, error) {
+	startTimestamp := time.Now()
+	defer func() {
+		golog.Verbosef("[%s] new sequence id for [%s.%s]", time.Since(startTimestamp), table.TableName, column.ColumnName)
+	}()
 	return ctx.db.NextSequenceValueById(fmt.Sprintf("/schema/%d/table/%d/column/%d/sequence", table.SchemaID, column.TableID, column.ColumnID))
 }
 

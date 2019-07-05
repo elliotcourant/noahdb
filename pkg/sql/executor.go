@@ -18,7 +18,7 @@ type responsePipe struct {
 func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 	startTimestamp := time.Now()
 	defer func() {
-		golog.Debugf("execution of statement took %s", time.Since(startTimestamp))
+		golog.Verbosef("[%s] execution of statement", time.Since(startTimestamp))
 	}()
 
 	switch plan.Target {
@@ -38,7 +38,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					response.err = err
 					return
 				}
-
+				golog.Debugf("{%d} executing: %s", task.DataNodeShardID, task.Query)
 				if err := frontend.Send(&pgproto.Query{
 					String: task.Query,
 				}); err != nil {
@@ -51,7 +51,8 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 		}
 
 		for i := 0; i < len(plan.Tasks); i++ {
-			return func(response *responsePipe) error {
+			sentRowDescription := false
+			err := func(response *responsePipe) error {
 				if response.err != nil {
 					return response.err
 				}
@@ -66,7 +67,16 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					}
 
 					switch message.(type) {
-					case *pgproto.RowDescription, *pgproto.DataRow:
+					case *pgproto.RowDescription:
+						if sentRowDescription {
+							continue
+						}
+						if err := s.Backend().Send(message); err != nil {
+							return err
+						}
+						canExit = true
+						sentRowDescription = true
+					case *pgproto.DataRow:
 						if err := s.Backend().Send(message); err != nil {
 							return err
 						}
@@ -89,6 +99,9 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					}
 				}
 			}(<-responses)
+			if err != nil {
+				return err
+			}
 		}
 	case PlanTarget_INTERNAL:
 		for i, task := range plan.Tasks {

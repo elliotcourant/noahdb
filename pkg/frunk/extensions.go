@@ -3,6 +3,8 @@ package frunk
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/readystock/golog"
+	"time"
 )
 
 // Get returns a byte array for a given key from BoltDB.
@@ -34,6 +36,10 @@ func (s *Store) Set(key, value []byte) error {
 
 // Query allows read-only queries to be issued to the database.
 func (s *Store) Query(query string) (*QueryResponse, error) {
+	startTimestamp := time.Now()
+	defer func() {
+		golog.Verbosef("[%s] %s", time.Since(startTimestamp), query)
+	}()
 	queryRequest := &QueryRequest{
 		Queries: []string{
 			query,

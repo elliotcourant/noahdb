@@ -13,7 +13,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 	for {
 		select {
 		case <-terminateChannel:
-			golog.Debugf("terminating ingress runner")
+			golog.Debugf("terminating runner")
 			return nil
 		default:
 			c, _, err := s.StatementBuffer().CurrentCommand()
@@ -23,43 +23,17 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 				}
 				return err
 			}
+
 			if c == nil {
 				golog.Debugf("found null command, advancing 1")
 				s.StatementBuffer().AdvanceOne()
 			}
+
 			result := &commands.CommandResult{}
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
 				result = commands.CreateExecuteCommandResult(s, cmd.Statement)
 				err = s.ExecuteStatement(cmd, result)
-				// val := types.Int4{}
-				// val.Set(1)
-				// bytes, _ := val.EncodeText(types.NewConnInfo(), nil)
-				// err = s.Backend().Send(pgproto.BackendMessages{
-				// 	&pgproto.RowDescription{
-				// 		Fields: []pgproto.FieldDescription{
-				// 			{
-				// 				Name:                 "",
-				// 				TableOID:             0,
-				// 				TableAttributeNumber: 0,
-				// 				DataTypeOID:          types.Int2OID,
-				// 				DataTypeSize:         4,
-				// 				TypeModifier:         0,
-				// 				Format:               pgproto.TextFormat,
-				// 			},
-				// 		},
-				// 	},
-				// 	&pgproto.DataRow{
-				// 		Values: [][]byte{
-				// 			bytes,
-				// 		},
-				// 	},
-				// 	&pgproto.CommandComplete{
-				// 		CommandTag: "SELECT 1",
-				// 	},
-				// })
-				// // err = session.Backend().Send()
-				// // err = session.Backend().Send()
 			case commands.ExecutePortal:
 			case commands.PrepareStatement:
 				result = commands.CreatePreparedStatementResult(s, cmd.Statement)

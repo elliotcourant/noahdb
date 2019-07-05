@@ -74,8 +74,4 @@ type PreparedStatement struct {
 	Columns []pgproto.FieldDescription
 
 	InTypes []types.OID
-
-	// TODO(andrei): The connExecutor doesn't use this. Delete it once the
-	//  Executor is gone.
-	portalNames map[string]struct{}
 }

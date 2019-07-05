@@ -117,5 +117,28 @@ func TestNewInsertStatementPlan(t *testing.T) {
 
 			assert.NotEmpty(t, values)
 		})
+
+		t.Run("insert with default serial value", func(t *testing.T) {
+			// These two tests make sure that the ID column can be found in any position
+			// if the column is specified.
+			t.Run("with serial being the first column", func(t *testing.T) {
+				_, err = db.Exec(`INSERT INTO different_table (id, name) VALUES(DEFAULT, 'with default');`)
+				if !assert.NoError(t, err) {
+					panic(err)
+				}
+			})
+
+			t.Run("with serial being a different column", func(t *testing.T) {
+				_, err = db.Exec(`INSERT INTO different_table (name, id) VALUES('with default different', DEFAULT);`)
+				if !assert.NoError(t, err) {
+					panic(err)
+				}
+			})
+		})
+
+		t.Run("fail if serial value provided", func(t *testing.T) {
+			_, err = db.Exec(`INSERT INTO different_table (id, name) VALUES(123, 'with default');`)
+			assert.EqualError(t, err, "pq: cannot manually set value of serialized column [id]")
+		})
 	})
 }

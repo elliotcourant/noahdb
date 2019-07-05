@@ -40,7 +40,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	callbacks := make([]func(), 0)
 
 	if spawnPg {
-		imageName := "docker.io/library/postgres:10"
+		imageName := "docker.io/library/postgres:12"
 
 		out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 		if err != nil {
