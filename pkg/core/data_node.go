@@ -154,7 +154,8 @@ func (ctx *dataNodeContext) GetDataNodeShardIDsForShard(id uint64) ([]uint64, er
 			goqu.I("data_node_shards"),
 			goqu.On(goqu.I("data_node_shards.data_node_id").Eq(goqu.I("data_nodes.data_node_id")))).
 		Where(goqu.Ex{
-			"data_nodes.healthy": true,
+			"data_nodes.healthy":        true,
+			"data_node_shards.shard_id": id,
 		}).
 		ToSql()
 	response, err := ctx.db.Query(compiledQuery)

@@ -76,6 +76,7 @@ func (ctx *typeContext) parseTimes(name string) (string, error) {
 
 func (ctx *typeContext) GetTypeByName(name string) (Type, bool, error) {
 	name = strings.ToLower(name)
+	name = strings.TrimPrefix(name, "pg_catalog.")
 
 	name, err := ctx.parseArray(name)
 	if err != nil {

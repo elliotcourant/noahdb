@@ -123,7 +123,7 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 			return ok && table.TableType == core.TableType_Sharded
 		}).Select(func(i interface{}) interface{} {
 			table, _ := i.(core.Table)
-			shardColumn, err := s.Colony().Tables().GetShardColumn(table.TableID)
+			shardColumn, err := s.Colony().Tables().GetShardKeyColumnForTable(table.TableID)
 			if err != nil {
 				return 0
 			}

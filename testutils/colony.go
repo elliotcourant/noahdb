@@ -40,7 +40,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	callbacks := make([]func(), 0)
 
 	if spawnPg {
-		imageName := "docker.io/library/postgres:12"
+		imageName := "docker.io/library/postgres:11"
 
 		out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 		if err != nil {
@@ -84,9 +84,9 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 
 		attempts := 0
 		maxAttempts := 10
+		connStr := fmt.Sprintf("postgres://postgres:%s@%s/postgres?sslmode=disable", testNameCleaned, address)
 		for {
 			time.Sleep(5 * time.Second)
-			connStr := fmt.Sprintf("postgres://postgres:%s@%s/postgres?sslmode=disable", testNameCleaned, address)
 			db, err := sql.Open("postgres", connStr)
 			if err != nil {
 				golog.Warnf("failed to connect to test postgres container address [%s]: %v", address, err)
@@ -132,6 +132,8 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 			db.Close()
 			break
 		}
+
+		golog.Warnf("Temp DB Address: %s", connStr)
 
 		tempPostgresAddress = "0.0.0.0"
 		tempPostgresPort = int32(port)

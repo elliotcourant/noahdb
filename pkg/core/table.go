@@ -32,7 +32,7 @@ type TableContext interface {
 	GetColumns(tableId uint64) ([]Column, error)
 	GetPrimaryKeyColumnByName(name string) (Column, bool, error)
 	GetSequenceColumnForTable(tableId uint64) (Column, bool, error)
-	GetShardColumn(uint64) (Column, error)
+	GetShardKeyColumnForTable(uint64) (Column, error)
 	GetTablesInSchema(schema string, names ...string) ([]Table, error)
 	GetTenantTable() (Table, bool, error)
 }
@@ -229,7 +229,7 @@ func (ctx *tableContext) GetPrimaryKeyColumnByName(tableName string) (Column, bo
 	return columns[0], true, nil
 }
 
-func (ctx *tableContext) GetShardColumn(tableId uint64) (Column, error) {
+func (ctx *tableContext) GetShardKeyColumnForTable(tableId uint64) (Column, error) {
 	compiledSql, _, _ := getColumnsQuery.
 		Where(goqu.Ex{
 			"table_id":  tableId,
@@ -258,7 +258,7 @@ func (ctx *tableContext) GetSequenceColumnForTable(tableId uint64) (Column, bool
 	}
 	columns, err := ctx.columnsFromRows(rows)
 	if len(columns) > 1 {
-		return Column{}, false, fmt.Errorf("tried to find one shard column, found %d", len(columns))
+		return Column{}, false, fmt.Errorf("tried to find one sequence column, found %d", len(columns))
 	}
 	if len(columns) == 0 {
 		return Column{}, false, nil

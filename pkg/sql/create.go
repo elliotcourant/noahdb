@@ -308,6 +308,8 @@ func (stmt *createStmtPlanner) handleColumns(s *session) error {
 						}
 						hasShardKey = true
 					}
+				case ast.CONSTR_UNIQUE:
+
 				default:
 					return fmt.Errorf("could not handle contraint type [%s]", col.Contype)
 				}

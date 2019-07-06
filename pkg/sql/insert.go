@@ -146,7 +146,63 @@ func (stmt *insertStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 			},
 		}, true, nil
 	case core.TableType_Sharded:
+		shardKeyColumn, err := s.Colony().Tables().GetShardKeyColumnForTable(table.TableID)
+		if err != nil {
+			return InitialPlan{}, false, err
+		}
 
+		shardKeyInsertIndex := linq.From(stmt.tree.Cols.Items).IndexOf(func(i interface{}) bool {
+			resTarget, ok := i.(ast.ResTarget)
+			return ok && *resTarget.Name == shardKeyColumn.ColumnName
+		})
+
+		if shardKeyInsertIndex == -1 {
+			return InitialPlan{}, false, fmt.Errorf("no shard key value specified")
+		}
+
+		// Discover the unique tenant IDs in the single insert
+
+		tenantIds := make([]uint64, 0)
+		linq.From(stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists).
+			Select(func(i interface{}) interface{} {
+				return uint64(i.([]ast.Node)[shardKeyInsertIndex].(ast.A_Const).Val.(ast.Integer).Ival)
+			}).
+			Distinct().
+			ToSlice(&tenantIds)
+
+		switch len(tenantIds) {
+		case 0:
+			panic("how the hell did this even happen")
+		case 1:
+			// Here we can generate a single plan
+			recompiled, err := stmt.tree.Deparse(ast.Context_None)
+			if err != nil {
+				return InitialPlan{}, false, err
+			}
+
+			tenant, err := s.Colony().Tenants().GetTenant(tenantIds[0])
+			if err != nil {
+				return InitialPlan{}, false, err
+			}
+
+			return InitialPlan{
+				Target:  PlanTarget_STANDARD,
+				ShardID: tenant.ShardID,
+				Types: map[PlanType]InitialPlanTask{
+					planType: {
+						Query: recompiled,
+						Type:  stmt.tree.StatementType(),
+					},
+				},
+			}, true, nil
+		default:
+			datums := map[uint64][][]ast.Node{}
+			for _, item := range stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists {
+				tenantId := uint64(item[shardKeyInsertIndex].(ast.A_Const).Val.(ast.Integer).Ival)
+				datums[tenantId] = append(datums[tenantId], item)
+			}
+
+		}
 	}
 	return InitialPlan{}, false, nil
 }
