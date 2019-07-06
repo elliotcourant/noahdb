@@ -40,16 +40,19 @@ func (stmt *insertStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 
 	table := tables[0] // We only want to work with one table.
 
+	var sequenceColumn core.Column
 	if table.HasSequence {
 		// If the table has a sequence then we want to get the column that has the sequence and
 		// handle it in the query.
-		sequenceColumn, ok, err := s.Colony().Tables().GetSequenceColumnForTable(table.TableID)
+		sc, ok, err := s.Colony().Tables().GetSequenceColumnForTable(table.TableID)
 		if err != nil {
 			return InitialPlan{}, false, err
 		}
 		if !ok {
 			return InitialPlan{}, false, fmt.Errorf("table metadata indicates a sequence column, but none could be found for table [%s]", table.TableName)
 		}
+
+		sequenceColumn = sc
 
 		sequenceInsertIndex := linq.From(stmt.tree.Cols.Items).IndexOf(func(i interface{}) bool {
 			resTarget, ok := i.(ast.ResTarget)
@@ -99,7 +102,32 @@ func (stmt *insertStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 	case core.TableType_Noah:
 		panic("not handling this yet")
 	case core.TableType_Tenant:
+		// Get the values of the primary key we are inserting.
+		var primaryKey core.Column
+		if sequenceColumn.PrimaryKey {
+			primaryKey = sequenceColumn
+		} else {
+			// Retrieve the tables primary key from the store.
+		}
 
+		primaryKeyInsertIndex := linq.From(stmt.tree.Cols.Items).IndexOf(func(i interface{}) bool {
+			resTarget, ok := i.(ast.ResTarget)
+			return ok && *resTarget.Name == primaryKey.ColumnName
+		})
+
+		switch primaryKeyInsertIndex {
+		case -1:
+			return InitialPlan{}, false, fmt.Errorf("no primary key value specified")
+		default:
+			ids := make([]uint64, len(stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists))
+			for i, item := range stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists {
+				ids[i] = uint64(item[primaryKeyInsertIndex].(ast.A_Const).Val.(ast.Integer).Ival)
+			}
+			_, err := s.Colony().Tenants().NewTenants(ids...)
+			if err != nil {
+				return InitialPlan{}, false, err
+			}
+		}
 		fallthrough
 	case core.TableType_Global:
 		recompiled, err := stmt.tree.Deparse(ast.Context_None)

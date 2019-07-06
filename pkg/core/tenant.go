@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
+	"github.com/readystock/golog"
 	"github.com/readystock/goqu"
 )
 
@@ -19,6 +20,7 @@ type tenantContext struct {
 type TenantContext interface {
 	GetTenants() ([]Tenant, error)
 	GetTenant(uint64) (Tenant, error)
+	NewTenants(tenantIds ...uint64) ([]Tenant, error)
 }
 
 func (ctx *base) Tenants() TenantContext {
@@ -27,8 +29,45 @@ func (ctx *base) Tenants() TenantContext {
 	}
 }
 
+func (ctx *tenantContext) NewTenants(tenantIds ...uint64) ([]Tenant, error) {
+	shardPressures, err := ctx.Shards().GetShardPressures(len(tenantIds))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(shardPressures) == 0 {
+		return nil, fmt.Errorf("no shards available for new tenants")
+	}
+
+	newTenants := make([]Tenant, len(tenantIds))
+	for i, id := range tenantIds {
+		shard := shardPressures[i%len(shardPressures)]
+		newTenants[i] = Tenant{
+			TenantID: id,
+			ShardID:  shard.ShardID,
+		}
+		golog.Debugf("assigning new tenant [%d] to shard [%d] current pressure [%d]", id, shard.ShardID, shard.Tenants)
+	}
+
+	records := make([]interface{}, len(newTenants))
+	for i, tenant := range newTenants {
+		records[i] = goqu.Record{
+			"tenant_id": tenant.TenantID,
+			"shard_id":  tenant.ShardID,
+		}
+	}
+
+	compiledSql := goqu.From("tenants").
+		Insert(records...).Sql
+
+	_, err = ctx.db.Exec(compiledSql)
+	return newTenants, err
+}
+
 func (ctx *tenantContext) GetTenants() ([]Tenant, error) {
-	response, err := ctx.db.Query("SELECT tenant_id, shard_id FROM tenants;")
+	compiledSql, _, _ := getTenantsQuery.
+		ToSql()
+	response, err := ctx.db.Query(compiledSql)
 	if err != nil {
 		return nil, err
 	}

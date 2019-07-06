@@ -33,6 +33,11 @@ type DataNodePressure struct {
 	Shards     int
 }
 
+type ShardPressure struct {
+	ShardID uint64
+	Tenants int
+}
+
 type shardContext struct {
 	*base
 }
@@ -45,6 +50,7 @@ type ShardContext interface {
 	GetWriteDataNodeShards(uint64) ([]DataNodeShard, error)
 	BalanceOrphanShards() error
 	GetDataNodesPressure(max int) ([]DataNodePressure, error)
+	GetShardPressures(max int) ([]ShardPressure, error)
 }
 
 func (ctx *base) Shards() ShardContext {
@@ -193,6 +199,38 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		}
 	}
 	return nil
+}
+
+func (ctx *shardContext) GetShardPressures(max int) ([]ShardPressure, error) {
+	getPressureQuery, _, _ := goqu.
+		From("shards").
+		Select(
+			goqu.I("shards.shard_id"),
+			goqu.COUNT(goqu.I("tenants.tenant_id")).As("tenants")).
+		LeftJoin(
+			goqu.I("tenants"),
+			goqu.On(goqu.I("tenants.shard_id").Eq(goqu.I("shards.shard_id")))).
+		GroupBy(goqu.I("shards.shard_id")).
+		Order(goqu.I("tenants").Asc()).
+		Limit(uint(max)).
+		ToSql()
+	response, err := ctx.db.Query(getPressureQuery)
+	if err != nil {
+		return nil, err
+	}
+	rows := rqliter.NewRqlRows(response)
+	pressures := make([]ShardPressure, 0)
+	for rows.Next() {
+		var shardPressure ShardPressure
+		if err := rows.Scan(
+			&shardPressure.ShardID,
+			&shardPressure.Tenants,
+		); err != nil {
+			return nil, err
+		}
+		pressures = append(pressures, shardPressure)
+	}
+	return pressures, nil
 }
 
 func (ctx *shardContext) GetDataNodesPressure(max int) ([]DataNodePressure, error) {
