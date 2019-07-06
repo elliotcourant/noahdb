@@ -141,4 +141,65 @@ func TestNewInsertStatementPlan(t *testing.T) {
 			assert.EqualError(t, err, "pq: cannot manually set value of serialized column [id]")
 		})
 	})
+
+	t.Run("create tenants table and insert", func(t *testing.T) {
+		_, err = db.Exec(`CREATE TABLE tenants_table (id BIGSERIAL NOT NULL PRIMARY KEY, name TEXT UNIQUE) TABLESPACE "noah.tenants";`)
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+
+		table, ok, err := colony.Tables().GetTable("tenants_table")
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+		assert.True(t, ok)
+		assert.NotEmpty(t, table)
+
+		_, err = db.Exec(`INSERT INTO tenants_table (name) VALUES('test 1');`)
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+
+		_, err = db.Exec(`INSERT INTO tenants_table (name) VALUES('test 2');`)
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+
+		rows, err := db.Query(`SELECT id, name FROM tenants_table;`)
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+
+		type TempRow struct {
+			ID   uint64
+			Name string
+		}
+
+		values := make([]TempRow, 0)
+
+		for rows.Next() {
+			if err := rows.Err(); !assert.NoError(t, err) {
+				panic(err)
+			}
+
+			value := TempRow{}
+			if err := rows.Scan(
+				&value.ID,
+				&value.Name,
+			); !assert.NoError(t, err) {
+				panic(err)
+			}
+			values = append(values, value)
+		}
+
+		if err := rows.Err(); !assert.NoError(t, err) {
+			panic(err)
+		}
+
+		assert.NotEmpty(t, values)
+
+		tenants, err := colony.Tenants().GetTenants()
+		assert.NoError(t, err)
+		assert.NotEmpty(t, tenants)
+	})
 }

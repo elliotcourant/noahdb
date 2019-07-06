@@ -53,6 +53,10 @@ func (s *Store) Query(query string) (*QueryResponse, error) {
 
 // Exec executes a write-only query against the database.
 func (s *Store) Exec(query string) (*ExecuteResponse, error) {
+	startTimestamp := time.Now()
+	defer func() {
+		golog.Verbosef("[%s] %s", time.Since(startTimestamp), query)
+	}()
 	executeRequest := &ExecuteRequest{
 		Queries: []string{
 			query,

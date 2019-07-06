@@ -107,7 +107,7 @@ func (stmt *insertStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 		if sequenceColumn.PrimaryKey {
 			primaryKey = sequenceColumn
 		} else {
-			// Retrieve the tables primary key from the store.
+			// Retrieve the table's primary key from the store.
 		}
 
 		primaryKeyInsertIndex := linq.From(stmt.tree.Cols.Items).IndexOf(func(i interface{}) bool {

@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	getTenantsQuery = goqu.From("tenants").
+	getTenantsQuery = goqu.
+		From("tenants").
 		Select("tenants.*")
 )
 
@@ -110,5 +111,5 @@ func (ctx *tenantContext) tenantsFromRows(response *frunk.QueryResponse) ([]Tena
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return tenants, nil
 }
