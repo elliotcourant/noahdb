@@ -47,7 +47,7 @@ func (ctx *tenantContext) NewTenants(tenantIds ...uint64) ([]Tenant, error) {
 			TenantID: id,
 			ShardID:  shard.ShardID,
 		}
-		golog.Debugf("assigning new tenant [%d] to shard [%d] current pressure [%d]", id, shard.ShardID, shard.Tenants)
+		golog.Debugf("assigning new tenant [%d] to shard [%d]", id, shard.ShardID)
 	}
 
 	records := make([]interface{}, len(newTenants))

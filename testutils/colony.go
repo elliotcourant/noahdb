@@ -225,7 +225,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	if err != nil {
 		panic(err)
 	}
-
+	golog.Infof("finished starting noahdb coordinator")
 	return colony, func() {
 		for _, callback := range callbacks {
 			callback()
