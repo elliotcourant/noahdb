@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/commands"
+	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 )
 
@@ -15,11 +16,23 @@ func (s *session) ExecuteDescribe(describe commands.DescribeStatement, result *c
 			return fmt.Errorf("unknown prepared statement %q", describe.Name)
 		}
 
+		if len(ps.InferredTypes) > 0 {
+			paramDesc := pgproto.ParameterDescription{}
+			for _, param := range ps.InferredTypes {
+				paramDesc.ParameterOIDs = append(paramDesc.ParameterOIDs, param.Uint32())
+			}
+			if err := s.sessionContext.Backend().Send(&paramDesc); err != nil {
+				return err
+			}
+		}
+
 		if ps.Statement == nil || (*ps.Statement).StatementType() != ast.Rows {
 			// The statement has no data to be returned.
 			result.SetNoDataMessage(true)
 		} else {
-
+			return s.sessionContext.Backend().Send(&pgproto.RowDescription{
+				Fields: ps.Columns,
+			})
 		}
 	case pgwirebase.PreparePortal:
 		if !ok {

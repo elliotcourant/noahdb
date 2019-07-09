@@ -1,6 +1,8 @@
 package sql
 
 import (
+	"fmt"
+	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/elliotcourant/noahdb/pkg/core"
@@ -86,7 +88,14 @@ func (s *session) prepare(
 	tableAliasMap := queryutil.GetExtendedTables(stmt)
 	referenceColumns := queryutil.GetColumns(stmt)
 
+	tableNames := make([]string, 0)
+	linq.From(tableAliasMap).Select(func(i interface{}) interface{} {
+		return i.(linq.KeyValue).Value.(string)
+	}).Distinct().ToSlice(&tableNames)
+
 	columns := make([]pgproto.FieldDescription, len(referenceColumns))
+
+	inferredTypes := make([]core.Type, 0)
 
 	for i, col := range referenceColumns {
 		column := pgproto.FieldDescription{
@@ -112,6 +121,7 @@ func (s *session) prepare(
 			goto WALK
 		case ast.ParamRef:
 			if column.DataTypeOID > 0 {
+				inferredTypes = append(inferredTypes, core.Type(column.DataTypeOID))
 				break
 			}
 
@@ -121,6 +131,7 @@ func (s *session) prepare(
 				column.DataTypeOID = core.Type_text.Uint32()
 			}
 
+			inferredTypes = append(inferredTypes, core.Type(column.DataTypeOID))
 		case ast.ColumnRef:
 			colNames, err := colt.Fields.DeparseList(ast.Context_Operator)
 			if err != nil {
@@ -129,7 +140,30 @@ func (s *session) prepare(
 
 			column.Name = colNames[len(colNames)-1]
 
-			golog.Debugf("colname: %v", colNames)
+			// If we already have the data type OID then we can just skip
+			if column.DataTypeOID > 0 {
+				break
+			}
+
+			var c string   // Column name to resolve
+			var t []string // Potential tables the column belongs to.
+			if len(colNames) == 1 {
+				c, t = colNames[0], tableNames
+			} else if tbl, ok := tableAliasMap[colNames[0]]; ok {
+				c, t = column.Name, []string{tbl}
+			} else {
+				return nil, fmt.Errorf("could not resolve table [%s]", colNames[0])
+			}
+
+			cl, ok, err := s.Colony().Tables().GetColumnFromTables(c, t)
+			if err != nil {
+				return nil, err
+			} else if !ok {
+				return nil, fmt.Errorf("could not resolve column [%s]", colNames[0])
+			}
+
+			column.DataTypeOID = cl.Type.Uint32()
+			column.TableOID = uint32(cl.TableID)
 		default:
 			golog.Debugf("test %+v", colt)
 		}
@@ -141,7 +175,7 @@ func (s *session) prepare(
 		columns[i] = column
 	}
 
-	golog.Debugf("test %+v %+v", tableAliasMap, columns)
-
+	prepared.Columns = columns
+	prepared.InferredTypes = inferredTypes
 	return prepared, nil
 }

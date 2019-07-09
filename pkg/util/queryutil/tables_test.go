@@ -28,8 +28,8 @@ var (
 			Tables: []string{"pg_type"},
 		},
 		{
-			Query:  "SELECT products.id FROM products JOIN types ON types.id=products.type_id",
-			Tables: []string{"products", "types"},
+			Query:  "SELECT products.id FROM products, things, stuff JOIN types ON types.id=products.type_id",
+			Tables: []string{"products", "things", "stuff", "types"},
 		},
 		{
 			Query:  "SELECT products.id FROM products JOIN types ON types.id=products.type_id WHERE products.id IN (SELECT id FROM other)",

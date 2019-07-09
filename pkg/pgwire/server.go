@@ -170,6 +170,7 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 				terminateChannel <- true
 				return nil
 			case *pgproto.Sync:
+				return wire.stmtBuf.Push(commands.Sync{})
 			case *pgproto.Flush:
 			case *pgproto.CopyData:
 			default:

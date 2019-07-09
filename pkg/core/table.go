@@ -35,6 +35,7 @@ type TableContext interface {
 	GetShardKeyColumnForTable(uint64) (Column, error)
 	GetTablesInSchema(schema string, names ...string) ([]Table, error)
 	GetTenantTable() (Table, bool, error)
+	GetColumnFromTables(column string, tables []string) (Column, bool, error)
 }
 
 func (ctx *base) Tables() TableContext {
@@ -262,6 +263,31 @@ func (ctx *tableContext) GetSequenceColumnForTable(tableId uint64) (Column, bool
 	}
 	if len(columns) == 0 {
 		return Column{}, false, nil
+	}
+	return columns[0], true, err
+}
+
+func (ctx *tableContext) GetColumnFromTables(column string, tables []string) (Column, bool, error) {
+	compiledSql, _, _ := getColumnsQuery.
+		InnerJoin(
+			goqu.I("tables"),
+			goqu.On(goqu.I("tables.table_id").Eq(goqu.I("columns.table_id"))),
+		).
+		Where(goqu.Ex{
+			"tables.table_name":   tables,
+			"columns.column_name": column,
+		}).
+		ToSql()
+	rows, err := ctx.db.Query(compiledSql)
+	if err != nil {
+		return Column{}, false, err
+	}
+	columns, err := ctx.columnsFromRows(rows)
+	if len(columns) == 0 {
+		return Column{}, false, err
+	}
+	if len(columns) > 1 {
+		return Column{}, false, fmt.Errorf("column [%s] is ambiguous between tables: %v", column, tables)
 	}
 	return columns[0], true, err
 }
