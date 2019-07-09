@@ -14,6 +14,18 @@ func GetTables(stmt interface{}) []string {
 	return tables
 }
 
+func GetExtendedTables(stmt interface{}) map[string]string {
+	tables := map[string]string{}
+	for _, item := range extendendExamineTables(stmt, 0) {
+		if item.Alias == "" {
+			tables[item.Actual] = item.Actual
+		} else {
+			tables[item.Alias] = item.Actual
+		}
+	}
+	return tables
+}
+
 func examineTables(value interface{}, depth int) []string {
 	args := make([]string, 0)
 	print := func(msg string, args ...interface{}) {
@@ -60,6 +72,70 @@ func examineTables(value interface{}, depth int) []string {
 		}
 	}
 	return args
+}
+
+type tableAliasItem struct {
+	Alias  string
+	Actual string
+}
+
+func extendendExamineTables(value interface{}, depth int) []tableAliasItem {
+	result := make([]tableAliasItem, 0)
+
+	print := func(msg string, args ...interface{}) {
+		// fmt.Printf("%s%s\n", strings.Repeat("\t", depth), fmt.Sprintf(msg, args...))
+	}
+
+	if value == nil {
+		return result
+	}
+
+	t := reflect.TypeOf(value)
+	v := reflect.ValueOf(value)
+
+	if v.Type() == reflect.TypeOf(ast.RangeVar{}) {
+		rangeVar := value.(ast.RangeVar)
+		if rangeVar.Alias != nil && rangeVar.Alias.Aliasname != nil && *rangeVar.Alias.Aliasname != "" {
+			result = append(result, tableAliasItem{
+				Alias:  *rangeVar.Alias.Aliasname,
+				Actual: *rangeVar.Relname,
+			})
+		} else {
+			result = append(result, tableAliasItem{
+				Alias:  "",
+				Actual: *rangeVar.Relname,
+			})
+		}
+	}
+
+	switch t.Kind() {
+	case reflect.Ptr:
+		if v.Elem().IsValid() {
+			result = append(result, extendendExamineTables(v.Elem().Interface(), depth+1)...)
+		}
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
+		depth--
+		if v.Len() > 0 {
+			print("[")
+			for i := 0; i < v.Len(); i++ {
+				depth++
+				print("[%d] Type {%s} {", i, v.Index(i).Type().String())
+				result = append(result, extendendExamineTables(v.Index(i).Interface(), depth+1)...)
+				print("},")
+				depth--
+			}
+			print("]")
+		} else {
+			print("[]")
+		}
+	case reflect.Struct:
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			print("[%d] Field {%s} Type {%s} Kind {%s}", i, f.Name, f.Type.String(), reflect.ValueOf(value).Field(i).Kind().String())
+			result = append(result, extendendExamineTables(reflect.ValueOf(value).Field(i).Interface(), depth+1)...)
+		}
+	}
+	return result
 }
 
 type DropInTableDefinition struct {

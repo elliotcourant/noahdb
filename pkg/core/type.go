@@ -13,6 +13,10 @@ func (typ Type) PostgresName() string {
 	return ""
 }
 
+func (typ Type) Uint32() uint32 {
+	return uint32(typ)
+}
+
 var (
 	getTypeQuery = goqu.
 		From("types").
@@ -36,9 +40,9 @@ func (ctx *base) Types() TypeContext {
 }
 
 func (ctx *typeContext) parseArray(name string) (string, error) {
-	if strings.HasPrefix(name, "[") {
-		i := strings.IndexRune(name, ']')
-		arraySize := name[1:i]
+	if strings.HasSuffix(name, "]") {
+		i := strings.IndexRune(name, '[')
+		arraySize := name[i+1 : len(name)-1]
 		if arraySize != "" {
 			size, err := strconv.Atoi(arraySize)
 			if err != nil {
@@ -46,7 +50,7 @@ func (ctx *typeContext) parseArray(name string) (string, error) {
 			}
 			golog.Infof("array size: %d", size)
 		}
-		name = name[i+1:]
+		name = name[:i]
 		name = fmt.Sprintf("_%s", name)
 	}
 	return name, nil
