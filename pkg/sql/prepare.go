@@ -120,6 +120,7 @@ func (s *session) prepare(
 			} else {
 				column.DataTypeOID = core.Type_text.Uint32()
 			}
+
 		case ast.ColumnRef:
 			colNames, err := colt.Fields.DeparseList(ast.Context_Operator)
 			if err != nil {
