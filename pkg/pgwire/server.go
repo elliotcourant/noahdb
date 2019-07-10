@@ -165,6 +165,7 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 			case *pgproto.Describe:
 				return wire.handleDescribe(msg)
 			case *pgproto.Bind:
+				return wire.handleBind(msg)
 			case *pgproto.Close:
 			case *pgproto.Terminate:
 				terminateChannel <- true

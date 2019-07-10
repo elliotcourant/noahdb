@@ -42,6 +42,8 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 				result = commands.CreateDescribeStatementResult(s)
 				err = s.ExecuteDescribe(cmd, result)
 			case commands.BindStatement:
+				result = commands.CreateBindStatementResult(s)
+
 			case commands.DeletePreparedStatement:
 			case commands.SendError:
 				result = commands.CreateErrorResult(s, cmd.Err)
