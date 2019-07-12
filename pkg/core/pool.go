@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"net"
 	"sync"
 	"time"
@@ -68,7 +68,7 @@ func (f *frontendConnection) Release() {
 	if f.Frontend == nil {
 		return
 	}
-	golog.Verbosef("releasing connection from data node shard [%d], pool size: %d", f.pool.id, len(f.pool.pool))
+	timber.Verbosef("releasing connection from data node shard [%d], pool size: %d", f.pool.id, len(f.pool.pool))
 	f.pool.releaseConnection(f)
 }
 
@@ -104,31 +104,31 @@ func (ctx *poolContext) StartPool() {
 
 			dataNodeShards, err := ctx.Shards().GetDataNodeShards()
 			if err != nil {
-				golog.Errorf("could not retrieve data node shards for pool check: %v", err)
+				timber.Errorf("could not retrieve data node shards for pool check: %v", err)
 				continue
 			}
 
 			for _, dataNodeShard := range dataNodeShards {
 				pool, err := ctx.getPoolForDataNodeShard(dataNodeShard.DataNodeShardID)
 				if err != nil {
-					golog.Errorf("could not retrieve pool for data node shard [%d], could not verify health: %v", dataNodeShard.DataNodeShardID, err)
+					timber.Errorf("could not retrieve pool for data node shard [%d], could not verify health: %v", dataNodeShard.DataNodeShardID, err)
 					continue
 				}
 
 				size := pool.Size()
 
 				if size == desiredPoolSize {
-					golog.Verbosef("data node shard [%d] pool full, size: %d", dataNodeShard.DataNodeShardID, size)
+					timber.Verbosef("data node shard [%d] pool full, size: %d", dataNodeShard.DataNodeShardID, size)
 					continue
 				}
 
 				if size < desiredPoolSize {
 					// If the pool is not full then we should try to top it off.
-					golog.Verbosef("data node shard [%d] pool not full, size: %d", dataNodeShard.DataNodeShardID, size)
+					timber.Verbosef("data node shard [%d] pool not full, size: %d", dataNodeShard.DataNodeShardID, size)
 					for i := size; i < desiredPoolSize; i++ {
 						conn, err := ctx.newConnection(dataNodeShard.DataNodeShardID, pool)
 						if err != nil {
-							golog.Errorf("could not create connection to add to pool: %v", err)
+							timber.Errorf("could not create connection to add to pool: %v", err)
 							continue
 						}
 						// We've now created a new connection, release it to the pool for use.
@@ -144,7 +144,7 @@ func (ctx *poolContext) StartPool() {
 					}
 				}
 
-				golog.Verbosef("data node shard [%d] new pool size: %d", dataNodeShard.DataNodeShardID, pool.Size())
+				timber.Verbosef("data node shard [%d] new pool size: %d", dataNodeShard.DataNodeShardID, pool.Size())
 			}
 		}
 	}()
@@ -155,7 +155,7 @@ func (ctx *poolContext) getPoolForDataNodeShard(id uint64) (*poolItem, error) {
 	pItem, ok := ctx.pool[id]
 	ctx.poolSync.RUnlock()
 	if !ok {
-		golog.Tracef("data node shard [%d] is not in pool, creating connection", id)
+		timber.Tracef("data node shard [%d] is not in pool, creating connection", id)
 		pItem = &poolItem{
 			id:    id,
 			mutex: sync.Mutex{},
@@ -167,7 +167,7 @@ func (ctx *poolContext) getPoolForDataNodeShard(id uint64) (*poolItem, error) {
 
 		// conn, err := ctx.NewConnection(id)
 		// if err != nil {
-		// 	golog.Errorf("could not create connection to data node shard [%d]: %v", id, err)
+		// 	timber.Errorf("could not create connection to data node shard [%d]: %v", id, err)
 		// 	return nil, err
 		// }
 		// ctx.pool[id].addConnection(conn)
@@ -195,19 +195,19 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 
 	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", dataNode.GetAddress(), dataNode.GetPort()))
 	if err != nil {
-		golog.Errorf("could not resolve address for data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		timber.Errorf("could not resolve address for data node [%d]: %s", dataNode.DataNodeID, err.Error())
 		return nil, err
 	}
 
 	conn, err := net.DialTCP("tcp", nil, addr)
 	if err != nil {
-		golog.Errorf("could not connect to data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		timber.Errorf("could not connect to data node [%d]: %s", dataNode.DataNodeID, err.Error())
 		return nil, err
 	}
 
 	frontend, err := pgproto.NewFrontend(conn, conn)
 	if err != nil {
-		golog.Errorf("could not setup frontend for data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		timber.Errorf("could not setup frontend for data node [%d]: %s", dataNode.DataNodeID, err.Error())
 		return nil, err
 	}
 
@@ -218,7 +218,7 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 			"database": fmt.Sprintf("noahdb_%d", id),
 		},
 	}); err != nil {
-		golog.Errorf("could not send startup message to data node [%d]: %s", dataNode.DataNodeID, err.Error())
+		timber.Errorf("could not send startup message to data node [%d]: %s", dataNode.DataNodeID, err.Error())
 		return nil, err
 	}
 
@@ -255,7 +255,7 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 			case *pgproto.ErrorResponse:
 				return fmt.Errorf("from backend: %s", msg.Message)
 			default:
-				golog.Warnf("unexpected message from backend %T", msg)
+				timber.Warningf("unexpected message from backend %T", msg)
 			}
 		}
 	}(); err != nil {

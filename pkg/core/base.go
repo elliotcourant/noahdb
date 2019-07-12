@@ -3,7 +3,7 @@ package core
 import (
 	"github.com/elliotcourant/noahdb/pkg/core/static"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"net"
 	"sync"
 )
@@ -71,7 +71,7 @@ func (ctx *base) Setup(config ColonyConfig) {
 	}
 
 	if ctx.isSetup() {
-		golog.Verbosef("internal database appears to be setup already")
+		timber.Verbosef("internal database appears to be setup already")
 		return
 	}
 

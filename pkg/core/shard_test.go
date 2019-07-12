@@ -2,7 +2,7 @@ package core_test
 
 import (
 	"github.com/elliotcourant/noahdb/testutils"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -23,7 +23,7 @@ func TestShardContext_GetShards(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, newShard.ShardID > 0)
 	time.Sleep(1 * time.Second)
-	golog.Verbosef("trying to query shards")
+	timber.Verbosef("trying to query shards")
 	shards, err := colony.Shards().GetShards()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, shards)

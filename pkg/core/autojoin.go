@@ -3,8 +3,8 @@ package core
 import (
 	"fmt"
 	"github.com/ahmetb/go-linq"
+	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
-	"github.com/readystock/golog"
 	"io/ioutil"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
@@ -25,7 +25,7 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 		return nil, fmt.Errorf("auto-join is only supported when running within kubernetes")
 	}
 
-	golog.Debugf("waiting a few seconds to give Kubernetes a chance to start any other pods")
+	timber.Debugf("waiting a few seconds to give Kubernetes a chance to start any other pods")
 	time.Sleep(5 * time.Second)
 
 	host := os.Getenv("HOSTNAME")
@@ -102,7 +102,7 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 
 		processedAddress := fmt.Sprintf("%s:%d", addr, containerPort.ContainerPort)
 
-		golog.Debugf("found pod [%s] address: %s", pod.Name, processedAddress)
+		timber.Debugf("found pod [%s] address: %s", pod.Name, processedAddress)
 		joinAddresses = append(joinAddresses, raft.Server{
 			ID:       raft.ServerID(pod.Name),
 			Address:  raft.ServerAddress(processedAddress),

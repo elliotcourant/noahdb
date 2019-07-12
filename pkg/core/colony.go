@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
+	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
-	"github.com/readystock/golog"
 	"net"
 	"os"
 	"strings"
@@ -91,18 +91,18 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 	for _, neighbor := range potentialNeighbors {
 		rpcConn, err := rpcer.NewRPCDriver(id, config.Transport.Addr(), string(neighbor.Address))
 		if err != nil {
-			golog.Errorf("failed to connect to potential neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
+			timber.Errorf("failed to connect to potential neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
 			continue
 		}
 
 		leaderAddr, err := rpcConn.Discover()
 		if err != nil {
-			golog.Errorf("failed to discover via neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
+			timber.Errorf("failed to discover via neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
 			continue
 		}
 
 		if leaderAddr == "" {
-			golog.Warnf("neighbor [%s] at address [%s] is not established and has no leader", neighbor.ID, neighbor.Address)
+			timber.Warningf("neighbor [%s] at address [%s] is not established and has no leader", neighbor.ID, neighbor.Address)
 			continue
 		}
 
@@ -135,7 +135,7 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 
 	// Now, open store.
 	if err := fr.Open(!foundLeader); err != nil {
-		golog.Fatalf("failed to open store: %s", err.Error())
+		timber.Fatalf("failed to open store: %s", err.Error())
 	}
 
 	*ctx = base{
@@ -153,32 +153,32 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 		attempts := 1
 	RetryJoin:
 		for i, joinAddr := range config.JoinAddresses {
-			golog.Debugf("trying to join address [%d] [%s]", i+1, joinAddr.Address)
+			timber.Debugf("trying to join address [%d] [%s]", i+1, joinAddr.Address)
 			rpcDriver, err := rpcer.NewRPCDriver(id, config.Transport.Addr(), string(joinAddr.Address))
 			if err != nil {
-				golog.Warnf("could not connect to join address [%s]: %v", joinAddr.Address, err)
+				timber.Warningf("could not connect to join address [%s]: %v", joinAddr.Address, err)
 				continue
 			}
 			if rpcDriver == nil {
-				golog.Warnf("failed to create frontend for address [%s]", joinAddr.Address)
+				timber.Warningf("failed to create frontend for address [%s]", joinAddr.Address)
 				continue
 			}
 			if err := rpcDriver.Join(); err != nil {
-				golog.Warnf("could not join address [%s]: %v", joinAddr.Address, err)
+				timber.Warningf("could not join address [%s]: %v", joinAddr.Address, err)
 				continue
 			} else {
-				golog.Infof("successfully joined at address [%s]", joinAddr)
+				timber.Infof("successfully joined at address [%s]", joinAddr)
 				goto WaitForSetup
 			}
 		}
 
 		if attempts < 3 {
-			golog.Infof("was not able to join any of the nodes provided, will try again in 10 seconds; attempt: %d", attempts)
+			timber.Infof("was not able to join any of the nodes provided, will try again in 10 seconds; attempt: %d", attempts)
 			time.Sleep(10 * time.Second)
 			attempts++
 			goto RetryJoin
 		} else {
-			golog.Fatalf("failed to join any of the node found after %d attempt(s)", attempts)
+			timber.Fatalf("failed to join any of the node found after %d attempt(s)", attempts)
 		}
 
 	}
@@ -187,7 +187,7 @@ WaitForSetup:
 
 	openTimeout, err := time.ParseDuration("10s")
 	if err != nil {
-		golog.Fatalf("failed to parse Raft open timeout: %s", err.Error())
+		timber.Fatalf("failed to parse Raft open timeout: %s", err.Error())
 	}
 	fr.WaitForLeader(openTimeout)
 	fr.WaitForApplied(openTimeout)
@@ -198,7 +198,7 @@ WaitForSetup:
 	// if err := fr.SetMetadata(meta); err != nil && err != store.ErrNotLeader {
 	// 	// Non-leader errors are OK, since metadata will then be set through
 	// 	// consensus as a result of a join. All other errors indicate a problem.
-	// 	golog.Fatalf("failed to set store metadata: %s", err.Error())
+	// 	timber.Fatalf("failed to set store metadata: %s", err.Error())
 	// }
 
 	// time.Sleep(6 * time.Second)

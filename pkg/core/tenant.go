@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"github.com/readystock/goqu"
 )
 
@@ -47,7 +47,7 @@ func (ctx *tenantContext) NewTenants(tenantIds ...uint64) ([]Tenant, error) {
 			TenantID: id,
 			ShardID:  shard.ShardID,
 		}
-		golog.Debugf("assigning new tenant [%d] to shard [%d]", id, shard.ShardID)
+		timber.Debugf("assigning new tenant [%d] to shard [%d]", id, shard.ShardID)
 	}
 
 	records := make([]interface{}, len(newTenants))

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"gopkg.in/doug-martin/goqu.v5"
 	// Use the postgres adapter for building queries.
 	"database/sql"
@@ -103,7 +103,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 	if err != nil {
 		return err
 	}
-	golog.Debugf("found %d orphaned shards", len(ids))
+	timber.Debugf("found %d orphaned shards", len(ids))
 	updateShardStateQuery := goqu.
 		From("shards").
 		Where(goqu.Ex{
@@ -122,7 +122,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		// Determine which node this shard should be assigned to.
 		pressureIndex := i % len(pressures)
 		dataNode := pressures[pressureIndex]
-		golog.Debugf("assigning shard [%d] to data node [%d]", shardId, dataNode.DataNodeID)
+		timber.Debugf("assigning shard [%d] to data node [%d]", shardId, dataNode.DataNodeID)
 
 		id, err := ctx.db.NextSequenceValueById(dataNodeShardIdSequencePath)
 		if err != nil {
@@ -143,12 +143,12 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 
 		dataNodeMeta, err := ctx.DataNodes().GetDataNode(dataNode.DataNodeID)
 		if err != nil {
-			golog.Criticalf("failed to retrieve metadata for data node [%d]: %v", dataNode.DataNodeID, err)
+			timber.Criticalf("failed to retrieve metadata for data node [%d]: %v", dataNode.DataNodeID, err)
 			continue
 		}
 
 		dataNodeAddress := fmt.Sprintf("%s:%d", dataNodeMeta.GetAddress(), dataNodeMeta.GetPort())
-		golog.Debugf("trying to connect to data node [%d] at %s to init shards", dataNode.DataNodeID, dataNodeAddress)
+		timber.Debugf("trying to connect to data node [%d] at %s to init shards", dataNode.DataNodeID, dataNodeAddress)
 
 		databaseLogin := dataNodeMeta.GetUser()
 		if dataNodeMeta.Password != "" {
@@ -158,7 +158,7 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		connStr := fmt.Sprintf("postgres://%s@%s/postgres?sslmode=disable", databaseLogin, dataNodeAddress)
 		db, err := sql.Open("postgres", connStr)
 		if err != nil {
-			golog.Criticalf("failed to connect to data node [%d] address %s: %v", dataNode.DataNodeID, dataNodeAddress, err)
+			timber.Criticalf("failed to connect to data node [%d] address %s: %v", dataNode.DataNodeID, dataNodeAddress, err)
 			continue
 		}
 
@@ -175,14 +175,14 @@ func (ctx *shardContext) BalanceOrphanShards() error {
 		deleteExistingShard := fmt.Sprintf("DROP DATABASE IF EXISTS noahdb_%d", id)
 		_, err = db.Exec(deleteExistingShard)
 		if err != nil {
-			golog.Criticalf("could not drop existing shard db: %v", err)
+			timber.Criticalf("could not drop existing shard db: %v", err)
 			continue
 		}
 
 		createShardQuery := fmt.Sprintf("CREATE DATABASE noahdb_%d", id)
 		_, err = db.Exec(createShardQuery)
 		if err != nil {
-			golog.Criticalf("failed to create data node shard [%d] on data node [%d] address %s: %v", id, dataNode.DataNodeID, dataNodeAddress, err)
+			timber.Criticalf("failed to create data node shard [%d] on data node [%d] address %s: %v", id, dataNode.DataNodeID, dataNodeAddress, err)
 			continue
 		}
 

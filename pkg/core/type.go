@@ -3,7 +3,7 @@ package core
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/types"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"github.com/readystock/goqu"
 	"strconv"
 	"strings"
@@ -48,7 +48,7 @@ func (ctx *typeContext) parseArray(name string) (string, error) {
 			if err != nil {
 				return name, fmt.Errorf("could not parse array bounds: %v", err)
 			}
-			golog.Infof("array size: %d", size)
+			timber.Infof("array size: %d", size)
 		}
 		name = name[:i]
 		name = fmt.Sprintf("_%s", name)

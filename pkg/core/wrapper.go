@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"net"
 	"time"
 )
@@ -45,7 +45,7 @@ func (t *transportWrapperItem) Accept() (net.Conn, error) {
 }
 
 func (t *transportWrapperItem) Close() error {
-	golog.Warnf("closing transport wrapper item")
+	timber.Warningf("closing transport wrapper item")
 	close(t.acceptChannel)
 	t.closeCallback()
 	return t.listener.Close()
@@ -56,7 +56,7 @@ func (t *transportWrapperItem) Addr() net.Addr {
 }
 
 func (t *transportWrapperItem) Dial(address string, timeout time.Duration) (net.Conn, error) {
-	golog.Warnf("dialing [%s] via transport wrapper item", address)
+	timber.Warningf("dialing [%s] via transport wrapper item", address)
 	return t.listener.Dial(address, timeout)
 }
 
@@ -99,7 +99,7 @@ func (wrapper *transportWrapper) ForwardToRpc(conn net.Conn, err error) {
 }
 
 func (wrapper *transportWrapper) closeCallback() {
-	golog.Verbosef("received close callback")
+	timber.Verbosef("received close callback")
 }
 
 func (wrapper *transportWrapper) RaftTransport() Listener {
