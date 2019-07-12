@@ -30,31 +30,18 @@ func FullError(err error) string {
 }
 
 func formatMsgHintDetail(prefix, msg, hint, detail string) string {
-	b := make([]string, 2)
-	b[0] = prefix
-	b[1] = msg
+	var b strings.Builder
+	b.WriteString(prefix)
+	b.WriteString(msg)
 	if hint != "" {
-		b = append(b, "\nHINT: ")
-		b = append(b, hint)
+		b.WriteString("\nHINT: ")
+		b.WriteString(hint)
 	}
 	if detail != "" {
-		b = append(b, "\nDETAIL: ")
-		b = append(b, detail)
+		b.WriteString("\nDETAIL: ")
+		b.WriteString(detail)
 	}
-	return strings.Join(b, " ")
-
-	// var b strings.Builder
-	// b.WriteString(prefix)
-	// b.WriteString(msg)
-	// if hint != "" {
-	//     b.WriteString("\nHINT: ")
-	//     b.WriteString(hint)
-	// }
-	// if detail != "" {
-	//     b.WriteString("\nDETAIL: ")
-	//     b.WriteString(detail)
-	// }
-	// return b.String()
+	return b.String()
 }
 
 // NewErrorWithDepthf creates an Error and extracts the context
@@ -136,7 +123,7 @@ func GetPGCause(err error) (*Error, bool) {
 func UnimplementedWithIssueErrorf(issue int, format string, args ...interface{}) error {
 	err := NewErrorWithDepthf(1, CodeFeatureNotSupportedError, "unimplemented: "+format, args...)
 	err.InternalCommand = fmt.Sprintf("#%d", issue)
-	return err.SetHintf("See: https://github.com/readystock/noah/issues/%d", issue)
+	return err.SetHintf("See: https://github.com/elliotcourant/noahdb/issues/%d", issue)
 }
 
 // UnimplementedWithIssueError constructs an error with the given message
@@ -144,7 +131,7 @@ func UnimplementedWithIssueErrorf(issue int, format string, args ...interface{})
 func UnimplementedWithIssueError(issue int, msg string) error {
 	err := NewErrorWithDepthf(1, CodeFeatureNotSupportedError, "unimplemented: %s", msg)
 	err.InternalCommand = fmt.Sprintf("#%d", issue)
-	return err.SetHintf("See: https://github.com/readystock/noah/issues/%d", issue)
+	return err.SetHintf("See: https://github.com/elliotcourant/noahdb/issues/%d", issue)
 }
 
 // Unimplemented constructs an unimplemented feature error.
