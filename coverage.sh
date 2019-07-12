@@ -3,7 +3,7 @@
 set -e
 echo "" > coverage.txt
 
-go test -v -race -coverprofile=profile.out ./...
+go test -v -race -coverprofile=profile.out -covermode=atomic -coverpkg=./...
 cat profile.out >> coverage.txt
 rm profile.out
 #
