@@ -9,7 +9,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 )
 
 const (
@@ -165,7 +165,7 @@ func (s *session) prepare(
 			column.DataTypeOID = cl.Type.Uint32()
 			column.TableOID = uint32(cl.TableID)
 		default:
-			golog.Debugf("test %+v", colt)
+			timber.Debugf("test %+v", colt)
 		}
 
 		if col.Name != nil {

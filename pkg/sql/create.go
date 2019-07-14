@@ -3,7 +3,7 @@ package sql
 import (
 	"fmt"
 	"github.com/ahmetb/go-linq"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"strings"
 
 	"github.com/elliotcourant/noahdb/pkg/ast"
@@ -193,7 +193,7 @@ func (stmt *createStmtPlanner) handleColumns(s *session) error {
 
 					typeName := strings.Join(names, ".")
 
-					golog.Verbosef("table [%s] column [%s] type [%s]", stmt.table.TableName, column.ColumnName, typeName)
+					timber.Verbosef("table [%s] column [%s] type [%s]", stmt.table.TableName, column.ColumnName, typeName)
 
 					// Handle serial types
 					switch typeName {

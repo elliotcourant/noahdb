@@ -3,20 +3,20 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"time"
 )
 
 func (s *session) stageQueryToResult(statement ast.Stmt) error {
 	planAndExpandTimestamp := time.Now()
 	defer func() {
-		golog.Verbosef("[%s] planning and execution of statement", time.Since(planAndExpandTimestamp))
+		timber.Verbosef("[%s] planning and execution of statement", time.Since(planAndExpandTimestamp))
 	}()
 
 	plan, err := func() (InitialPlan, error) {
 		startTimestamp := time.Now()
 		defer func() {
-			golog.Verbosef("[%s] initial planning of statement", time.Since(startTimestamp))
+			timber.Verbosef("[%s] initial planning of statement", time.Since(startTimestamp))
 		}()
 		planner, err := getStatementHandler(statement)
 		if err != nil {
@@ -52,7 +52,7 @@ func (s *session) stageQueryToResult(statement ast.Stmt) error {
 	}
 
 	expandedPlan, err := s.expandQueryPlan(plan)
-	golog.Verbosef("[%s] planning and expanding of statement", time.Since(planAndExpandTimestamp))
+	timber.Verbosef("[%s] planning and expanding of statement", time.Since(planAndExpandTimestamp))
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,8 @@
 package logger
 
 import (
+	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/go-hclog"
-	"github.com/readystock/golog"
 	"io"
 	"log"
 )
@@ -68,15 +68,15 @@ type Logger interface {
 }
 
 func NewLogger() Logger {
-	l := golog.NewWithDepth(6)
-	l.SetLevel("trace")
+	l := timber.New()
+	l.SetDepth(1)
 	return &lggr{
 		gologger: l,
 	}
 }
 
 type lggr struct {
-	gologger *golog.Logger
+	gologger timber.Logger
 }
 
 func (l *lggr) Trace(msg string, args ...interface{}) {
@@ -92,7 +92,7 @@ func (l *lggr) Info(msg string, args ...interface{}) {
 }
 
 func (l *lggr) Warn(msg string, args ...interface{}) {
-	l.gologger.Warnf(msg, args...)
+	l.gologger.Warningf(msg, args...)
 }
 
 func (l *lggr) Error(msg string, args ...interface{}) {
@@ -100,23 +100,23 @@ func (l *lggr) Error(msg string, args ...interface{}) {
 }
 
 func (l *lggr) IsTrace() bool {
-	return l.gologger.Level >= golog.TraceLevel
+	return true // l.gologger.Level >= golog.TraceLevel
 }
 
 func (l *lggr) IsDebug() bool {
-	return l.gologger.Level >= golog.DebugLevel
+	return true // l.gologger.Level >= golog.DebugLevel
 }
 
 func (l *lggr) IsInfo() bool {
-	return l.gologger.Level >= golog.InfoLevel
+	return true // l.gologger.Level >= golog.InfoLevel
 }
 
 func (l *lggr) IsWarn() bool {
-	return l.gologger.Level >= golog.WarnLevel
+	return true // l.gologger.Level >= golog.WarnLevel
 }
 
 func (l *lggr) IsError() bool {
-	return l.gologger.Level >= golog.ErrorLevel
+	return true // l.gologger.Level >= golog.ErrorLevel
 }
 
 func (l *lggr) With(args ...interface{}) hclog.Logger {
@@ -132,25 +132,26 @@ func (l *lggr) ResetNamed(name string) hclog.Logger {
 }
 
 func (l *lggr) SetLevel(level hclog.Level) {
-	lvl := func() golog.Level {
-		switch level {
-		case hclog.NoLevel:
-			return golog.DisableLevel
-		case hclog.Trace:
-			return golog.TraceLevel
-		case hclog.Debug:
-			return golog.DebugLevel
-		case hclog.Info:
-			return golog.InfoLevel
-		case hclog.Warn:
-			return golog.WarnLevel
-		case hclog.Error:
-			return golog.ErrorLevel
-		default:
-			return golog.TraceLevel
-		}
-	}()
-	l.gologger.SetLevel(golog.Levels[lvl].Name)
+	return
+	// lvl := func() golog.Level {
+	// 	switch level {
+	// 	case hclog.NoLevel:
+	// 		return golog.DisableLevel
+	// 	case hclog.Trace:
+	// 		return golog.TraceLevel
+	// 	case hclog.Debug:
+	// 		return golog.DebugLevel
+	// 	case hclog.Info:
+	// 		return golog.InfoLevel
+	// 	case hclog.Warn:
+	// 		return golog.WarnLevel
+	// 	case hclog.Error:
+	// 		return golog.ErrorLevel
+	// 	default:
+	// 		return golog.TraceLevel
+	// 	}
+	// }()
+	// l.gologger.SetLevel(golog.Levels[lvl].Name)
 }
 
 func (l *lggr) StandardLogger(opts *hclog.StandardLoggerOptions) *log.Logger {

@@ -3,7 +3,7 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"io"
 	"reflect"
 )
@@ -13,7 +13,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 	for {
 		select {
 		case <-terminateChannel:
-			golog.Debugf("terminating runner")
+			timber.Debugf("terminating runner")
 			return nil
 		default:
 			c, _, err := s.StatementBuffer().CurrentCommand()
@@ -25,7 +25,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			}
 
 			if c == nil {
-				golog.Debugf("found null command, advancing 1")
+				timber.Debugf("found null command, advancing 1")
 				s.StatementBuffer().AdvanceOne()
 			}
 

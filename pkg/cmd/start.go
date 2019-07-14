@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/top"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -37,7 +37,7 @@ var (
 				}
 				StoreDirectory = tempdir
 				defer func() {
-					golog.Infof("cleaning up temp directory: %s", tempdir)
+					timber.Infof("cleaning up temp directory: %s", tempdir)
 					os.RemoveAll(tempdir)
 				}()
 			}
@@ -59,7 +59,7 @@ func init() {
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		golog.Fatal(err)
+		timber.Fatal(err)
 		os.Exit(1)
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"strings"
 )
 
@@ -44,7 +44,7 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 				}
 				return nil
 			}).ToSlice(&missingTables)
-		golog.Debugf("could not resolve tables: %s", strings.Join(missingTables, ", "))
+		timber.Debugf("could not resolve tables: %s", strings.Join(missingTables, ", "))
 		return InitialPlan{}, false, fmt.Errorf("could not resolve tables with names: %s", strings.Join(missingTables, ", "))
 	}
 
@@ -144,7 +144,7 @@ func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool
 				fmt.Errorf("cannot query sharded tables without specifying a tenant ID")
 		case 1: // We are only querying a single tenant
 			tenantId = tenantIds[0]
-			golog.Debugf("query targets tenant ID [%d]", tenantId)
+			timber.Debugf("query targets tenant ID [%d]", tenantId)
 		default:
 			return InitialPlan{}, false,
 				fmt.Errorf("cannot query sharded tables for multiple tenants")

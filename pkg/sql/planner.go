@@ -3,7 +3,7 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"time"
 )
 
@@ -48,12 +48,12 @@ type ExpandedPlanTask struct {
 func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	startTimestamp := time.Now()
 	defer func() {
-		golog.Verbosef("[%s] expanding of plan", time.Since(startTimestamp))
+		timber.Verbosef("[%s] expanding of plan", time.Since(startTimestamp))
 	}()
 
 	if plan.Target == PlanTarget_INTERNAL {
 		// Internal query plans can go directly to the SQLite database.
-		golog.Verbosef("plan targets internal SQLite database")
+		timber.Verbosef("plan targets internal SQLite database")
 		readPlan, _ := plan.Types[PlanType_READ]
 		return ExpandedPlan{
 			Target: PlanTarget_INTERNAL,

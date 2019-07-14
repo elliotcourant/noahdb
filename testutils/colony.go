@@ -12,8 +12,8 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/elliotcourant/noahdb/pkg/util"
+	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
-	"github.com/readystock/golog"
 	"io"
 	"io/ioutil"
 	"net"
@@ -68,7 +68,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 
 		info, err := cli.ContainerInspect(ctx, resp.ID)
 		if err != nil {
-			golog.Errorf("could not inspect container: %v", err)
+			timber.Errorf("could not inspect container: %v", err)
 		}
 		netInfo := info.NetworkSettings.Ports["5432/tcp"][0]
 		postgresPort := netInfo.HostPort
@@ -76,11 +76,11 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 
 		port, err := strconv.ParseInt(postgresPort, 10, 32)
 		if err != nil {
-			golog.Fatalf("could not parse temp postgres port [%s]: %v", postgresPort, err)
+			timber.Fatalf("could not parse temp postgres port [%s]: %v", postgresPort, err)
 			panic(err)
 		}
 		address := fmt.Sprintf("%s:%s", postgresAddress, postgresPort)
-		golog.Warnf("USING [%s] AS POSTGRES TEMP DB", address)
+		timber.Warningf("USING [%s] AS POSTGRES TEMP DB", address)
 
 		attempts := 0
 		maxAttempts := 10
@@ -89,7 +89,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 			time.Sleep(5 * time.Second)
 			db, err := sql.Open("postgres", connStr)
 			if err != nil {
-				golog.Warnf("failed to connect to test postgres container address [%s]: %v", address, err)
+				timber.Warningf("failed to connect to test postgres container address [%s]: %v", address, err)
 				attempts++
 				if attempts > maxAttempts {
 					t.Errorf("could not connect to postgres container in %d attempts: %v", maxAttempts, err)
@@ -100,7 +100,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 
 			rows, err := db.Query("SELECT 1")
 			if err != nil {
-				golog.Warnf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
+				timber.Warningf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
 				attempts++
 				if attempts > maxAttempts {
 					t.Errorf("could not execute simple query to postgres container in %d attempts: %v", maxAttempts, err)
@@ -119,7 +119,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 
 		LeaveLoop:
 			if err := rows.Err(); err != nil {
-				golog.Warnf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
+				timber.Warningf("failed to execute simple query to test postgres container address [%s]: %v", address, err)
 				attempts++
 				if attempts > maxAttempts {
 					t.Errorf("could not execute simple query to postgres container in %d attempts: %v", maxAttempts, err)
@@ -133,7 +133,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 			break
 		}
 
-		golog.Warnf("Temp DB Address: %s", connStr)
+		timber.Warningf("Temp DB Address: %s", connStr)
 
 		tempPostgresAddress = "0.0.0.0"
 		tempPostgresPort = int32(port)
@@ -144,26 +144,25 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 			timeout := time.Second * 5
 			if err := cli.ContainerStop(ctx, resp.ID, &timeout); err != nil {
 				t.Fail()
-				golog.Criticalf("failed to stop docker container at the end of test [%s]: %v", t.Name(), err)
+				timber.Criticalf("failed to stop docker container at the end of test [%s]: %v", t.Name(), err)
 			}
 			if err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{
 				RemoveVolumes: true,
 				Force:         true,
 			}); err != nil {
 				t.Fail()
-				golog.Criticalf("failed to remove docker container at the end of test [%s]: %v", t.Name(), err)
+				timber.Criticalf("failed to remove docker container at the end of test [%s]: %v", t.Name(), err)
 			}
 		})
 	}
 
-	golog.SetLevel("trace")
 	tempdir, err := ioutil.TempDir("", testNameCleaned)
 	if err != nil {
 		panic(err)
 	}
 
 	callbacks = append(callbacks, func() {
-		golog.Warnf("removing temporary directory at: %s", tempdir)
+		timber.Warningf("removing temporary directory at: %s", tempdir)
 		if err := os.RemoveAll(tempdir); err != nil {
 			panic(err)
 		}
@@ -189,20 +188,20 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 
 	go func() {
 		if err = pgwire.NewServer(colony, trans); err != nil {
-			golog.Errorf(err.Error())
+			timber.Errorf(err.Error())
 		}
 	}()
 
 	go func() {
 		if err = rpcwire.NewRpcServer(colony, trans); err != nil {
-			golog.Errorf(err.Error())
+			timber.Errorf(err.Error())
 		}
 	}()
 
 	joins := make([]raft.Server, 0)
 	for _, joinAddress := range joinAddresses {
 		if addr, err := util.ResolveAddress(joinAddress); err != nil {
-			golog.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
+			timber.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
 			t.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
 		} else {
 			joins = append(joins, raft.Server{
@@ -227,7 +226,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	if err != nil {
 		panic(err)
 	}
-	golog.Infof("finished starting noahdb coordinator")
+	timber.Infof("finished starting noahdb coordinator")
 	return colony, func() {
 		for _, callback := range callbacks {
 			callback()

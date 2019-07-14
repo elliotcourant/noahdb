@@ -6,7 +6,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/types"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"time"
 )
 
@@ -18,7 +18,7 @@ type responsePipe struct {
 func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 	startTimestamp := time.Now()
 	defer func() {
-		golog.Verbosef("[%s] execution of statement", time.Since(startTimestamp))
+		timber.Verbosef("[%s] execution of statement", time.Since(startTimestamp))
 	}()
 
 	switch plan.Target {
@@ -34,15 +34,15 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 
 				frontend, err := s.Colony().Pool().GetConnectionForDataNodeShard(task.DataNodeShardID)
 				if err != nil {
-					golog.Errorf("could not retrieve connection from pool for data node shard [%d]: %s", task.DataNodeShardID, err.Error())
+					timber.Errorf("could not retrieve connection from pool for data node shard [%d]: %s", task.DataNodeShardID, err.Error())
 					response.err = err
 					return
 				}
-				golog.Debugf("{%d} executing: %s", task.DataNodeShardID, task.Query)
+				timber.Debugf("{%d} executing: %s", task.DataNodeShardID, task.Query)
 				if err := frontend.Send(&pgproto.Query{
 					String: task.Query,
 				}); err != nil {
-					golog.Errorf("could not send query to data node [%d]: %s", task.DataNodeShardID, err.Error())
+					timber.Errorf("could not send query to data node [%d]: %s", task.DataNodeShardID, err.Error())
 					response.err = err
 					return
 				}
@@ -62,7 +62,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 				for {
 					message, err := frontend.Receive()
 					if err != nil {
-						golog.Errorf("received error from frontend: %s", err.Error())
+						timber.Errorf("received error from frontend: %s", err.Error())
 						return err
 					}
 
@@ -106,11 +106,11 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 	case PlanTarget_INTERNAL:
 		for i, task := range plan.Tasks {
 			return func() error {
-				golog.Verbosef("executing task %d on internal data store", i)
+				timber.Verbosef("executing task %d on internal data store", i)
 				response, err := s.Colony().Query(task.Query)
 				rows := rqliter.NewRqlRows(response)
 				if err != nil {
-					golog.Errorf("could not execute internal query: %s", err.Error())
+					timber.Errorf("could not execute internal query: %s", err.Error())
 					return err
 				}
 				result := make([][]interface{}, 0)
@@ -121,13 +121,13 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 						row[i] = new(interface{})
 					}
 					if err := rows.Scan(row...); err != nil {
-						golog.Errorf("could not scan row: %s", err.Error())
+						timber.Errorf("could not scan row: %s", err.Error())
 						return err
 					}
 					result = append(result, row)
 				}
 				if err := rows.Err(); err != nil {
-					golog.Errorf("could not query internal store: %s", err.Error())
+					timber.Errorf("could not query internal store: %s", err.Error())
 					return err
 				}
 
