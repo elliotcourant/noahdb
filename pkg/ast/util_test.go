@@ -99,6 +99,10 @@ func DoTest(t *testing.T, test DeparseTest) {
 	}
 	assert.NotEmpty(t, j)
 
+	if finger := ast.Fingerprint(); !assert.NotEmpty(t, finger) {
+		panic("fingerprint is empty")
+	}
+
 	recompiled, err := ast.Statements[0].Deparse(Context_None)
 	if test.ExpectedCompileError != "" {
 		assert.EqualError(t, err, test.ExpectedCompileError, "did not receive the expected error when recompiling")
