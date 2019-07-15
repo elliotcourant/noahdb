@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "type.proto";
+import "types/type.proto";
 
 package core;
 
@@ -23,7 +23,7 @@ message Table {
 message Column {
     uint64 ColumnID = 1;
     uint64 TableID = 2;
-    Type Type = 3;
+    types.Type Type = 3;
     int32 Sort = 4;
     string ColumnName = 5;
     bool PrimaryKey = 6;

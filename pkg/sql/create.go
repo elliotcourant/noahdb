@@ -3,6 +3,7 @@ package sql
 import (
 	"fmt"
 	"github.com/ahmetb/go-linq"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/timber"
 	"strings"
 
@@ -119,7 +120,7 @@ func (stmt *createStmtPlanner) handleTableType() error {
 func (stmt *createStmtPlanner) handleColumns(s *session) error {
 	verifyPrimaryKeyColumnType := func(column core.Column) error {
 		switch column.Type {
-		case core.Type_int8, core.Type_int4, core.Type_int2:
+		case types.Type_int8, types.Type_int4, types.Type_int2:
 			// We only allow for these types to be primary keys at this time.
 			return nil
 		default:

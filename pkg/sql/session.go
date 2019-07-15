@@ -5,6 +5,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
 )
@@ -71,5 +72,5 @@ type PreparedStatement struct {
 
 	Columns []pgproto.FieldDescription
 
-	InferredTypes []core.Type
+	InferredTypes []types.Type
 }

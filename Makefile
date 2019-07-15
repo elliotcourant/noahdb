@@ -1,8 +1,10 @@
-.PHONY: default strings protos embedded test coverage generated docker
+a.PHONY: default strings protos embedded test coverage generated docker
 
-CORE_DIRECTORY = ./pkg/core
-PGERROR_DIRECTORY = ./pkg/pgerror
-BUILD_DIRECTORY = ./bin
+PKG_DIRECTORY := pkg
+CORE_DIRECTORY := pkg/core
+PGERROR_DIRECTORY := pkg/pgerror
+TYPES_DIRECTORY := pkg/types
+BUILD_DIRECTORY := bin
 PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
 DOCKER_TAG = local
@@ -59,12 +61,12 @@ protos:
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/shard.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/data_node.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/tenant.proto
-	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/type.proto
-	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/table.proto
+	@protoc -I=$(PKG_DIRECTORY) --go_out=$(PKG_DIRECTORY) $(CORE_DIRECTORY)/table.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/setting.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/schema.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/user.proto
 	@protoc -I=$(PGERROR_DIRECTORY) --go_out=$(PGERROR_DIRECTORY) $(PGERROR_DIRECTORY)/errors.proto
+	@protoc -I=$(TYPES_DIRECTORY) --go_out=$(TYPES_DIRECTORY) $(TYPES_DIRECTORY)/type.proto
 
 embedded:
 	@echo generating embedded files...

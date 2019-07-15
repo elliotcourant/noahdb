@@ -5,9 +5,9 @@ import (
 	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/commands"
-	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/elliotcourant/timber"
 )
@@ -60,7 +60,7 @@ func (s *session) prepare(
 	stmt ast.Stmt, placeholderHints queryutil.PlaceholderTypes,
 ) (*PreparedStatement, error) {
 	if placeholderHints == nil {
-		placeholderHints = make(map[int]core.Type)
+		placeholderHints = make(map[int]types.Type)
 	}
 
 	prepared := &PreparedStatement{
@@ -82,7 +82,7 @@ func (s *session) prepare(
 
 	columns := make([]pgproto.FieldDescription, len(referenceColumns))
 
-	inferredTypes := make([]core.Type, 0)
+	inferredTypes := make([]types.Type, 0)
 
 	for i, col := range referenceColumns {
 		column := pgproto.FieldDescription{
@@ -100,7 +100,7 @@ func (s *session) prepare(
 			// If we do not recognize the type we want to be optimistic, and return text for now
 			// If the type truly does not exist then postgres will throw an error.
 			if !ok {
-				typ = core.Type_text
+				typ = types.Type_text
 			}
 
 			column.DataTypeOID = typ.Uint32()
@@ -108,17 +108,17 @@ func (s *session) prepare(
 			goto WALK
 		case ast.ParamRef:
 			if column.DataTypeOID > 0 {
-				inferredTypes = append(inferredTypes, core.Type(column.DataTypeOID))
+				inferredTypes = append(inferredTypes, types.Type(column.DataTypeOID))
 				break
 			}
 
 			if hint, ok := placeholderHints[colt.Number]; ok {
 				column.DataTypeOID = hint.Uint32()
 			} else {
-				column.DataTypeOID = core.Type_text.Uint32()
+				column.DataTypeOID = types.Type_text.Uint32()
 			}
 
-			inferredTypes = append(inferredTypes, core.Type(column.DataTypeOID))
+			inferredTypes = append(inferredTypes, types.Type(column.DataTypeOID))
 		case ast.ColumnRef:
 			colNames, err := colt.Fields.DeparseList(ast.Context_Operator)
 			if err != nil {

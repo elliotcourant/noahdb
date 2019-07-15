@@ -158,7 +158,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 								typs[i] = *t
 								switch (*t).(type) {
 								case int64:
-									field.DataTypeOID = uint32(core.Type_int8)
+									field.DataTypeOID = uint32(types.Type_int8)
 								}
 							}
 						}

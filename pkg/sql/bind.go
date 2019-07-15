@@ -62,6 +62,15 @@ func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.Comm
 			"expected %d arguments, got %d", numberOfArguments, len(bind.Args))
 	}
 
+	for i, arg := range bind.Args {
+		// t := ps.InferredTypes[i]
+		if arg == nil {
+			args[i] = nil
+		} else {
+
+		}
+	}
+
 	fmt.Println(args)
 	return nil
 }

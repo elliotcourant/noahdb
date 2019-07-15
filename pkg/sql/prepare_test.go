@@ -3,6 +3,7 @@ package sql_test
 import (
 	"database/sql"
 	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/testutils"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -29,12 +30,12 @@ func Test_ExecPrepare(t *testing.T) {
 		columns := []core.Column{
 			{
 				ColumnName: "id",
-				Type:       core.Type_int8,
+				Type:       types.Type_int8,
 				PrimaryKey: true,
 			},
 			{
 				ColumnName: "name",
-				Type:       core.Type_text,
+				Type:       types.Type_text,
 				PrimaryKey: false,
 				Nullable:   true,
 			},

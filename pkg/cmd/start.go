@@ -30,18 +30,7 @@ var (
 	startCmd = &cobra.Command{
 		Use: "start",
 		Run: func(cmd *cobra.Command, args []string) {
-			if UseTmpDir {
-				tempdir, err := ioutil.TempDir("", "noahdb")
-				if err != nil {
-					panic(err)
-				}
-				StoreDirectory = tempdir
-				defer func() {
-					timber.Infof("cleaning up temp directory: %s", tempdir)
-					os.RemoveAll(tempdir)
-				}()
-			}
-			top.NoahMain(StoreDirectory, JoinAddr, ListenAddr, AutoDataNode, AutoJoin)
+			StartDB(StoreDirectory, JoinAddr, ListenAddr, UseTmpDir, AutoDataNode, AutoJoin)
 		},
 	}
 )
@@ -62,4 +51,19 @@ func Execute() {
 		timber.Fatal(err)
 		os.Exit(1)
 	}
+}
+
+func StartDB(storeDirectory, joinAddr, listenAddr string, useTempDir, autoDataNode, autoJoin bool) {
+	if useTempDir {
+		tempdir, err := ioutil.TempDir("", "noahdb")
+		if err != nil {
+			panic(err)
+		}
+		storeDirectory = tempdir
+		defer func() {
+			timber.Infof("cleaning up temp directory: %s", tempdir)
+			os.RemoveAll(tempdir)
+		}()
+	}
+	top.NoahMain(storeDirectory, joinAddr, listenAddr, autoDataNode, autoJoin)
 }

@@ -9,14 +9,6 @@ import (
 	"strings"
 )
 
-func (typ Type) PostgresName() string {
-	return ""
-}
-
-func (typ Type) Uint32() uint32 {
-	return uint32(typ)
-}
-
 var (
 	getTypeQuery = goqu.
 		From("types").
@@ -28,8 +20,8 @@ type typeContext struct {
 }
 
 type TypeContext interface {
-	GetTypeByName(name string) (Type, bool, error)
-	GetTypeByOid(oid types.OID) (Type, bool)
+	GetTypeByName(name string) (types.Type, bool, error)
+	GetTypeByOid(oid types.OID) (types.Type, bool)
 	// GetTypeInstance(typ Type) (types.Value, bool, error)
 }
 
@@ -78,18 +70,18 @@ func (ctx *typeContext) parseTimes(name string) (string, error) {
 	return name, nil
 }
 
-func (ctx *typeContext) GetTypeByName(name string) (Type, bool, error) {
+func (ctx *typeContext) GetTypeByName(name string) (types.Type, bool, error) {
 	name = strings.ToLower(name)
 	name = strings.TrimPrefix(name, "pg_catalog.")
 
 	name, err := ctx.parseArray(name)
 	if err != nil {
-		return Type_unknown, false, err
+		return types.Type_unknown, false, err
 	}
 
 	name, err = ctx.parseTimes(name)
 	if err != nil {
-		return Type_unknown, false, err
+		return types.Type_unknown, false, err
 	}
 
 	compiledSql, _, _ := getTypeQuery.
@@ -110,21 +102,21 @@ func (ctx *typeContext) GetTypeByName(name string) (Type, bool, error) {
 		ToSql()
 	rows, err := ctx.db.Query(compiledSql)
 	if err != nil {
-		return Type_unknown, false, err
+		return types.Type_unknown, false, err
 	}
 	ids, err := idArray(rows)
 	if err != nil {
-		return Type_unknown, false, err
+		return types.Type_unknown, false, err
 	}
 	if len(ids) == 0 {
-		return Type_unknown, false, nil
+		return types.Type_unknown, false, nil
 	}
-	return Type(ids[0]), true, nil
+	return types.Type(ids[0]), true, nil
 }
 
-func (ctx *typeContext) GetTypeByOid(oid types.OID) (Type, bool) {
+func (ctx *typeContext) GetTypeByOid(oid types.OID) (types.Type, bool) {
 	i := int(oid)
-	t := Type(i)
+	t := types.Type(i)
 	s := strconv.Itoa(i)
 	if s == t.String() {
 		return t, false
