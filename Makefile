@@ -31,14 +31,22 @@ test:
 setup_build_dir:
 	mkdir -p $(BUILD_DIRECTORY)
 
-build: generated setup_build_dir
+build: clean generated setup_build_dir
 	go build -o $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME) $(PACKAGE)
 
-fresh: generated setup_build_dir
+fresh: clean generated setup_build_dir
 	go build -a -x -v -o $(BUILD_DIRECTORY)/$(EXECUTABLE_NAME) $(PACKAGE)
 
 coverage:
 	./coverage.sh
+
+clean:
+	rm -rfd bin
+	rm -rfd vendor
+	rm -rf pkg/ast/*.string.go
+	rm -rf $(CORE_DIRECTORY)/*.pb.go
+	rm -rf $(PGERROR_DIRECTORY)/*.pb.go
+	rm -rf $(TYPES_DIRECTORY)/*.pb.go
 
 strings:
 	@echo generating strings...
@@ -65,8 +73,8 @@ protos:
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/setting.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/schema.proto
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/user.proto
+	@protoc -I=$(TYPES_DIRECTORY) --go_out=${GOPATH}/src $(TYPES_DIRECTORY)/type.proto
 	@protoc -I=$(PGERROR_DIRECTORY) --go_out=$(PGERROR_DIRECTORY) $(PGERROR_DIRECTORY)/errors.proto
-	@protoc -I=$(TYPES_DIRECTORY) --go_out=$(TYPES_DIRECTORY) $(TYPES_DIRECTORY)/type.proto
 
 embedded:
 	@echo generating embedded files...
