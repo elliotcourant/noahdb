@@ -110,54 +110,39 @@ func (result *CommandResult) Close() error {
 	}()
 
 	// Send a completion message, specific to the type of result.
-	switch result.typ {
-	case commandComplete:
-		tag := result.tag
-		if err := result.backend.Send(&pgproto.CommandComplete{
-			CommandTag: tag,
-		}); err != nil {
-			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
-		}
-		// panic("not handling command complete yet.")
-
-		// tag := cookTag(
-		// 	result.cmdCompleteTag, r.conn.writerState.tagBuf[:0], r.stmt, r.rowsAffected,
-		// )
-		// r.conn.bufferCommandComplete(tag)
-	case parseComplete:
-		if err := result.backend.Send(&pgproto.ParseComplete{}); err != nil {
-			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
-		}
-	case bindComplete:
-		if err := result.backend.Send(&pgproto.BindComplete{}); err != nil {
-			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
-		}
-	case closeComplete:
-		if err := result.backend.Send(&pgproto.CloseComplete{}); err != nil {
-			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
-		}
-	case readyForQuery:
-		if err := result.backend.Send(&pgproto.ReadyForQuery{
-			TxStatus: 'I',
-		}); err != nil {
-			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
-		}
-	case emptyQueryResponse:
-		if err := result.backend.Send(&pgproto.EmptyQueryResponse{}); err != nil {
-			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
-		}
-	case flush:
-		// // The error is saved on conn.err.
-		// _ /* err */ = r.conn.Flush(r.pos)
-	case noCompletionMsg:
-		// Only for describe statements.
-		if result.noDataMessage {
-			if err := result.backend.Send(&pgproto.NoData{}); err != nil {
-				panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
+	if err := func() error {
+		switch result.typ {
+		case commandComplete:
+			return result.backend.Send(&pgproto.CommandComplete{
+				CommandTag: result.tag,
+			})
+		case parseComplete:
+			return result.backend.Send(&pgproto.ParseComplete{})
+		case bindComplete:
+			return result.backend.Send(&pgproto.BindComplete{})
+		case closeComplete:
+			return result.backend.Send(&pgproto.CloseComplete{})
+		case readyForQuery:
+			return result.backend.Send(&pgproto.ReadyForQuery{
+				TxStatus: 'I',
+			})
+		case emptyQueryResponse:
+			return result.backend.Send(&pgproto.EmptyQueryResponse{})
+		case flush:
+			// // The error is saved on conn.err.
+			// _ /* err */ = r.conn.Flush(r.pos)
+		case noCompletionMsg:
+			// Only for describe statements.
+			if result.noDataMessage {
+				return result.backend.Send(&pgproto.NoData{})
 			}
+		default:
+			panic(fmt.Sprintf("unknown type: %v", result.typ))
 		}
-	default:
-		panic(fmt.Sprintf("unknown type: %v", result.typ))
+		return nil
+	}(); err != nil {
+		panic(fmt.Sprintf("unexpected error from buffer: %v", err))
 	}
+
 	return nil
 }
