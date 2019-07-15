@@ -1,9 +1,19 @@
 package sql
 
 import (
+	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/elliotcourant/noahdb/pkg/pgerror"
+	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 )
+
+func (s *session) DeletePortal(name string) {
+	_, ok := s.portals[name]
+	if !ok {
+		return
+	}
+	delete(s.portals, name)
+}
 
 func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.CommandResult) error {
 
@@ -13,6 +23,45 @@ func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.Comm
 				pgerror.CodeDuplicateCursorError,
 				"portal %q already exists", bind.PortalName)
 		}
+	} else {
+		s.DeletePortal("")
 	}
+
+	ps, ok := s.preparedStatements[bind.PreparedStatementName]
+	if !ok {
+		return pgerror.NewErrorf(
+			pgerror.CodeInvalidSQLStatementNameError,
+			"unknown prepared statement %q", bind.PreparedStatementName)
+	}
+
+	numberOfArguments := len(ps.InferredTypes)
+
+	args := make([]interface{}, numberOfArguments)
+	argFormatCodes := bind.ArgFormatCodes
+
+	if len(bind.Args) != numberOfArguments {
+		return pgwirebase.NewProtocolViolationErrorf(
+			"expected %d arguments, got %d", numberOfArguments, len(bind.Args))
+	}
+
+	if len(bind.ArgFormatCodes) != 1 && len(bind.ArgFormatCodes) != numberOfArguments {
+		return pgwirebase.NewProtocolViolationErrorf(
+			"wrong number of format codes specified: %d for %d arguments",
+			len(bind.ArgFormatCodes), numberOfArguments)
+	}
+
+	if len(bind.ArgFormatCodes) == 1 && numberOfArguments > 1 {
+		argFormatCodes = make([]pgwirebase.FormatCode, numberOfArguments)
+		for i := range argFormatCodes {
+			argFormatCodes[i] = bind.ArgFormatCodes[0]
+		}
+	}
+
+	if len(bind.Args) != int(numberOfArguments) {
+		return pgwirebase.NewProtocolViolationErrorf(
+			"expected %d arguments, got %d", numberOfArguments, len(bind.Args))
+	}
+
+	fmt.Println(args)
 	return nil
 }

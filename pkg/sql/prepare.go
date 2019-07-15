@@ -23,7 +23,6 @@ func (s *session) AddPreparedStatement(name string, stmt ast.Stmt, parseTypeHint
 	}
 	s.preparedStatements[name] = preparedStatementEntry{
 		PreparedStatement: prepared,
-		portals:           make(map[string]struct{}),
 	}
 	return prepared, nil
 }
@@ -34,23 +33,11 @@ func (s *session) HasPreparedStatement(name string) bool {
 }
 
 func (s *session) DeletePreparedStatement(name string) {
-	psEntry, ok := s.preparedStatements[name]
+	_, ok := s.preparedStatements[name]
 	if !ok {
 		return
-	}
-	for portalName := range psEntry.portals {
-		s.DeletePortal(portalName)
 	}
 	delete(s.preparedStatements, name)
-}
-
-func (s *session) DeletePortal(name string) {
-	portalEntry, ok := s.portals[name]
-	if !ok {
-		return
-	}
-	delete(s.portals, name)
-	delete(s.preparedStatements[portalEntry.psName].portals, name)
 }
 
 func (s *session) ExecutePrepare(prepare commands.PrepareStatement, result *commands.CommandResult) error {

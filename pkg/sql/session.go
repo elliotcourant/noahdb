@@ -32,7 +32,6 @@ func newSession(s sessionContext) *session {
 
 type preparedStatementEntry struct {
 	*PreparedStatement
-	portals map[string]struct{}
 }
 
 // PreparedPortal is a PreparedStatement that has been bound with query arguments.
