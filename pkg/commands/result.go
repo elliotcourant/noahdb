@@ -4,13 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
-	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
 )
-
-type sessionContext interface {
-	Backend() *pgproto.Backend
-	StatementBuffer() stmtbuf.StatementBuffer
-}
 
 type completionMsgType int
 
@@ -29,7 +23,7 @@ const (
 
 type CommandResult struct {
 	closed  bool
-	session sessionContext
+	backend *pgproto.Backend
 	err     error
 	typ     completionMsgType
 	tag     string
@@ -37,49 +31,49 @@ type CommandResult struct {
 	noDataMessage bool
 }
 
-func CreateSyncCommandResult(session sessionContext) *CommandResult {
-	result := NewCommandResult(session)
+func CreateSyncCommandResult(backend *pgproto.Backend) *CommandResult {
+	result := NewCommandResult(backend)
 	result.typ = readyForQuery
 	return result
 }
 
-func CreateExecuteCommandResult(session sessionContext, stmt ast.Stmt) *CommandResult {
-	result := NewCommandResult(session)
+func CreateExecuteCommandResult(backend *pgproto.Backend, stmt ast.Stmt) *CommandResult {
+	result := NewCommandResult(backend)
 	result.typ = commandComplete
 	result.tag = stmt.StatementTag()
 	return result
 }
 
-func CreatePreparedStatementResult(session sessionContext, stmt ast.Stmt) *CommandResult {
-	result := NewCommandResult(session)
+func CreatePreparedStatementResult(backend *pgproto.Backend, stmt ast.Stmt) *CommandResult {
+	result := NewCommandResult(backend)
 	result.typ = parseComplete
 	result.tag = stmt.StatementTag()
 	return result
 }
 
-func CreateDescribeStatementResult(session sessionContext) *CommandResult {
-	result := NewCommandResult(session)
+func CreateDescribeStatementResult(backend *pgproto.Backend) *CommandResult {
+	result := NewCommandResult(backend)
 	result.typ = noCompletionMsg
 	return result
 }
 
-func CreateBindStatementResult(session sessionContext) *CommandResult {
-	result := NewCommandResult(session)
+func CreateBindStatementResult(backend *pgproto.Backend) *CommandResult {
+	result := NewCommandResult(backend)
 	result.typ = bindComplete
 	return result
 }
 
-func CreateErrorResult(session sessionContext, err error) *CommandResult {
-	result := NewCommandResult(session)
+func CreateErrorResult(backend *pgproto.Backend, err error) *CommandResult {
+	result := NewCommandResult(backend)
 	result.typ = noCompletionMsg
 	result.err = err
 	return result
 }
 
-func NewCommandResult(session sessionContext) *CommandResult {
+func NewCommandResult(backend *pgproto.Backend) *CommandResult {
 	return &CommandResult{
 		closed:  false,
-		session: session,
+		backend: backend,
 	}
 }
 
@@ -98,7 +92,7 @@ func (result *CommandResult) CloseWithErr(e error) error {
 	defer func() {
 		result.closed = true
 	}()
-	return result.session.Backend().Send(&pgproto.ErrorResponse{
+	return result.backend.Send(&pgproto.ErrorResponse{
 		Message: e.Error(),
 	})
 }
@@ -119,7 +113,7 @@ func (result *CommandResult) Close() error {
 	switch result.typ {
 	case commandComplete:
 		tag := result.tag
-		if err := result.session.Backend().Send(&pgproto.CommandComplete{
+		if err := result.backend.Send(&pgproto.CommandComplete{
 			CommandTag: tag,
 		}); err != nil {
 			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
@@ -131,25 +125,25 @@ func (result *CommandResult) Close() error {
 		// )
 		// r.conn.bufferCommandComplete(tag)
 	case parseComplete:
-		if err := result.session.Backend().Send(&pgproto.ParseComplete{}); err != nil {
+		if err := result.backend.Send(&pgproto.ParseComplete{}); err != nil {
 			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
 		}
 	case bindComplete:
-		if err := result.session.Backend().Send(&pgproto.BindComplete{}); err != nil {
+		if err := result.backend.Send(&pgproto.BindComplete{}); err != nil {
 			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
 		}
 	case closeComplete:
-		if err := result.session.Backend().Send(&pgproto.CloseComplete{}); err != nil {
+		if err := result.backend.Send(&pgproto.CloseComplete{}); err != nil {
 			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
 		}
 	case readyForQuery:
-		if err := result.session.Backend().Send(&pgproto.ReadyForQuery{
+		if err := result.backend.Send(&pgproto.ReadyForQuery{
 			TxStatus: 'I',
 		}); err != nil {
 			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
 		}
 	case emptyQueryResponse:
-		if err := result.session.Backend().Send(&pgproto.EmptyQueryResponse{}); err != nil {
+		if err := result.backend.Send(&pgproto.EmptyQueryResponse{}); err != nil {
 			panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
 		}
 	case flush:
@@ -158,7 +152,7 @@ func (result *CommandResult) Close() error {
 	case noCompletionMsg:
 		// Only for describe statements.
 		if result.noDataMessage {
-			if err := result.session.Backend().Send(&pgproto.NoData{}); err != nil {
+			if err := result.backend.Send(&pgproto.NoData{}); err != nil {
 				panic(fmt.Sprintf("unexpected error from buffer: %s", err.Error()))
 			}
 		}

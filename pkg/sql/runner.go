@@ -32,23 +32,23 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			result := &commands.CommandResult{}
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
-				result = commands.CreateExecuteCommandResult(s, cmd.Statement)
+				result = commands.CreateExecuteCommandResult(s.Backend(), cmd.Statement)
 				err = s.ExecuteStatement(cmd, result)
 			case commands.ExecutePortal:
 			case commands.PrepareStatement:
-				result = commands.CreatePreparedStatementResult(s, cmd.Statement)
+				result = commands.CreatePreparedStatementResult(s.Backend(), cmd.Statement)
 				err = s.ExecutePrepare(cmd, result)
 			case commands.DescribeStatement:
-				result = commands.CreateDescribeStatementResult(s)
+				result = commands.CreateDescribeStatementResult(s.Backend())
 				err = s.ExecuteDescribe(cmd, result)
 			case commands.BindStatement:
-				result = commands.CreateBindStatementResult(s)
+				result = commands.CreateBindStatementResult(s.Backend())
 				err = s.ExecuteBind(cmd, result)
 			case commands.DeletePreparedStatement:
 			case commands.SendError:
-				result = commands.CreateErrorResult(s, cmd.Err)
+				result = commands.CreateErrorResult(s.Backend(), cmd.Err)
 			case commands.Sync:
-				result = commands.CreateSyncCommandResult(s)
+				result = commands.CreateSyncCommandResult(s.Backend())
 			case commands.Flush:
 			case commands.CopyIn:
 			default:
