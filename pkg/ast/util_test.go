@@ -93,6 +93,12 @@ func DoTest(t *testing.T, test DeparseTest) {
 		}
 	}
 
+	j, err := ast.MarshalJSON()
+	if !assert.NoError(t, err) {
+		panic(err)
+	}
+	assert.NotEmpty(t, j)
+
 	recompiled, err := ast.Statements[0].Deparse(Context_None)
 	if test.ExpectedCompileError != "" {
 		assert.EqualError(t, err, test.ExpectedCompileError, "did not receive the expected error when recompiling")
