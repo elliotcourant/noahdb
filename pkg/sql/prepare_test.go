@@ -2,6 +2,7 @@ package sql_test
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/testutils"
@@ -44,19 +45,19 @@ func Test_ExecPrepare(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, newTable.TableID > 0)
 		assert.NotEmpty(t, newColumns)
-		prepared, err := db.Prepare("SELECT $1::int, $2::bigint")
-		// prepared, err := db.Prepare("SELECT $1::int, $2::int[], a.id, id tenant_id, id::int user_id FROM accounts a")
+		// prepared, err := db.Prepare("SELECT $1::int, $2::text")
+		prepared, err := db.Prepare("SELECT $1::int, $2::int[], a.id, id tenant_id, id::int user_id FROM accounts a WHERE a.id = $3")
 		if !assert.NoError(t, err) {
 			panic(err)
 		}
 
 		input := 1
-		row := prepared.QueryRow(input, input)
-
-		value := 0
-		if err := row.Scan(&value); !assert.NoError(t, err) {
-			panic(err)
-		}
-		assert.Equal(t, input, value)
+		row := prepared.QueryRow(input, input+1, input+2)
+		fmt.Println(row)
+		// value := 0
+		// if err := row.Scan(&value); !assert.NoError(t, err) {
+		// 	panic(err)
+		// }
+		// assert.Equal(t, input, value)
 	}()
 }

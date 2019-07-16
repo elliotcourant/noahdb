@@ -107,6 +107,7 @@ func (s *session) prepare(
 			col.Val = colt.Arg
 			goto WALK
 		case ast.ParamRef:
+			timber.Verbosef("found parameter reference [$%d]", colt.Number)
 			if column.DataTypeOID > 0 {
 				inferredTypes = append(inferredTypes, types.Type(column.DataTypeOID))
 				break

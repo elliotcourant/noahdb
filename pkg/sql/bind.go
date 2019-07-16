@@ -17,7 +17,6 @@ func (s *session) DeletePortal(name string) {
 }
 
 func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.CommandResult) error {
-
 	if bind.PortalName != "" {
 		if _, ok := s.portals[bind.PortalName]; ok {
 			return pgerror.NewErrorf(
@@ -37,7 +36,7 @@ func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.Comm
 
 	numberOfArguments := len(ps.InferredTypes)
 
-	args := make([]interface{}, numberOfArguments)
+	args := make([]types.Value, numberOfArguments)
 	argFormatCodes := bind.ArgFormatCodes
 
 	if len(bind.Args) != numberOfArguments {
@@ -58,18 +57,14 @@ func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.Comm
 		}
 	}
 
-	if len(bind.Args) != int(numberOfArguments) {
-		return pgwirebase.NewProtocolViolationErrorf(
-			"expected %d arguments, got %d", numberOfArguments, len(bind.Args))
-	}
-
 	for i, arg := range bind.Args {
 		t := ps.InferredTypes[i]
 		if arg == nil {
 			args[i] = nil
+		} else if v, err := types.Decode(argFormatCodes[i], t, arg); err != nil {
+			return err
 		} else {
-			v, err := types.Decode(argFormatCodes[i], t, arg)
-			fmt.Println(v, err)
+			args[i] = v
 		}
 	}
 
