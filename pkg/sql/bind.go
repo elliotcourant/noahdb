@@ -5,6 +5,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/types"
 )
 
 func (s *session) DeletePortal(name string) {
@@ -63,11 +64,12 @@ func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.Comm
 	}
 
 	for i, arg := range bind.Args {
-		// t := ps.InferredTypes[i]
+		t := ps.InferredTypes[i]
 		if arg == nil {
 			args[i] = nil
 		} else {
-
+			v, err := types.Decode(argFormatCodes[i], t, arg)
+			fmt.Println(v, err)
 		}
 	}
 

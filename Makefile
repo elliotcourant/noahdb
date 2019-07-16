@@ -25,7 +25,7 @@ kube: docker
 
 default: generated test
 
-test:
+test: clean generated
 	go test -race -v ./...
 
 setup_build_dir:
