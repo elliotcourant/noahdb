@@ -82,7 +82,7 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 	return InitialPlan{}, false, nil
 }
 
-func (stmt *selectStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
+func (stmt *selectStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool, error) {
 	// We don't need to retrieve tables here, since getNoahQuery is called first
 	// the tables will have been setup there.
 	query, err := stmt.tree.Deparse(ast.Context_None)

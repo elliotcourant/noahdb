@@ -1,7 +1,7 @@
 package sql
 
 import (
-	"github.com/elliotcourant/noahdb/pkg/commands"
+	"github.com/elliotcourant/noahdb/pkg/ast"
 )
 
 type execResult interface {
@@ -9,7 +9,10 @@ type execResult interface {
 	Err() error
 }
 
-func (s *session) executeStatement(statement commands.ExecuteStatement, result execResult) error {
-	result.SetError(s.stageQueryToResult(statement.Statement))
+func (s *session) executeStatement(
+	stmt ast.Stmt,
+	result execResult,
+	placeholders interface{}) error {
+	result.SetError(s.stageQueryToResult(stmt, placeholders))
 	return nil
 }

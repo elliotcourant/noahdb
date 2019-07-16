@@ -34,7 +34,9 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 
 				frontend, err := s.Colony().Pool().GetConnectionForDataNodeShard(task.DataNodeShardID)
 				if err != nil {
-					timber.Errorf("could not retrieve connection from pool for data node shard [%d]: %s", task.DataNodeShardID, err.Error())
+					timber.Errorf(
+						"could not retrieve connection from pool for data node shard [%d]: %s",
+						task.DataNodeShardID, err.Error())
 					response.err = err
 					return
 				}
@@ -42,7 +44,9 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 				if err := frontend.Send(&pgproto.Query{
 					String: task.Query,
 				}); err != nil {
-					timber.Errorf("could not send query to data node [%d]: %s", task.DataNodeShardID, err.Error())
+					timber.Errorf(
+						"could not send query to data node [%d]: %s",
+						task.DataNodeShardID, err.Error())
 					response.err = err
 					return
 				}

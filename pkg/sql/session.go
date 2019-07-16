@@ -66,7 +66,7 @@ type PreparedStatement struct {
 
 	// Statement is the parse tree from pg_query.
 	// This is used later to modify the query on the fly.
-	Statement *ast.Stmt
+	Statement ast.Stmt
 
 	Types queryutil.PlaceholderTypes
 

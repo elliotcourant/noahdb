@@ -4,8 +4,8 @@ type NoahQueryPlanner interface {
 	getNoahQueryPlan(*session) (InitialPlan, bool, error)
 }
 
-type SimpleQueryPlanner interface {
-	getSimpleQueryPlan(*session) (InitialPlan, bool, error)
+type NormalQueryPlanner interface {
+	getNormalQueryPlan(*session) (InitialPlan, bool, error)
 }
 
 type StandardQueryPlanner interface {

@@ -25,7 +25,7 @@ func newCreateStatementPlan(tree ast.CreateStmt) *createStmtPlanner {
 	}
 }
 
-func (stmt *createStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
+func (stmt *createStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool, error) {
 	// schemaName := *stmt.tree.Relation.Schemaname
 	tableName := *stmt.tree.Relation.Relname
 	tables, err := s.Colony().Tables().GetTables(tableName)

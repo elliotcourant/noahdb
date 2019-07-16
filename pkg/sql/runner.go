@@ -3,6 +3,7 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
+	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/elliotcourant/timber"
 	"io"
 	"reflect"
@@ -33,9 +34,24 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
 				result = commands.CreateExecuteCommandResult(s.Backend(), cmd.Statement)
-				err = s.executeStatement(cmd, result)
+				err = s.executeStatement(cmd.Statement, result, nil)
 			case commands.ExecutePortal:
-				fmt.Println("oh")
+				// Make sure the portal exists, if it doesn't then we want to break early.
+				portal, ok := s.portals[cmd.Name]
+				if !ok {
+					err = pgerror.NewErrorf(pgerror.CodeInvalidCursorNameError,
+						"unknown portal [%s]", cmd.Name)
+					break
+				}
+
+				// At this point the portal exists, but we need to make sure that the query is valid
+				if portal.Stmt.Statement == nil {
+					result = commands.CreateEmptyQueryResult(s.Backend())
+					break
+				}
+
+				result = commands.CreateExecutePortalResult(s.Backend(), portal.Stmt.Statement)
+				err = s.executeStatement(portal.Stmt.Statement, result, nil)
 			case commands.PrepareStatement:
 				result = commands.CreatePreparedStatementResult(s.Backend(), cmd.Statement)
 				err = s.executePrepare(cmd, result)

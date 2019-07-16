@@ -27,6 +27,16 @@ func TestCreateExecuteCommandResult(t *testing.T) {
 	commands.CreateExecuteCommandResult(nil, stmt.Statements[0].(ast.RawStmt).Stmt.(ast.SelectStmt))
 }
 
+func TestCreateExecutePortalResult(t *testing.T) {
+	stmt, err := ast.Parse("SELECT 1")
+	assert.NoError(t, err)
+	commands.CreateExecutePortalResult(nil, stmt.Statements[0].(ast.RawStmt).Stmt.(ast.SelectStmt))
+}
+
+func TestCreateEmptyQueryResult(t *testing.T) {
+	commands.CreateEmptyQueryResult(nil)
+}
+
 func TestCreatePreparedStatementResult(t *testing.T) {
 	stmt, err := ast.Parse("SELECT 1")
 	assert.NoError(t, err)
@@ -63,6 +73,13 @@ func TestCommandResult_Close(t *testing.T) {
 		})
 	})
 
+	t.Run("panic with bad buffer", func(t *testing.T) {
+		assert.Panics(t, func() {
+			_ = commands.CreateBindStatementResult(
+				testutils.CreateTextBackendEx(t, testutils.BufferUnhealthy)).Close()
+		})
+	})
+
 	t.Run("bind", func(t *testing.T) {
 		err := commands.CreateBindStatementResult(testutils.CreateTestBackend(t)).Close()
 		assert.NoError(t, err)
@@ -92,6 +109,20 @@ func TestCommandResult_Close(t *testing.T) {
 		err = commands.CreateExecuteCommandResult(
 			testutils.CreateTestBackend(t),
 			stmt.Statements[0].(ast.RawStmt).Stmt.(ast.SelectStmt)).Close()
+		assert.NoError(t, err)
+	})
+
+	t.Run("execute portal", func(t *testing.T) {
+		stmt, err := ast.Parse("SELECT 1")
+		assert.NoError(t, err)
+		err = commands.CreateExecutePortalResult(
+			testutils.CreateTestBackend(t),
+			stmt.Statements[0].(ast.RawStmt).Stmt.(ast.SelectStmt)).Close()
+		assert.NoError(t, err)
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		err := commands.CreateEmptyQueryResult(testutils.CreateTestBackend(t)).Close()
 		assert.NoError(t, err)
 	})
 

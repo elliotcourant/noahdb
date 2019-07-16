@@ -20,6 +20,6 @@ func (stmt *createSchemaStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, 
 	return InitialPlan{}, false, nil
 }
 
-func (stmt *createSchemaStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
+func (stmt *createSchemaStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool, error) {
 	return InitialPlan{}, false, nil
 }

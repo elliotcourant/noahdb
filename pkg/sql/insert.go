@@ -17,7 +17,7 @@ func newInsertStatementPlan(tree ast.InsertStmt) *insertStmtPlanner {
 	}
 }
 
-func (stmt *insertStmtPlanner) getSimpleQueryPlan(s *session) (InitialPlan, bool, error) {
+func (stmt *insertStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool, error) {
 	tableName := *stmt.tree.Relation.Relname
 	tables, err := s.Colony().Tables().GetTables(tableName)
 	if err != nil {

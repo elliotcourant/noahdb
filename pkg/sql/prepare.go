@@ -64,7 +64,7 @@ func (s *session) prepare(
 
 	prepared := &PreparedStatement{
 		TypeHints: placeholderHints,
-		Statement: &stmt,
+		Statement: stmt,
 	}
 
 	if stmt == nil {
@@ -194,7 +194,7 @@ func (s *session) getPreparedStatementColumns(
 func (s *session) getInferredPreparedStatementParamTypes(
 	statement *PreparedStatement,
 	placeholderHints queryutil.PlaceholderTypes) ([]types.Type, error) {
-	params := queryutil.GetArguments(*statement.Statement)
+	params := queryutil.GetArguments(statement.Statement)
 	inferredTypes := make([]types.Type, len(params))
 	for i, n := range params {
 		t, ok := placeholderHints[n]

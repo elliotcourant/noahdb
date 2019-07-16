@@ -7,7 +7,14 @@ import (
 	"time"
 )
 
-func (s *session) stageQueryToResult(statement ast.Stmt) error {
+func (s *session) stageQueryToResult(statement ast.Stmt, placeholders interface{}) error {
+	// If there are placeholders present then we need to walk the syntax tree and add the
+	// placeholders into the query manually, this is a bit weird and kind of expensive. But it's
+	// the best solution I have at the moment for the query planner.
+	if placeholders != nil {
+
+	}
+
 	planAndExpandTimestamp := time.Now()
 	defer func() {
 		timber.Verbosef("[%s] planning and execution of statement", time.Since(planAndExpandTimestamp))
@@ -36,8 +43,8 @@ func (s *session) stageQueryToResult(statement ast.Stmt) error {
 			}
 		}
 
-		if simplePlanner, ok := planner.(SimpleQueryPlanner); ok {
-			if plan, ok, err = simplePlanner.getSimpleQueryPlan(s); err != nil {
+		if normalQueryPlanner, ok := planner.(NormalQueryPlanner); ok {
+			if plan, ok, err = normalQueryPlanner.getNormalQueryPlan(s); err != nil {
 				return InitialPlan{}, err
 			} else if ok {
 				return plan, nil

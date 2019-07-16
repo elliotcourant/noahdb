@@ -26,7 +26,7 @@ func (s *session) executeDescribe(describe commands.DescribeStatement, result *c
 			}
 		}
 
-		if ps.Statement == nil || (*ps.Statement).StatementType() != ast.Rows {
+		if ps.Statement == nil || ps.Statement.StatementType() != ast.Rows {
 			// The statement has no data to be returned.
 			result.SetNoDataMessage(true)
 		} else {

@@ -44,6 +44,19 @@ func CreateExecuteCommandResult(backend *pgproto.Backend, stmt ast.Stmt) *Comman
 	return result
 }
 
+func CreateExecutePortalResult(backend *pgproto.Backend, stmt ast.Stmt) *CommandResult {
+	result := NewCommandResult(backend)
+	result.typ = commandComplete
+	result.tag = stmt.StatementTag()
+	return result
+}
+
+func CreateEmptyQueryResult(backend *pgproto.Backend) *CommandResult {
+	result := NewCommandResult(backend)
+	result.typ = emptyQueryResponse
+	return result
+}
+
 func CreatePreparedStatementResult(backend *pgproto.Backend, stmt ast.Stmt) *CommandResult {
 	result := NewCommandResult(backend)
 	result.typ = parseComplete
