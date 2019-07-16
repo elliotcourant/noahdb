@@ -91,8 +91,17 @@ func (s *session) prepare(
 	if err != nil {
 		return nil, err
 	}
-
 	prepared.Columns = columns
+
+	// Infer the type for each param provided.
+	inferredTypes, err := s.getInferredPreparedStatementParamTypes(
+		prepared,
+		placeholderHints)
+	if err != nil {
+		return nil, err
+	}
+	prepared.InferredTypes = inferredTypes
+
 	return prepared, nil
 }
 
@@ -180,4 +189,20 @@ func (s *session) getPreparedStatementColumns(
 	}
 
 	return columns, nil
+}
+
+func (s *session) getInferredPreparedStatementParamTypes(
+	statement *PreparedStatement,
+	placeholderHints queryutil.PlaceholderTypes) ([]types.Type, error) {
+	params := queryutil.GetArguments(*statement.Statement)
+	inferredTypes := make([]types.Type, len(params))
+	for i, n := range params {
+		t, ok := placeholderHints[n]
+		if ok {
+			inferredTypes[i] = t
+		} else {
+			inferredTypes[i] = types.Type_text
+		}
+	}
+	return inferredTypes, nil
 }

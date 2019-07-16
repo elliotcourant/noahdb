@@ -15,11 +15,11 @@ type PlaceholderTypes map[int]types.Type
 // QueryArguments relates placeholder names to their provided query argument.
 //
 // A nil value represents a NULL argument.
-type QueryArguments map[string]types.Value
+type QueryArguments []types.Value
 
+// GetArguments returns a distinct list of argument numbers that were found in the provided query.
 func GetArguments(stmt interface{}) []int {
-	args := make([]int, 0)
-	args = append(args, examineArguments(stmt, 0)...)
+	args := examineArguments(stmt)
 	linq.From(args).Distinct().ToSlice(&args)
 	return args
 }
@@ -42,51 +42,35 @@ func ReplaceArguments(stmt interface{}, args QueryArguments) interface{} {
 	return replaceArguments(stmt, 0, args)
 }
 
-func examineArguments(value interface{}, depth int) []int {
-	args := make([]int, 0)
-	print := func(msg string, args ...interface{}) {
-		// fmt.Printf("%s%s\n", strings.Repeat("\t", depth), fmt.Sprintf(msg, args...))
-	}
-
+func examineArguments(value interface{}) []int {
 	if value == nil {
-		return args
+		return []int{}
 	}
 
+	if paramRef, ok := value.(ast.ParamRef); ok {
+		return []int{paramRef.Number}
+	}
+
+	args := make([]int, 0)
 	t := reflect.TypeOf(value)
 	v := reflect.ValueOf(value)
-
-	if v.Type() == reflect.TypeOf(ast.ParamRef{}) {
-		param := value.(ast.ParamRef)
-		args = append(args, param.Number)
-	}
-
 	switch t.Kind() {
 	case reflect.Ptr:
 		if v.Elem().IsValid() {
-			args = append(args, examineArguments(v.Elem().Interface(), depth+1)...)
+			return examineArguments(v.Elem().Interface())
 		}
 	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
-		depth--
 		if v.Len() > 0 {
-			print("[")
 			for i := 0; i < v.Len(); i++ {
-				depth++
-				print("[%d] Type {%s} {", i, v.Index(i).Type().String())
-				args = append(args, examineArguments(v.Index(i).Interface(), depth+1)...)
-				print("},")
-				depth--
+				args = append(args, examineArguments(v.Index(i).Interface())...)
 			}
-			print("]")
-		} else {
-			print("[]")
 		}
 	case reflect.Struct:
 		for i := 0; i < t.NumField(); i++ {
-			f := t.Field(i)
-			print("[%d] Field {%s} Type {%s} Kind {%s}", i, f.Name, f.Type.String(), reflect.ValueOf(value).Field(i).Kind().String())
-			args = append(args, examineArguments(reflect.ValueOf(value).Field(i).Interface(), depth+1)...)
+			args = append(args, examineArguments(reflect.ValueOf(value).Field(i).Interface())...)
 		}
 	}
+
 	return args
 }
 
@@ -97,7 +81,7 @@ func examineArgumentsEx(parent, value interface{}) []ast.Node {
 
 	if param, ok := value.(ast.ParamRef); ok {
 		switch parent.(type) {
-		case ast.A_Expr, ast.TypeCast:
+		case ast.A_Expr:
 			return []ast.Node{parent.(ast.Node)}
 		default:
 			return []ast.Node{param}
@@ -133,69 +117,65 @@ func replaceArguments(value interface{}, depth int, args QueryArguments) interfa
 	}
 
 	if param, ok := value.(ast.ParamRef); ok {
-		if arg, ok := args[strconv.FormatInt(int64(param.Number), 10)]; ok {
-			return func() ast.Node {
-				switch argValue := arg.Get().(type) {
-				case string:
-					return ast.A_Const{
+		arg := args[param.Number-1]
+		return func() ast.Node {
+			switch argValue := arg.Get().(type) {
+			case string:
+				return ast.A_Const{
+					Val: ast.String{
+						Str: argValue,
+					},
+				}
+			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+				intv, _ := strconv.ParseUint(fmt.Sprintf("%v", argValue), 10, 64)
+				return ast.A_Const{
+					Val: ast.Integer{
+						Ival: int64(intv),
+					},
+				}
+			case *types.Numeric:
+				floatyMcFloatyFace := float64(0.0)
+				argValue.AssignTo(&floatyMcFloatyFace)
+				return ast.A_Const{
+					Val: ast.Float{
+						Str: fmt.Sprintf("%v", floatyMcFloatyFace),
+					},
+				}
+			case float32, float64:
+				return ast.A_Const{
+					Val: ast.Float{
+						Str: fmt.Sprintf("%v", argValue),
+					},
+				}
+			case bool:
+				boolVal := string([]rune(fmt.Sprintf("%v", argValue))[0])
+				return ast.TypeCast{
+					Arg: ast.A_Const{
 						Val: ast.String{
-							Str: argValue,
+							Str: boolVal,
 						},
-					}
-				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-					intv, _ := strconv.ParseUint(fmt.Sprintf("%v", argValue), 10, 64)
-					return ast.A_Const{
-						Val: ast.Integer{
-							Ival: int64(intv),
-						},
-					}
-				case *types.Numeric:
-					floatyMcFloatyFace := float64(0.0)
-					argValue.AssignTo(&floatyMcFloatyFace)
-					return ast.A_Const{
-						Val: ast.Float{
-							Str: fmt.Sprintf("%v", floatyMcFloatyFace),
-						},
-					}
-				case float32, float64:
-					return ast.A_Const{
-						Val: ast.Float{
-							Str: fmt.Sprintf("%v", argValue),
-						},
-					}
-				case bool:
-					boolVal := string([]rune(fmt.Sprintf("%v", argValue))[0])
-					return ast.TypeCast{
-						Arg: ast.A_Const{
-							Val: ast.String{
-								Str: boolVal,
-							},
-						},
-						TypeName: &ast.TypeName{
-							Names: ast.List{
-								Items: []ast.Node{
-									ast.String{
-										Str: "pg_catalog",
-									},
-									ast.String{
-										Str: "bool",
-									},
+					},
+					TypeName: &ast.TypeName{
+						Names: ast.List{
+							Items: []ast.Node{
+								ast.String{
+									Str: "pg_catalog",
+								},
+								ast.String{
+									Str: "bool",
 								},
 							},
 						},
-					}
-				case nil:
-					return &ast.A_Const{
-						Val: ast.Null{},
-					}
-				default:
-					panic(fmt.Sprintf("unsupported type %+v", argValue))
+					},
 				}
-			}()
-		} else {
-			panic("parameter is not a param reference")
-		}
-
+			case nil:
+				return &ast.A_Const{
+					Val: ast.Null{},
+				}
+			default:
+				panic(fmt.Sprintf("unsupported type %+v", argValue))
+			}
+		}()
 	}
 
 	if value == nil {

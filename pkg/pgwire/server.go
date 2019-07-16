@@ -160,6 +160,7 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 				}
 				return wire.StatementBuffer().Push(commands.Sync{})
 			case *pgproto.Execute:
+				return nil
 			case *pgproto.Parse:
 				return wire.handleParse(msg)
 			case *pgproto.Describe:

@@ -50,6 +50,32 @@ func Test_GetArguments(t *testing.T) {
 	}
 }
 
+func BenchmarkGetArguments(b *testing.B) {
+	b.Run("typical query", func(b *testing.B) {
+		parsed, err := ast.Parse(`SELECT $1::int, $2::int[], $4, a.id, id tenant_id, id::int user_id FROM accounts a WHERE a.id = $3`)
+		assert.NoError(b, err)
+		stmt := parsed.Statements[0].(ast.RawStmt).Stmt
+
+		b.StartTimer()
+		for i := 0; i < b.N; i++ {
+			GetArguments(stmt)
+		}
+		b.StopTimer()
+	})
+
+	b.Run("dead simple query", func(b *testing.B) {
+		parsed, err := ast.Parse(`SELECT $1`)
+		assert.NoError(b, err)
+		stmt := parsed.Statements[0].(ast.RawStmt).Stmt
+
+		b.StartTimer()
+		for i := 0; i < b.N; i++ {
+			GetArguments(stmt)
+		}
+		b.StopTimer()
+	})
+}
+
 func Test_GetArgumentsEx(t *testing.T) {
 	parsed, err := ast.Parse(`SELECT $1::int, $2::int[], $4, a.id, id tenant_id, id::int user_id FROM accounts a WHERE a.id = $3`)
 	assert.NoError(t, err)
@@ -93,8 +119,8 @@ var (
 		{
 			Query:    "SELECT $1",
 			ArgCount: 1,
-			Arguments: map[string]types.Value{
-				"1": &types.Int4{
+			Arguments: []types.Value{
+				&types.Int4{
 					Status: types.Present,
 					Int:    1,
 				},
@@ -103,12 +129,12 @@ var (
 		{
 			Query:    "SELECT products.id FROM products WHERE products.sku=$1 AND products.type=$2",
 			ArgCount: 2,
-			Arguments: map[string]types.Value{
-				"1": &types.Int4{
+			Arguments: []types.Value{
+				&types.Int4{
 					Status: types.Present,
 					Int:    1,
 				},
-				"2": &types.Bool{
+				&types.Bool{
 					Status: types.Present,
 					Bool:   true,
 				},
@@ -117,12 +143,12 @@ var (
 		{
 			Query:    "UPDATE users SET enabled=$1 WHERE type=$2",
 			ArgCount: 2,
-			Arguments: map[string]types.Value{
-				"1": &types.Int4{
+			Arguments: []types.Value{
+				&types.Int4{
 					Status: types.Present,
 					Int:    1,
 				},
-				"2": &types.Bool{
+				&types.Bool{
 					Status: types.Present,
 					Bool:   true,
 				},
@@ -131,12 +157,12 @@ var (
 		{
 			Query:    "INSERT INTO users (id, enabled) VALUES($1, $2) RETURNING *;",
 			ArgCount: 2,
-			Arguments: map[string]types.Value{
-				"1": &types.Int4{
+			Arguments: []types.Value{
+				&types.Int4{
 					Status: types.Present,
 					Int:    1,
 				},
-				"2": &types.Bool{
+				&types.Bool{
 					Status: types.Present,
 					Bool:   false,
 				},
@@ -145,16 +171,16 @@ var (
 		{
 			Query:    "INSERT INTO users (id, enabled, setup, value) VALUES($1, $2, $1, $3) RETURNING *;",
 			ArgCount: 3,
-			Arguments: map[string]types.Value{
-				"1": &types.Int4{
+			Arguments: []types.Value{
+				&types.Int4{
 					Status: types.Present,
 					Int:    1,
 				},
-				"2": &types.Bool{
+				&types.Bool{
 					Status: types.Present,
 					Bool:   false,
 				},
-				"3": func() *types.Numeric {
+				func() *types.Numeric {
 					float := types.Numeric{}
 					float.Set(float64(5.6))
 					return &float
@@ -164,17 +190,17 @@ var (
 		{
 			Query:     "select current_database(), current_schema(), current_user",
 			ArgCount:  0,
-			Arguments: map[string]types.Value{},
+			Arguments: []types.Value{},
 		},
 		{
 			Query:    "INSERT INTO users (id, enabled, setup) VALUES($1, $2, $1) RETURNING *;",
 			ArgCount: 2,
-			Arguments: map[string]types.Value{
-				"1": &types.Int4{
+			Arguments: []types.Value{
+				&types.Int4{
 					Status: types.Present,
 					Int:    1,
 				},
-				"2": &types.Text{
+				&types.Text{
 					Status: types.Present,
 					String: "hello world",
 				},
@@ -183,12 +209,12 @@ var (
 		{
 			Query:    "INSERT INTO users (id, enabled, setup) VALUES($1, $2, $1) RETURNING *;",
 			ArgCount: 2,
-			Arguments: map[string]types.Value{
-				"1": &types.Float4{
+			Arguments: []types.Value{
+				&types.Float4{
 					Status: types.Present,
 					Float:  82.3,
 				},
-				"2": &types.Float8{
+				&types.Float8{
 					Status: types.Present,
 					Float:  1.4,
 				},
@@ -197,26 +223,26 @@ var (
 		{
 			Query:    "INSERT INTO users (id, enabled, setup) VALUES($1, $2, $1) RETURNING *;",
 			ArgCount: 2,
-			Arguments: map[string]types.Value{
-				"1": &types.Float4{
+			Arguments: []types.Value{
+				&types.Float4{
 					Status: types.Null,
 				},
-				"2": &types.Float8{
+				&types.Float8{
 					Status: types.Present,
 					Float:  1.4,
 				},
 			},
 		},
-		// {
-		//     Query:    "DELETE FROM users WHERE user_id = $1;",
-		//     ArgCount: 1,
-		//     Arguments: map[string]types.Value{
-		//         "1": &types.Int8{
-		//             Status: types.Present,
-		//             Int:    28412931,
-		//         },
-		//     },
-		// },
+		{
+			Query:    "DELETE FROM users WHERE user_id = $1;",
+			ArgCount: 1,
+			Arguments: []types.Value{
+				&types.Int8{
+					Status: types.Present,
+					Int:    28412931,
+				},
+			},
+		},
 	}
 )
 

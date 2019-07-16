@@ -19,8 +19,14 @@ casting that param to another type or if we are comparing that
 param to another object we want to assert that objects type
 so that we can then assume the param's type.
 
-#### Benchmark
+## GetArguments
+GetArguments returns a distinct list of argument numbers that 
+were found in the provided query.
+
+# Benchmarks
 ```bash
-BenchmarkGetArgumentsEx/typical_query-8         	  200000	      7729 ns/op
-BenchmarkGetArgumentsEx/dead_simple_query-8     	 1000000	      1342 ns/op
+BenchmarkGetArguments/typical_query-8         	  200000	      7471 ns/op
+BenchmarkGetArguments/dead_simple_query-8     	 1000000	      1942 ns/op
+BenchmarkGetArgumentsEx/typical_query-8       	  200000	      7376 ns/op
+BenchmarkGetArgumentsEx/dead_simple_query-8   	 1000000	      1301 ns/op
 ```

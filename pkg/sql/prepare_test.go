@@ -12,7 +12,6 @@ import (
 )
 
 func Test_ExecPrepare(t *testing.T) {
-	t.Skip()
 	colony, cleanup := testutils.NewTestColony(t)
 	defer cleanup()
 	time.Sleep(1 * time.Second)

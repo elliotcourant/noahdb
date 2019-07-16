@@ -35,6 +35,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 				result = commands.CreateExecuteCommandResult(s.Backend(), cmd.Statement)
 				err = s.executeStatement(cmd, result)
 			case commands.ExecutePortal:
+				fmt.Println("oh")
 			case commands.PrepareStatement:
 				result = commands.CreatePreparedStatementResult(s.Backend(), cmd.Statement)
 				err = s.executePrepare(cmd, result)
