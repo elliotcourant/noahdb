@@ -16,7 +16,7 @@ func (s *session) DeletePortal(name string) {
 	delete(s.portals, name)
 }
 
-func (s *session) ExecuteBind(bind commands.BindStatement, result *commands.CommandResult) error {
+func (s *session) executeBind(bind commands.BindStatement, result *commands.CommandResult) error {
 	if bind.PortalName != "" {
 		if _, ok := s.portals[bind.PortalName]; ok {
 			return pgerror.NewErrorf(

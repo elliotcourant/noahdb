@@ -8,7 +8,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 )
 
-func (s *session) ExecuteDescribe(describe commands.DescribeStatement, result *commands.CommandResult) error {
+func (s *session) executeDescribe(describe commands.DescribeStatement, result *commands.CommandResult) error {
 	ps, ok := s.preparedStatements[describe.Name]
 	switch describe.Type {
 	case pgwirebase.PrepareStatement:

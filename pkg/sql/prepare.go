@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	DefaultColumnName = "?column?"
+	defaultColumnName = "?column?"
 )
 
-func (s *session) AddPreparedStatement(name string, stmt ast.Stmt, parseTypeHints queryutil.PlaceholderTypes) (*PreparedStatement, error) {
+func (s *session) addPreparedStatement(name string, stmt ast.Stmt, parseTypeHints queryutil.PlaceholderTypes) (*PreparedStatement, error) {
 	prepared, err := s.prepare(stmt, parseTypeHints)
 	if err != nil {
 		return nil, err
@@ -27,12 +27,12 @@ func (s *session) AddPreparedStatement(name string, stmt ast.Stmt, parseTypeHint
 	return prepared, nil
 }
 
-func (s *session) HasPreparedStatement(name string) bool {
+func (s *session) hasPreparedStatement(name string) bool {
 	_, ok := s.preparedStatements[name]
 	return ok
 }
 
-func (s *session) DeletePreparedStatement(name string) {
+func (s *session) deletePreparedStatement(name string) {
 	_, ok := s.preparedStatements[name]
 	if !ok {
 		return
@@ -40,20 +40,19 @@ func (s *session) DeletePreparedStatement(name string) {
 	delete(s.preparedStatements, name)
 }
 
-func (s *session) ExecutePrepare(prepare commands.PrepareStatement, result *commands.CommandResult) error {
+func (s *session) executePrepare(prepare commands.PrepareStatement, result *commands.CommandResult) error {
 	if prepare.Name != "" {
-		if s.HasPreparedStatement(prepare.Name) {
+		if s.hasPreparedStatement(prepare.Name) {
 			return pgerror.NewErrorf(pgerror.CodeDuplicatePreparedStatementError,
 				"prepared statement %q already exists", prepare.Name)
 		}
 	} else {
 		// Deallocate the unnamed statement, if it exists.
-		s.DeletePreparedStatement("")
+		s.deletePreparedStatement("")
 	}
 
-	s.AddPreparedStatement(prepare.Name, prepare.Statement, prepare.TypeHints)
-
-	return nil
+	_, err := s.addPreparedStatement(prepare.Name, prepare.Statement, prepare.TypeHints)
+	return err
 }
 
 func (s *session) prepare(
@@ -74,19 +73,39 @@ func (s *session) prepare(
 
 	tableAliasMap := queryutil.GetExtendedTables(stmt)
 	referenceColumns := queryutil.GetColumns(stmt)
-
 	tableNames := make([]string, 0)
+
+	// Take all of the actual table names from the table alias map and create a distinct
+	// array. We do this because if they are joining on the same table multiple times then
+	// we only need to reference that one table once.
 	linq.From(tableAliasMap).Select(func(i interface{}) interface{} {
 		return i.(linq.KeyValue).Value.(string)
 	}).Distinct().ToSlice(&tableNames)
 
-	columns := make([]pgproto.FieldDescription, len(referenceColumns))
+	// Infer the type info for each of the columns that will be returned.
+	columns, err := s.getPreparedStatementColumns(
+		referenceColumns,
+		tableNames,
+		tableAliasMap,
+		placeholderHints)
+	if err != nil {
+		return nil, err
+	}
 
-	inferredTypes := make([]types.Type, 0)
+	prepared.Columns = columns
+	return prepared, nil
+}
 
-	for i, col := range referenceColumns {
+func (s *session) getPreparedStatementColumns(
+	resTargets []ast.ResTarget,
+	tableNames []string,
+	tableAliases map[string]string,
+	placeholderHints queryutil.PlaceholderTypes) ([]pgproto.FieldDescription, error) {
+	columns := make([]pgproto.FieldDescription, len(resTargets))
+
+	for i, col := range resTargets {
 		column := pgproto.FieldDescription{
-			Name: DefaultColumnName,
+			Name: defaultColumnName,
 		}
 	WALK: // Used to handle nested references.
 		switch colt := col.Val.(type) {
@@ -109,7 +128,6 @@ func (s *session) prepare(
 		case ast.ParamRef:
 			timber.Verbosef("found parameter reference [$%d]", colt.Number)
 			if column.DataTypeOID > 0 {
-				inferredTypes = append(inferredTypes, types.Type(column.DataTypeOID))
 				break
 			}
 
@@ -118,8 +136,6 @@ func (s *session) prepare(
 			} else {
 				column.DataTypeOID = types.Type_text.Uint32()
 			}
-
-			inferredTypes = append(inferredTypes, types.Type(column.DataTypeOID))
 		case ast.ColumnRef:
 			colNames, err := colt.Fields.DeparseList(ast.Context_Operator)
 			if err != nil {
@@ -137,7 +153,7 @@ func (s *session) prepare(
 			var t []string // Potential tables the column belongs to.
 			if len(colNames) == 1 {
 				c, t = colNames[0], tableNames
-			} else if tbl, ok := tableAliasMap[colNames[0]]; ok {
+			} else if tbl, ok := tableAliases[colNames[0]]; ok {
 				c, t = column.Name, []string{tbl}
 			} else {
 				return nil, fmt.Errorf("could not resolve table [%s]", colNames[0])
@@ -163,7 +179,5 @@ func (s *session) prepare(
 		columns[i] = column
 	}
 
-	prepared.Columns = columns
-	prepared.InferredTypes = inferredTypes
-	return prepared, nil
+	return columns, nil
 }

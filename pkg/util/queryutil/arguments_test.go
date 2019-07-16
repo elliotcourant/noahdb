@@ -50,6 +50,40 @@ func Test_GetArguments(t *testing.T) {
 	}
 }
 
+func Test_GetArgumentsEx(t *testing.T) {
+	parsed, err := ast.Parse(`SELECT $1::int, $2::int[], $4, a.id, id tenant_id, id::int user_id FROM accounts a WHERE a.id = $3`)
+	assert.NoError(t, err)
+	stmt := parsed.Statements[0].(ast.RawStmt).Stmt
+	args := GetArgumentsEx(stmt)
+	assert.NotEmpty(t, args)
+}
+
+func BenchmarkGetArgumentsEx(b *testing.B) {
+	b.Run("typical query", func(b *testing.B) {
+		parsed, err := ast.Parse(`SELECT $1::int, $2::int[], $4, a.id, id tenant_id, id::int user_id FROM accounts a WHERE a.id = $3`)
+		assert.NoError(b, err)
+		stmt := parsed.Statements[0].(ast.RawStmt).Stmt
+
+		b.StartTimer()
+		for i := 0; i < b.N; i++ {
+			GetArgumentsEx(stmt)
+		}
+		b.StopTimer()
+	})
+
+	b.Run("dead simple query", func(b *testing.B) {
+		parsed, err := ast.Parse(`SELECT $1`)
+		assert.NoError(b, err)
+		stmt := parsed.Statements[0].(ast.RawStmt).Stmt
+
+		b.StartTimer()
+		for i := 0; i < b.N; i++ {
+			GetArgumentsEx(stmt)
+		}
+		b.StopTimer()
+	})
+}
+
 var (
 	testReplacements = []struct {
 		Query     string

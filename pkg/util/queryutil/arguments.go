@@ -24,6 +24,20 @@ func GetArguments(stmt interface{}) []int {
 	return args
 }
 
+// GetArgumentsEx will pull all of the ParamRef objects that
+// it can find in a query and return them as an array.
+// But if the ParamRef object has a parent object that is a
+// A_Expr or a TypeCase then it will include the parent object
+// as the item in the array instead (with the ParamRef as a child
+// object). This function is specifically used to pull params
+// from the query to try to infer their types. So if we are
+// casting that param to another type or if we are comparing that
+// param to another object we want to assert that objects type
+// so that we can then assume the param's type.
+func GetArgumentsEx(stmt interface{}) []ast.Node {
+	return examineArgumentsEx(nil, stmt)
+}
+
 func ReplaceArguments(stmt interface{}, args QueryArguments) interface{} {
 	return replaceArguments(stmt, 0, args)
 }
@@ -73,6 +87,43 @@ func examineArguments(value interface{}, depth int) []int {
 			args = append(args, examineArguments(reflect.ValueOf(value).Field(i).Interface(), depth+1)...)
 		}
 	}
+	return args
+}
+
+func examineArgumentsEx(parent, value interface{}) []ast.Node {
+	if value == nil {
+		return []ast.Node{}
+	}
+
+	if param, ok := value.(ast.ParamRef); ok {
+		switch parent.(type) {
+		case ast.A_Expr, ast.TypeCast:
+			return []ast.Node{parent.(ast.Node)}
+		default:
+			return []ast.Node{param}
+		}
+	}
+
+	t := reflect.TypeOf(value)
+	v := reflect.ValueOf(value)
+	args := make([]ast.Node, 0)
+	switch t.Kind() {
+	case reflect.Ptr:
+		if v.Elem().IsValid() {
+			return examineArgumentsEx(value, v.Elem().Interface())
+		}
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
+		if v.Len() > 0 {
+			for i := 0; i < v.Len(); i++ {
+				args = append(args, examineArgumentsEx(value, v.Index(i).Interface())...)
+			}
+		}
+	case reflect.Struct:
+		for i := 0; i < t.NumField(); i++ {
+			args = append(args, examineArgumentsEx(value, reflect.ValueOf(value).Field(i).Interface())...)
+		}
+	}
+
 	return args
 }
 

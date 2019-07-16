@@ -9,7 +9,7 @@ type execResult interface {
 	Err() error
 }
 
-func (s *session) ExecuteStatement(statement commands.ExecuteStatement, result execResult) error {
+func (s *session) executeStatement(statement commands.ExecuteStatement, result execResult) error {
 	result.SetError(s.stageQueryToResult(statement.Statement))
 	return nil
 }

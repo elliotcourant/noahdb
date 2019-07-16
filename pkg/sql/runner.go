@@ -33,17 +33,17 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
 				result = commands.CreateExecuteCommandResult(s.Backend(), cmd.Statement)
-				err = s.ExecuteStatement(cmd, result)
+				err = s.executeStatement(cmd, result)
 			case commands.ExecutePortal:
 			case commands.PrepareStatement:
 				result = commands.CreatePreparedStatementResult(s.Backend(), cmd.Statement)
-				err = s.ExecutePrepare(cmd, result)
+				err = s.executePrepare(cmd, result)
 			case commands.DescribeStatement:
 				result = commands.CreateDescribeStatementResult(s.Backend())
-				err = s.ExecuteDescribe(cmd, result)
+				err = s.executeDescribe(cmd, result)
 			case commands.BindStatement:
 				result = commands.CreateBindStatementResult(s.Backend())
-				err = s.ExecuteBind(cmd, result)
+				err = s.executeBind(cmd, result)
 			case commands.DeletePreparedStatement:
 			case commands.SendError:
 				result = commands.CreateErrorResult(s.Backend(), cmd.Err)
