@@ -7,7 +7,9 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/sql"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
+	"github.com/elliotcourant/timber"
 	"github.com/readystock/golog"
+	"io"
 	"net"
 	"reflect"
 	"strings"
@@ -31,65 +33,76 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 	ln := transport.NormalTransport()
 
 	for {
-		golog.Verbosef("accepting connection at: %s", ln.Addr())
+		timber.Verbosef("accepting connection at: %s", ln.Addr())
 		conn, err := ln.Accept()
 		if err != nil {
 			return err
 		}
-		golog.Verbosef("accepted connection from: %s", conn.RemoteAddr())
+		timber.Verbosef("accepted connection from: %s", conn.RemoteAddr())
 
 		go func() {
-			wire, err := newWire(colony, conn)
+			wire, err := newWire(colony, conn, conn)
 			if err != nil {
-				golog.Errorf("failed setting up wire: %s", err.Error())
+				timber.Errorf("failed setting up wire: %s", err.Error())
 			}
 
-			if err := wire.Serve(transport); err != nil {
-				golog.Errorf("failed serving connection: %s", err.Error())
+			if wire == nil {
+				timber.Errorf("wire is null, cannot continue")
+				return
+			}
+
+			// Receive startup messages.
+			startupMsg, err := wire.backend.ReceiveStartupMessage()
+			if err != nil {
+				switch err {
+				case pgproto.RaftStartupMessageError:
+					timber.Verbosef("forwarding connection from [%v] to raft", conn.RemoteAddr())
+					transport.ForwardToRaft(conn, nil)
+					return
+				case pgproto.RpcStartupMessageError:
+					transport.ForwardToRpc(conn, nil)
+					return
+				default:
+					defer func() {
+						if err := conn.Close(); err != nil {
+							timber.Warningf("error returned when closing connection [%s]: %v", conn.RemoteAddr().String(), err)
+						}
+					}()
+					timber.Errorf("error from startup message: %v", err)
+					return
+				}
+			} else {
+				defer func() {
+					if err := conn.Close(); err != nil {
+						timber.Warningf("error returned when closing connection [%s]: %v", conn.RemoteAddr().String(), err)
+					}
+				}()
+				if err := wire.Serve(*startupMsg); err != nil {
+					timber.Errorf("failed serving connection: %s", err.Error())
+				}
 			}
 		}()
 	}
 }
 
 type wireServer struct {
-	colony core.Colony
-	conn   net.Conn
-
+	colony  core.Colony
 	backend *pgproto.Backend
-
 	stmtBuf stmtbuf.StatementBuffer
 }
 
-func newWire(colony core.Colony, conn net.Conn) (*wireServer, error) {
-	backend, err := pgproto.NewBackend(conn, conn)
+func newWire(colony core.Colony, reader io.Reader, writer io.Writer) (*wireServer, error) {
+	backend, err := pgproto.NewBackend(reader, writer)
 	if err != nil {
 		return nil, err
 	}
 	return &wireServer{
 		colony:  colony,
-		conn:    conn,
 		backend: backend,
 	}, nil
 }
 
-func (wire *wireServer) Serve(wrapper TransportWrapper) error {
-	// Receive startup messages.
-	startupMsg, err := wire.backend.ReceiveStartupMessage()
-	if err != nil {
-		switch err {
-		case pgproto.RaftStartupMessageError:
-			golog.Verbosef("forwarding connection from [%v] to raft", wire.conn.RemoteAddr())
-			wrapper.ForwardToRaft(wire.conn, nil)
-			return nil
-		case pgproto.RpcStartupMessageError:
-			wrapper.ForwardToRpc(wire.conn, nil)
-			return nil
-		default:
-			defer wire.conn.Close()
-			return wire.Errorf(err.Error())
-		}
-	}
-
+func (wire *wireServer) Serve(startupMsg pgproto.StartupMessage) error {
 	wire.stmtBuf = stmtbuf.NewStatementBuffer() // We only want to setup a statement buffer if there is a need
 	if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
 		return wire.Errorf("user authentication required")
@@ -140,7 +153,6 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 	terminateChannel := make(chan bool)
 
 	go func() {
-		defer wire.conn.Close()
 		if err := sql.Run(wire, terminateChannel); err != nil {
 			golog.Errorf(err.Error())
 		}
@@ -194,7 +206,6 @@ func (wire *wireServer) Serve(wrapper TransportWrapper) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (wire *wireServer) Backend() *pgproto.Backend {
