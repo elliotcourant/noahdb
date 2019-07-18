@@ -11,23 +11,43 @@ import (
 )
 
 type selectStmtPlanner struct {
-	tables []core.Table
-	tree   ast.SelectStmt
+	tables        []core.Table
+	aliases       map[string]string
+	tablesToAlias map[string][]string
+	tree          ast.SelectStmt
 }
 
 func newSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
 	return &selectStmtPlanner{
-		tree: tree,
+		tree:          tree,
+		tablesToAlias: map[string][]string{},
 	}
 }
 
 func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, error) {
-	tableNames := queryutil.GetTables(stmt.tree)
-	if len(tableNames) == 0 {
+	stmt.aliases = queryutil.GetExtendedTables(stmt.tree)
+	if len(stmt.aliases) == 0 {
 		return InitialPlan{}, false, nil
 	}
 
-	linq.From(tableNames).Distinct().ToSlice(&tableNames)
+	tableNames := make([]string, 0)
+	linq.From(stmt.aliases).Select(func(i interface{}) interface{} {
+		return i.(linq.KeyValue).Value.(string)
+	}).Distinct().ToSlice(&tableNames)
+
+	linq.From(stmt.aliases).GroupBy(func(i interface{}) interface{} {
+		return i.(linq.KeyValue).Value.(string)
+	}, func(i interface{}) interface{} {
+		return i.(linq.KeyValue).Key.(string)
+	}).ToMapBy(&stmt.tablesToAlias, func(i interface{}) interface{} {
+		return i.(linq.Group).Key.(string)
+	}, func(i interface{}) interface{} {
+		items := make([]string, len(i.(linq.Group).Group))
+		for x := range i.(linq.Group).Group {
+			items[x] = i.(linq.Group).Group[x].(string)
+		}
+		return items
+	})
 
 	tables, err := s.Colony().Tables().GetTables(tableNames...)
 	if err != nil {
@@ -125,11 +145,12 @@ func (stmt *selectStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 			table, _ := i.(core.Table)
 			shardColumn, err := s.Colony().Tables().GetShardKeyColumnForTable(table.TableID)
 			if err != nil {
-				return 0
+				return nil
 			}
-			return shardColumn
+			return shardColumn.ColumnName
 		}).Where(func(i interface{}) bool {
-			return i.(uint64) > 0
+			_, ok := i.(string)
+			return ok
 		}).ToSlice(&shardColumns)
 
 		for _, shardColumn := range shardColumns {

@@ -135,7 +135,7 @@ func (stmt *insertStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 			return InitialPlan{}, false, err
 		}
 
-		return InitialPlan{
+		plan := InitialPlan{
 			Target:  PlanTarget_STANDARD,
 			ShardID: 0,
 			Types: map[PlanType]InitialPlanTask{
@@ -144,7 +144,21 @@ func (stmt *insertStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 					Type:  stmt.tree.StatementType(),
 				},
 			},
-		}, true, nil
+		}
+
+		if planType == PlanType_READWRITE {
+			stmt.tree.ReturningList.Items = []ast.Node{}
+			recompiled, err = stmt.tree.Deparse(ast.Context_None)
+			if err != nil {
+				return InitialPlan{}, false, err
+			}
+			plan.Types[PlanType_WRITE] = InitialPlanTask{
+				Query: recompiled,
+				Type:  stmt.tree.StatementType(),
+			}
+		}
+
+		return plan, true, nil
 	case core.TableType_Sharded:
 		shardKeyColumn, err := s.Colony().Tables().GetShardKeyColumnForTable(table.TableID)
 		if err != nil {
@@ -185,7 +199,7 @@ func (stmt *insertStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 				return InitialPlan{}, false, err
 			}
 
-			return InitialPlan{
+			plan := InitialPlan{
 				Target:  PlanTarget_STANDARD,
 				ShardID: tenant.ShardID,
 				Types: map[PlanType]InitialPlanTask{
@@ -194,7 +208,21 @@ func (stmt *insertStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 						Type:  stmt.tree.StatementType(),
 					},
 				},
-			}, true, nil
+			}
+
+			if planType == PlanType_READWRITE {
+				stmt.tree.ReturningList.Items = []ast.Node{}
+				recompiled, err = stmt.tree.Deparse(ast.Context_None)
+				if err != nil {
+					return InitialPlan{}, false, err
+				}
+				plan.Types[PlanType_WRITE] = InitialPlanTask{
+					Query: recompiled,
+					Type:  stmt.tree.StatementType(),
+				}
+			}
+
+			return plan, true, nil
 		default:
 			datums := map[uint64][][]ast.Node{}
 			for _, item := range stmt.tree.SelectStmt.(ast.SelectStmt).ValuesLists {
