@@ -11,43 +11,23 @@ import (
 )
 
 type selectStmtPlanner struct {
-	tables        []core.Table
-	aliases       map[string]string
-	tablesToAlias map[string][]string
-	tree          ast.SelectStmt
+	tables []core.Table
+	tree   ast.SelectStmt
 }
 
 func newSelectStatementPlan(tree ast.SelectStmt) *selectStmtPlanner {
 	return &selectStmtPlanner{
-		tree:          tree,
-		tablesToAlias: map[string][]string{},
+		tree: tree,
 	}
 }
 
 func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, error) {
-	stmt.aliases = queryutil.GetExtendedTables(stmt.tree)
-	if len(stmt.aliases) == 0 {
+	tableNames := queryutil.GetTables(stmt.tree)
+	if len(tableNames) == 0 {
 		return InitialPlan{}, false, nil
 	}
 
-	tableNames := make([]string, 0)
-	linq.From(stmt.aliases).Select(func(i interface{}) interface{} {
-		return i.(linq.KeyValue).Value.(string)
-	}).Distinct().ToSlice(&tableNames)
-
-	linq.From(stmt.aliases).GroupBy(func(i interface{}) interface{} {
-		return i.(linq.KeyValue).Value.(string)
-	}, func(i interface{}) interface{} {
-		return i.(linq.KeyValue).Key.(string)
-	}).ToMapBy(&stmt.tablesToAlias, func(i interface{}) interface{} {
-		return i.(linq.Group).Key.(string)
-	}, func(i interface{}) interface{} {
-		items := make([]string, len(i.(linq.Group).Group))
-		for x := range i.(linq.Group).Group {
-			items[x] = i.(linq.Group).Group[x].(string)
-		}
-		return items
-	})
+	linq.From(tableNames).Distinct().ToSlice(&tableNames)
 
 	tables, err := s.Colony().Tables().GetTables(tableNames...)
 	if err != nil {
@@ -125,23 +105,23 @@ func (stmt *selectStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 		}, true, nil
 	}
 
+	var shardedTablesInQuery []core.Table
+	linq.From(stmt.tables).Where(func(i interface{}) bool {
+		table, ok := i.(core.Table)
+		return ok && table.TableType == core.TableType_Sharded
+	}).ToSlice(&shardedTablesInQuery)
+
 	// If any of the queried tables are shard tables then we
 	// need to target a specific shard. If none of the tables
 	// are sharded tables then we can target any node/shard.
-	if linq.From(stmt.tables).AnyWith(func(i interface{}) bool {
-		table, ok := i.(core.Table)
-		return ok && table.TableType == core.TableType_Sharded
-	}) {
+	if len(shardedTablesInQuery) > 0 {
 		tenantIds, shardColumns := make([]uint64, 0), make([]string, 0)
 
 		// For all of the tables in the query that have a sharded column
 		// check the query to see if the query filters by that table's
 		// shard key, and then aggregate the resulting filters into
 		// an array for validation
-		linq.From(stmt.tables).Where(func(i interface{}) bool {
-			table, ok := i.(core.Table)
-			return ok && table.TableType == core.TableType_Sharded
-		}).Select(func(i interface{}) interface{} {
+		linq.From(shardedTablesInQuery).Select(func(i interface{}) interface{} {
 			table, _ := i.(core.Table)
 			shardColumn, err := s.Colony().Tables().GetShardKeyColumnForTable(table.TableID)
 			if err != nil {

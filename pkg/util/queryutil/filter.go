@@ -7,7 +7,11 @@ import (
 	"reflect"
 )
 
-func FindAccountIdsEx(stmt interface{}, shardColumnNames map[string]string, columnsAndTables map[string][]string) ([]uint64, error) {
+func FindAccountIdsEx(
+	stmt interface{},
+	shardColumnNames map[string]string,
+	columnsAndTables map[string][]string,
+) ([]uint64, error) {
 	f := &findAccounts{
 		shardColumnNames: shardColumnNames,
 		aliases:          map[string]string{},
