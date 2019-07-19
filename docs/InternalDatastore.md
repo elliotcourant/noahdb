@@ -17,26 +17,27 @@ we can maintain the structure of the database.
 
 ## SQL Store
 
-The SQL store is used to help noah process some very simple queries when
-a Postgres node is not available, or when a query is so simple that it's
-easier to use the local SQLite database rather than sending a query over
-the network for an additional round trip. It's primary purpose though is
-to manage noah's cluster interface via SQL commands. After starting a
-coordinator that is not connected to any Postgres nodes you can still
-issue queries to add/remove data node, view information about cluster
-topography.
+The SQL store is used to manage some of the basic topography data that noah
+needs to know in order to manage the cluster. 
 
-### Tables
+The definition for this internal database can be found here: 
+[Internal Schema](/pkg/core/static/files/00_internal_sql.sql)
 
-> #### noah.nodes
-> Table definition:
-> ```postgresql
-> CREATE TABLE noah.data_nodes (
->   data_node_id SERIAL PRIMARY KEY,
->   address      TEXT   NOT NULL,
->   port         INT    NOT NULL,
->   healthy      BOOL   NOT NULL
-> );
-> ```
+If this file is changed then the following command should be run.
+
+```bash
+make embedded
+```
+
+This will take the contents of the `files` folder that the SQL script resides
+in and it will embed those files into a file named `static.embedded.go` (this
+file is git-ignored) and the script is executed when the coordinator node
+initially starts. 
+
+If an internal store has already been established for a given coordinator then
+the script will not be executed when the node starts. At the moment this is
+intentional and is used for testing purposes. In the future there will be a
+migration tool that will be used to migrate the internal database without causing
+downtime within the cluster.
 
 ## Key-Value Store
