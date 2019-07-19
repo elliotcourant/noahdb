@@ -7,7 +7,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	timber.SetLevel(timber.Level_Trace)
+	timber.SetLevel(timber.Level_Error)
 	res := m.Run()
 	os.Exit(res)
 }

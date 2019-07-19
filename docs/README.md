@@ -45,3 +45,8 @@ Protoc however, is a required tool if you want to do a clean build of noahdb.
 At the moment noahdb cannot be compiled on Windows, it must be compiled on Mac OS X or Linux.
 
 # Commands
+
+## `start`
+Options
+> `L`: Coordinator listen address, defaults to `:5433`. This is the only listen address
+for the coordinator, all connections (both client and raft) will use this address. 

@@ -27,7 +27,7 @@ import (
 )
 
 func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresses ...string) (core.Colony, func()) {
-	timber.SetDefaultLevel(timber.Level_Error)
+	timber.SetLevel(timber.Level_Error)
 	// Create a postgres docker image to connect to.
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
