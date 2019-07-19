@@ -1,13 +1,13 @@
 package pgwire
 
 import (
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"os"
 	"testing"
 )
 
 func TestMain(m *testing.M) {
-	golog.SetLevel("verbose")
+	timber.SetLevel(timber.Level_Trace)
 	res := m.Run()
 	os.Exit(res)
 }

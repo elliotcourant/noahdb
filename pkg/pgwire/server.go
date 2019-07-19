@@ -41,13 +41,16 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 		timber.Verbosef("accepted connection from: %s", conn.RemoteAddr())
 
 		go func() {
-			wire, err := newWire(colony, conn, conn)
+			log := timber.With(timber.Keys{
+				"client": conn.RemoteAddr().String(),
+			})
+			wire, err := newWire(colony, conn, conn, log)
 			if err != nil {
-				timber.Errorf("failed setting up wire: %s", err.Error())
+				log.Errorf("failed setting up wire: %s", err.Error())
 			}
 
 			if wire == nil {
-				timber.Errorf("wire is null, cannot continue")
+				log.Errorf("wire is null, cannot continue")
 				return
 			}
 
@@ -56,7 +59,7 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 			if err != nil {
 				switch err {
 				case pgproto.RaftStartupMessageError:
-					timber.Verbosef("forwarding connection from [%v] to raft", conn.RemoteAddr())
+					log.Verbosef("forwarding connection to raft")
 					transport.ForwardToRaft(conn, nil)
 					return
 				case pgproto.RpcStartupMessageError:
@@ -65,20 +68,20 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 				default:
 					defer func() {
 						if err := conn.Close(); err != nil {
-							timber.Warningf("error returned when closing connection [%s]: %v", conn.RemoteAddr().String(), err)
+							log.Warningf("error returned when closing connection: %v", err)
 						}
 					}()
-					timber.Errorf("error from startup message: %v", err)
+					log.Errorf("error from startup message: %v", err)
 					return
 				}
 			} else {
 				defer func() {
 					if err := conn.Close(); err != nil {
-						timber.Warningf("error returned when closing connection [%s]: %v", conn.RemoteAddr().String(), err)
+						log.Warningf("error returned when closing connection: %v", err)
 					}
 				}()
 				if err := wire.Serve(*startupMsg); err != nil {
-					timber.Errorf("failed serving connection: %s", err.Error())
+					log.Errorf("failed serving connection: %s", err.Error())
 				}
 			}
 		}()
@@ -89,9 +92,10 @@ type wireServer struct {
 	colony  core.Colony
 	backend *pgproto.Backend
 	stmtBuf stmtbuf.StatementBuffer
+	log     timber.Logger
 }
 
-func newWire(colony core.Colony, reader io.Reader, writer io.Writer) (*wireServer, error) {
+func newWire(colony core.Colony, reader io.Reader, writer io.Writer, logger timber.Logger) (*wireServer, error) {
 	backend, err := pgproto.NewBackend(reader, writer)
 	if err != nil {
 		return nil, err
@@ -99,6 +103,7 @@ func newWire(colony core.Colony, reader io.Reader, writer io.Writer) (*wireServe
 	return &wireServer{
 		colony:  colony,
 		backend: backend,
+		log:     logger,
 	}, nil
 }
 
@@ -153,7 +158,7 @@ func (wire *wireServer) Serve(startupMsg pgproto.StartupMessage) error {
 	terminateChannel := make(chan bool)
 
 	go func() {
-		if err := sql.Run(wire, terminateChannel); err != nil {
+		if err := sql.Run(wire, wire.log, terminateChannel); err != nil {
 			golog.Errorf(err.Error())
 		}
 	}()

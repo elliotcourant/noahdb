@@ -6,15 +6,14 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgerror"
 	"github.com/elliotcourant/timber"
 	"io"
-	"reflect"
 )
 
-func Run(stx sessionContext, terminateChannel chan bool) error {
+func Run(stx sessionContext, log timber.Logger, terminateChannel chan bool) error {
 	s := newSession(stx)
 	for {
 		select {
 		case <-terminateChannel:
-			timber.Debugf("terminating runner")
+			log.Debugf("terminating runner")
 			return nil
 		default:
 			c, _, err := s.StatementBuffer().CurrentCommand()
@@ -26,7 +25,7 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			}
 
 			if c == nil {
-				timber.Debugf("found null command, advancing 1")
+				log.Debugf("found null command, advancing 1")
 				s.StatementBuffer().AdvanceOne()
 			}
 
@@ -69,7 +68,8 @@ func Run(stx sessionContext, terminateChannel chan bool) error {
 			case commands.Flush:
 			case commands.CopyIn:
 			default:
-				panic(fmt.Sprintf("unsupported command type [%s]", reflect.TypeOf(cmd).Name()))
+				log.Warningf("received unsupported command type [%T]", cmd)
+				panic(fmt.Sprintf("unsupported command type [%T]", cmd))
 			}
 
 			if err != nil {
