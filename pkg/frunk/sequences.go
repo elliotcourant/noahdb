@@ -42,6 +42,11 @@ func (s *Store) getNextChunkInSequence(sequenceName string) error {
 
 func (s *Store) getSequenceChunk(sequenceName string) (*SequenceChunkResponse, error) {
 	if !s.IsLeader() { // Only the leader can manage sequences
+		// driver, err := rpcer.NewRPCDriver(s.ID(), nil, s.LeaderAddr())
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// driver.Join()
 		// return s.clusterClient.getNextChunkInSequence(sequenceName)
 	}
 	s.sequenceCacheSync.Lock()

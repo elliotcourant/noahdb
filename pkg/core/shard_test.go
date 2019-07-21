@@ -49,7 +49,6 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 	})
 
 	t.Run("balance multiple orphaned shards", func(t *testing.T) {
-
 		colony, cleanup := testutils.NewPgTestColony(t)
 		defer cleanup()
 
@@ -57,15 +56,21 @@ func TestShardContext_BalanceOrphanedShards(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, existingNodes)
 
-		templateNode := existingNodes[0]
-
-		numberOfNodes := 10 - len(existingNodes)
+		numberOfNodes := 5 - len(existingNodes)
 		numberOfShards := 32
 
 		for i := 0; i < numberOfNodes; i++ {
+			node, cleanup, err := testutils.NewDataNode(t)
+			if !assert.NoError(t, err) {
+				panic(err)
+			}
+			defer cleanup()
 			// Noahdb does not check to see if a node is a duplicate. And shards on each "node"
 			// are unique so a single node can be treated as multiple nodes in somne cases.
-			_, _ = colony.DataNodes().NewDataNode(templateNode.Address, templateNode.Port, templateNode.User, templateNode.Password)
+			_, err = colony.DataNodes().NewDataNode(node.Address, node.Port, node.User, node.Password)
+			if !assert.NoError(t, err) {
+				panic(err)
+			}
 		}
 
 		for i := 0; i < numberOfShards; i++ {

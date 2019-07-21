@@ -19,8 +19,7 @@ func (discovery *DiscoveryRequest) Decode(src []byte) error {
 func (discovery *DiscoveryRequest) Encode(dst []byte) []byte {
 	dst = append(dst, RpcDiscoveryRequest)
 	sp := len(dst)
-
+	dst = pgio.AppendInt32(dst, -1)
 	pgio.SetInt32(dst[sp:], int32(len(dst[sp:])))
-
 	return dst
 }

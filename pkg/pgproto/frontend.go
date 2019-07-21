@@ -106,6 +106,8 @@ func (b *Frontend) Receive() (BackendMessage, error) {
 		msg = &b.copyBothResponse
 	case PgReadyForQuery:
 		msg = &b.readyForQuery
+	case RpcDiscoveryRequest:
+		msg = &DiscoveryResponse{}
 	default:
 		return nil, errors.Errorf("unknown message type: %c", b.msgType)
 	}

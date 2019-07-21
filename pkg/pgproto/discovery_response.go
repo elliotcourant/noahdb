@@ -27,6 +27,7 @@ func (discovery *DiscoveryResponse) Decode(src []byte) error {
 func (discovery *DiscoveryResponse) Encode(dst []byte) []byte {
 	dst = append(dst, RpcDiscoveryRequest)
 	sp := len(dst)
+	dst = pgio.AppendInt32(dst, -1)
 
 	dst = pgio.AppendInt32(dst, int32(len(discovery.LeaderAddr)))
 	dst = append(dst, discovery.LeaderAddr...)

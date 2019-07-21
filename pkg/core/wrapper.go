@@ -46,7 +46,7 @@ func (t *transportWrapperItem) Accept() (net.Conn, error) {
 
 func (t *transportWrapperItem) Close() error {
 	timber.Warningf("closing transport wrapper item")
-	close(t.acceptChannel)
+	// close(t.acceptChannel)
 	t.closeCallback()
 	return t.listener.Close()
 }

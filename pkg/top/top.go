@@ -8,11 +8,13 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
 	"github.com/elliotcourant/noahdb/pkg/util"
+	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
 	"github.com/readystock/golog"
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -125,11 +127,44 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		}
 	}
 
-	err = colony.InitColony(core.ColonyConfig{
+	config := core.ColonyConfig{
 		DataDirectory: dataDirectory,
 		JoinAddresses: joins,
 		Transport:     trans,
-	})
+		AutoJoin:      autoJoin,
+	}
+
+	switch autoDataNode {
+	case true:
+		strPgPort, pgUser, pgPassword :=
+			os.Getenv("PGPORT"), os.Getenv("PGUSER"), os.Getenv("PGPASSWORD")
+
+		if strPgPort == "" || pgUser == "" {
+			timber.Infof("no auto data node could be found")
+			break
+		}
+
+		addr, err := util.ExternalIP()
+		if err != nil {
+			timber.Warningf("could not get external IP address for local data node")
+			break
+		}
+
+		pgPort, err := strconv.ParseInt(strPgPort, 10, 32)
+		if err != nil {
+			timber.Warningf("could not parse PGPORT environment variable: %s", strPgPort)
+			break
+		}
+
+		config.LocalPostgresPort = int32(pgPort)
+		config.LocalPostgresAddress = addr
+		config.LocalPostgresPassword = pgPassword
+		config.LocalPostgresUser = pgUser
+	case false:
+		timber.Verbosef("not using auto data node")
+	}
+
+	err = colony.InitColony(config)
 	if err != nil {
 		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
 	} else if colony == nil {

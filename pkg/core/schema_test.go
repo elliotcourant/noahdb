@@ -40,6 +40,7 @@ func TestSchemaContext_NewSchema_MultiServer(t *testing.T) {
 		assert.NotEmpty(t, schema)
 		assert.True(t, schema.SchemaID > 0)
 		assert.Equal(t, name, schema.SchemaName)
+
 		colony2, cleanup2 := testutils.NewTestColony(t, colony1.Addr().String())
 		defer cleanup2()
 		time.Sleep(4 * time.Second)

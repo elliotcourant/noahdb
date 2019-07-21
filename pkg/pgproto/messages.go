@@ -93,6 +93,8 @@ const (
 	RpcSequenceResponse = 'S'
 	RpcJoinRequest      = 'j'
 	RpcDiscoveryRequest = 'm'
+	RpcCommandRequest   = '$'
+	RpcCommandResponse  = '~'
 
 	// Both
 	PgCopyData = 'd'

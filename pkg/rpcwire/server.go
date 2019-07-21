@@ -3,6 +3,7 @@ package rpcwire
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/readystock/golog"
 	"io"
@@ -60,7 +61,7 @@ func serveRpcConnection(colony core.Colony, conn net.Conn) error {
 
 		switch message := msg.(type) {
 		case *pgproto.DiscoveryRequest:
-			if colony == nil {
+			if colony.State() == frunk.Unknown {
 				backend.Send(&pgproto.DiscoveryResponse{})
 			} else {
 				addr, _, err := colony.LeaderID()

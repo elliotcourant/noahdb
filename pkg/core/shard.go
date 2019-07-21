@@ -210,6 +210,10 @@ func (ctx *shardContext) GetShardPressures(max int) ([]ShardPressure, error) {
 		LeftJoin(
 			goqu.I("tenants"),
 			goqu.On(goqu.I("tenants.shard_id").Eq(goqu.I("shards.shard_id")))).
+		Where(goqu.Ex{
+			// We want to make sure we are only working with shards that are currently stable.
+			"shards.state": ShardState_Stable,
+		}).
 		GroupBy(goqu.I("shards.shard_id")).
 		Order(goqu.I("tenants").Asc()).
 		Limit(uint(max)).

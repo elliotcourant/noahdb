@@ -2,19 +2,21 @@ package core
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
-	"io/ioutil"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"os"
-	"strings"
-	"time"
 
+	// Kubernetes API authentication.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -62,6 +64,13 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 		return nil, fmt.Errorf("could not find a noahdb deployment, auto-join not supported")
 	}
 
+	var replicas = 1
+	if deployments.Items[noahDeploymentIndex].Spec.Replicas != nil {
+		replicas = int(*deployments.Items[noahDeploymentIndex].Spec.Replicas)
+	}
+
+	retries, maxRetries := 0, 3
+GetPods:
 	pods, err := clientSet.CoreV1().Pods(currentNameSpace).List(metaV1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -73,10 +82,18 @@ func getAutoJoinAddresses() ([]raft.Server, error) {
 		pod, ok := i.(coreV1.Pod)
 		if !ok {
 			return "z"
-		} else {
-			return pod.Name
 		}
+		return pod.Name
 	}).ToSlice(&items)
+
+	if len(items) < replicas {
+		timber.Warningf("looking for [%d] replicas, but only found [%d]", replicas, len(items))
+		if retries < maxRetries {
+			time.Sleep(5 * time.Second)
+			retries++
+			goto GetPods
+		}
+	}
 
 	for _, pod := range items {
 		if pod.Name == host {

@@ -91,6 +91,5 @@ func (appendEntries *AppendEntriesRequest) Encode(dst []byte) []byte {
 	dst = pgio.AppendUint64(dst, appendEntries.LeaderCommitIndex)
 
 	pgio.SetInt32(dst[sp:], int32(len(dst[sp:])))
-
 	return dst
 }

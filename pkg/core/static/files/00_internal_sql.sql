@@ -33,7 +33,8 @@ CREATE TABLE data_nodes (
     port         INT     NOT NULL,
     user         TEXT    NOT NULL,
     password     TEXT    NOT NULL,
-    healthy      BOOLEAN NOT NULL
+    healthy      BOOLEAN NOT NULL,
+    UNIQUE (address, port)
 );
 
 CREATE TABLE shards (

@@ -22,6 +22,7 @@ type ColonyConfig struct {
 	LocalPostgresUser     string
 	LocalPostgresPassword string
 	StartPool             bool
+	AutoJoin              bool
 }
 
 // Colony is a wrapper for all of the core data that noahdb needs to operate.
@@ -79,11 +80,15 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 		ID:  id,
 	})
 
-	potentialNeighbors, err := getAutoJoinAddresses()
+	var potentialNeighbors []raft.Server
+	if config.AutoJoin {
+		potentialNeighbors, err = getAutoJoinAddresses()
+		if err != nil {
+			return err
+		}
+	}
 
-	foundLeader := false
-
-	autoJoins := make([]raft.Server, 0)
+	foundLeader, leaderAddress := false, ""
 
 	// If we find other nodes in the cluster already, then we want to reach out to those nodes
 	// and see if any of them are established. If we find one that is, send a join request to the
@@ -107,14 +112,10 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 		}
 
 		foundLeader = true
-		autoJoins = append(autoJoins, raft.Server{
-			ID:       neighbor.ID,
-			Address:  neighbor.Address,
-			Suffrage: raft.Voter,
-		})
+		leaderAddress = leaderAddr
 	}
 
-	if foundLeader {
+	if leaderAddress != "" {
 
 	}
 
@@ -134,7 +135,7 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 	// }
 
 	// Now, open store.
-	if err := fr.Open(!foundLeader); err != nil {
+	if err := fr.Open(!foundLeader, potentialNeighbors...); err != nil {
 		timber.Fatalf("failed to open store: %s", err.Error())
 	}
 
@@ -147,6 +148,10 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 
 	if config.StartPool {
 		ctx.Pool().StartPool()
+	}
+
+	if len(potentialNeighbors) > 0 {
+		config.JoinAddresses = potentialNeighbors
 	}
 
 	if len(config.JoinAddresses) > 0 {
@@ -180,7 +185,6 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 		} else {
 			timber.Fatalf("failed to join any of the node found after %d attempt(s)", attempts)
 		}
-
 	}
 
 WaitForSetup:
@@ -207,7 +211,34 @@ WaitForSetup:
 
 	ctx.Setup(config)
 
+	autoLocalPostgres(ctx, config)
+
 	return nil
+}
+
+func autoLocalPostgres(ctx *base, config ColonyConfig) {
+	if len(config.LocalPostgresAddress) > 0 && len(config.LocalPostgresUser) > 0 {
+		// Check to see if there is a local postgres instance we can use.
+		if _, err := ctx.DataNodes().NewDataNode(
+			config.LocalPostgresAddress,
+			config.LocalPostgresPort,
+			config.LocalPostgresUser,
+			config.LocalPostgresPassword); err != nil {
+			timber.Warningf("could not add local postgres instance: %v", err)
+			return
+		}
+
+		initialShards := 3
+		for i := 0; i < initialShards; i++ {
+			if _, err := ctx.Shards().NewShard(); err != nil {
+				panic(err)
+			}
+		}
+
+		if err := ctx.Shards().BalanceOrphanShards(); err != nil {
+			panic(err)
+		}
+	}
 }
 
 func determineJoinAddresses(joinAddr string) ([]string, error) {

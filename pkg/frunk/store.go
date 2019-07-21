@@ -10,9 +10,11 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/logger"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgtransport"
+	"github.com/elliotcourant/timber"
 	"io"
 	"io/ioutil"
 	"log"
@@ -218,6 +220,8 @@ type Store struct {
 	sequenceCacheSync *sync.Mutex
 	sequenceChunks    map[string]*SequenceChunk
 	sequenceCache     map[string]*pgproto.SequenceResponse
+
+	leaderClient *rpcer.RpcDriver
 }
 
 // StoreConfig represents the configuration of the underlying Store.
@@ -448,6 +452,7 @@ func (s *Store) Close(wait bool) error {
 	s.db = nil
 
 	if s.raft != nil {
+		timber.Infof("shutting down raft for node [%s]", s.ID())
 		f := s.raft.Shutdown()
 		if wait {
 			if e := f.(raft.Future); e.Error() != nil {
@@ -878,6 +883,10 @@ func (s *Store) execute(c *Connection, ex *ExecuteRequest) (*ExecuteResponse, er
 	c.SetLastUsedNow()
 
 	start := time.Now()
+
+	if !s.IsLeader() {
+
+	}
 
 	d := &databaseSub{
 		ConnID:  c.ID,

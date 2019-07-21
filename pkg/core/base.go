@@ -19,6 +19,9 @@ type base struct {
 }
 
 func (ctx *base) State() frunk.ClusterState {
+	if ctx.db == nil {
+		return frunk.Unknown
+	}
 	return ctx.db.State()
 }
 
@@ -85,27 +88,6 @@ func (ctx *base) Setup(config ColonyConfig) {
 		panic(err)
 	}
 
-	if len(config.LocalPostgresAddress) > 0 && len(config.LocalPostgresUser) > 0 {
-		// Check to see if there is a local postgres instance we can use.
-		if _, err := ctx.DataNodes().NewDataNode(
-			config.LocalPostgresAddress,
-			config.LocalPostgresPort,
-			config.LocalPostgresUser,
-			config.LocalPostgresPassword); err != nil {
-			panic(err)
-		}
-
-		initialShards := 3
-		for i := 0; i < initialShards; i++ {
-			if _, err := ctx.Shards().NewShard(); err != nil {
-				panic(err)
-			}
-		}
-
-		if err := ctx.Shards().BalanceOrphanShards(); err != nil {
-			panic(err)
-		}
-	}
 }
 
 func (ctx *base) Query(query string) (*frunk.QueryResponse, error) {
