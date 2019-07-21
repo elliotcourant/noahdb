@@ -172,7 +172,7 @@ func GetCleanTestName(t *testing.T) string {
 }
 
 func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresses ...string) (core.Colony, func()) {
-	timber.SetLevel(timber.Level_Trace)
+	timber.SetLevel(timber.Level_Error)
 
 	tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword := "", int32(0), "", ""
 	testNameCleaned := fmt.Sprintf("%s-%d", GetCleanTestName(t), time.Now().Unix())
