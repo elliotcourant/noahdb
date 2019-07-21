@@ -48,5 +48,7 @@ At the moment noahdb cannot be compiled on Windows, it must be compiled on Mac O
 
 ## `start`
 Options
-> `L`: Coordinator listen address, defaults to `:5433`. This is the only listen address
+> `-L` | `--listen`
+>
+> Coordinator listen address, defaults to `:5433`. This is the only listen address
 for the coordinator, all connections (both client and raft) will use this address. 

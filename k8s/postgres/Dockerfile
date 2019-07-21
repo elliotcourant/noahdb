@@ -11,7 +11,7 @@ RUN apt-get --assume-yes install \
     bison \
     libxml2-utils \
     xsltproc
-RUN git clone https://github.com/readystock/postgres.git && cd ./postgres && git checkout REL_10_STABLE && cd ..
+RUN git clone https://github.com/postgres/postgres.git && cd ./postgres && git checkout REL_10_STABLE && cd ..
 RUN mkdir /postbuild
 RUN ./postgres/configure --prefix=/postbuild --with-ossp-uuid
 RUN cd /postgres
