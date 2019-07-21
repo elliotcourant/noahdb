@@ -147,7 +147,7 @@ func (stmt *selectStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 				fmt.Errorf("cannot query sharded tables without specifying a tenant ID")
 		case 1: // We are only querying a single tenant
 			tenantId = tenantIds[0]
-			timber.Debugf("query targets tenant ID [%d]", tenantId)
+			timber.Verbosef("query targets tenant ID [%d]", tenantId)
 		default:
 			return InitialPlan{}, false,
 				fmt.Errorf("cannot query sharded tables for multiple tenants")

@@ -38,7 +38,7 @@ func (s *Store) Set(key, value []byte) error {
 func (s *Store) Query(query string) (*QueryResponse, error) {
 	startTimestamp := time.Now()
 	defer func() {
-		timber.Verbosef("[%s] %s", time.Since(startTimestamp), query)
+		timber.Tracef("[%s] %s", time.Since(startTimestamp), query)
 	}()
 	queryRequest := &QueryRequest{
 		Queries: []string{
@@ -55,7 +55,7 @@ func (s *Store) Query(query string) (*QueryResponse, error) {
 func (s *Store) Exec(query string) (*ExecuteResponse, error) {
 	startTimestamp := time.Now()
 	defer func() {
-		timber.Verbosef("[%s] %s", time.Since(startTimestamp), query)
+		timber.Tracef("[%s] %s", time.Since(startTimestamp), query)
 	}()
 	executeRequest := &ExecuteRequest{
 		Queries: []string{

@@ -40,12 +40,12 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					response.err = err
 					return
 				}
-				timber.Debugf("{%d} executing: %s", task.DataNodeShardID, task.Query)
+				timber.Verbosef("{%d} executing: %s", task.DataNodeShardID, task.Query)
 				if err := frontend.Send(&pgproto.Query{
 					String: task.Query,
 				}); err != nil {
 					timber.Errorf(
-						"could not send query to data node [%d]: %s",
+						"could not send query to data node shard [%d]: %s",
 						task.DataNodeShardID, err.Error())
 					response.err = err
 					return

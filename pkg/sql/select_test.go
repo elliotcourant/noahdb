@@ -58,27 +58,45 @@ func TestSelect(t *testing.T) {
 			SKU       string
 		}
 
-		for _, accountId := range accountIds {
-			rows, err := db.Query(fmt.Sprintf(`SELECT p.id, p.account_id, p.sku FROM products p JOIN products p2 ON p2.id = p.id WHERE p.account_id = %d;`, accountId))
-			if !assert.NoError(t, err) {
-				panic(err)
-			}
-
-			products := make([]Product, 0)
-			// Read the product rows
-			for rows.Next() {
-				var product Product
-				if err := rows.Scan(
-					&product.ID,
-					&product.AccountID,
-					&product.SKU,
-				); !assert.NoError(t, err) {
+		t.Run("single account", func(t *testing.T) {
+			for _, accountId := range accountIds {
+				rows, err := db.Query(fmt.Sprintf(`SELECT p.id, p.account_id, p.sku FROM products p JOIN products p2 ON p2.id = p.id WHERE p.account_id = %d;`, accountId))
+				if !assert.NoError(t, err) {
 					panic(err)
 				}
-				products = append(products, product)
+
+				products := make([]Product, 0)
+				// Read the product rows
+				for rows.Next() {
+					var product Product
+					if err := rows.Scan(
+						&product.ID,
+						&product.AccountID,
+						&product.SKU,
+					); !assert.NoError(t, err) {
+						panic(err)
+					}
+					products = append(products, product)
+				}
+				if err := rows.Err(); !assert.NoError(t, err) {
+					panic(err)
+				}
+				assert.NotEmpty(t, products)
 			}
-			fmt.Println(products)
-		}
-		fmt.Println("asfgas")
+		})
+
+		t.Run("without account", func(t *testing.T) {
+			_, err := db.Query(`SELECT p.id, p.account_id, p.sku FROM products p JOIN products p2 ON p2.id = p.id;`)
+			if !assert.EqualError(t, err, "pq: cannot query sharded tables without specifying a tenant ID") {
+				panic("should have encountered error")
+			}
+		})
+
+		t.Run("with multiple accounts", func(t *testing.T) {
+			_, err := db.Query(`SELECT p.id, p.account_id, p.sku FROM products p JOIN products p2 ON p2.id = p.id WHERE p.account_id IN (1, 2, 3, 4);`)
+			if !assert.EqualError(t, err, "pq: cannot query sharded tables for multiple tenants") {
+				panic("should have encountered error")
+			}
+		})
 	}()
 }

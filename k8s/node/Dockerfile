@@ -5,8 +5,6 @@ COPY ./ /go/src/github.com/elliotcourant/noahdb
 WORKDIR /go/src/github.com/elliotcourant/noahdb
 RUN go build -o bin/noahdb
 
-
-
 FROM ubuntu:18.04 AS final
 RUN mkdir /node
 WORKDIR /node

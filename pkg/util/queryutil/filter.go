@@ -5,6 +5,7 @@ import (
 	"github.com/ahmetb/go-linq"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"reflect"
+	"strconv"
 )
 
 func FindAccountIdsEx(
@@ -77,7 +78,7 @@ func (f *findAccounts) findAccountIdsEx(value interface{}) ([]uint64, error) {
 			return nil, nil
 		}
 
-		return []uint64{uint64(expr.Rexpr.(ast.A_Const).Val.(ast.Integer).Ival)}, nil
+		return getNumericValues(expr.Rexpr)
 	}
 
 	t := reflect.TypeOf(value)
@@ -109,6 +110,32 @@ func (f *findAccounts) findAccountIdsEx(value interface{}) ([]uint64, error) {
 	}
 
 	return args, nil
+}
+
+func getNumericValues(node ast.Node) ([]uint64, error) {
+	switch item := node.(type) {
+	case ast.A_Const:
+		return getNumericValues(item.Val)
+	case ast.List:
+		ids := make([]uint64, 0)
+		for _, listItem := range item.Items {
+			if values, err := getNumericValues(listItem); err != nil {
+				return nil, err
+			} else if values != nil {
+				ids = append(ids, values...)
+			}
+		}
+		return ids, nil
+	case ast.Integer:
+		return []uint64{
+			uint64(item.Ival),
+		}, nil
+	case ast.String:
+		val, err := strconv.ParseUint(item.Str, 10, 64)
+		return []uint64{val}, err
+	default:
+		return nil, fmt.Errorf("could not handle value type [%T]", item)
+	}
 }
 
 func examineWhereClause(value interface{}, depth int, shardColumnName string) []uint64 {
