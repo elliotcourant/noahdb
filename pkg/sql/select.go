@@ -115,26 +115,28 @@ func (stmt *selectStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool
 	// need to target a specific shard. If none of the tables
 	// are sharded tables then we can target any node/shard.
 	if len(shardedTablesInQuery) > 0 {
-		tenantIds, shardColumns := make([]uint64, 0), make([]string, 0)
+		shardColumnNames := map[string]string{}
+		columnsAndTables := map[string][]string{}
 
-		// For all of the tables in the query that have a sharded column
-		// check the query to see if the query filters by that table's
-		// shard key, and then aggregate the resulting filters into
-		// an array for validation
-		linq.From(shardedTablesInQuery).Select(func(i interface{}) interface{} {
-			table, _ := i.(core.Table)
-			shardColumn, err := s.Colony().Tables().GetShardKeyColumnForTable(table.TableID)
+		for _, table := range stmt.tables {
+			columns, err := s.Colony().Tables().GetColumns(table.TableID)
 			if err != nil {
-				return nil
+				return InitialPlan{}, false, err
 			}
-			return shardColumn.ColumnName
-		}).Where(func(i interface{}) bool {
-			_, ok := i.(string)
-			return ok
-		}).ToSlice(&shardColumns)
+			for _, column := range columns {
+				if column.ShardKey {
+					shardColumnNames[table.TableName] = column.ColumnName
+				}
 
-		for _, shardColumn := range shardColumns {
-			tenantIds = append(tenantIds, queryutil.FindAccountIds(stmt.tree, shardColumn)...)
+				if tables, ok := columnsAndTables[column.ColumnName]; ok {
+					columnsAndTables[column.ColumnName] = append(tables, table.TableName)
+				}
+			}
+		}
+
+		tenantIds, err := queryutil.FindAccountIdsEx(stmt.tree, shardColumnNames, columnsAndTables)
+		if err != nil {
+			return InitialPlan{}, false, err
 		}
 
 		tenantId := uint64(0)
