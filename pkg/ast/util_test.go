@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/readystock/golog"
+	"github.com/elliotcourant/timber"
 	"github.com/stretchr/testify/assert"
 	"runtime/debug"
 	"testing"
@@ -68,8 +68,8 @@ func parse(input string, log bool) (t *parsetreeList, errr error) {
 		return nil, err
 	}
 	if log {
-		golog.Debugf(" QUERY  | %s", input)
-		golog.Debugf(" TREE   | %s", string(jsonTree))
+		timber.Debugf(" QUERY  | %s", input)
+		timber.Debugf(" TREE   | %s", string(jsonTree))
 	}
 
 	// JSON unmarshalling can panic in edge cases we don't support yet. This is
@@ -112,7 +112,7 @@ func DoTest(t *testing.T, test DeparseTest) {
 		}
 	}
 
-	golog.Debugf("RESULT | %s\n", recompiled)
+	timber.Debugf("RESULT | %s\n", recompiled)
 
 	_, err = parse(recompiled, false)
 	if err != nil {

@@ -57,14 +57,14 @@ type Colony interface {
 
 	Neighbors() ([]*frunk.Server, error)
 
-	InitColony(config ColonyConfig) error
+	InitColony(config ColonyConfig, log timber.Logger) error
 }
 
 func NewColony() Colony {
 	return &base{}
 }
 
-func (ctx *base) InitColony(config ColonyConfig) error {
+func (ctx *base) InitColony(config ColonyConfig, log timber.Logger) error {
 	hostname, err := os.Hostname()
 	if err != nil {
 		panic(err)
@@ -96,18 +96,18 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 	for _, neighbor := range potentialNeighbors {
 		rpcConn, err := rpcer.NewRPCDriver(id, config.Transport.Addr(), string(neighbor.Address))
 		if err != nil {
-			timber.Errorf("failed to connect to potential neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
+			log.Errorf("failed to connect to potential neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
 			continue
 		}
 
 		leaderAddr, err := rpcConn.Discover()
 		if err != nil {
-			timber.Errorf("failed to discover via neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
+			log.Errorf("failed to discover via neighbor [%s] at address %s: %v", neighbor.ID, neighbor.Address, err)
 			continue
 		}
 
 		if leaderAddr == "" {
-			timber.Warningf("neighbor [%s] at address [%s] is not established and has no leader", neighbor.ID, neighbor.Address)
+			log.Warningf("neighbor [%s] at address [%s] is not established and has no leader", neighbor.ID, neighbor.Address)
 			continue
 		}
 
@@ -136,7 +136,7 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 
 	// Now, open store.
 	if err := fr.Open(!foundLeader, potentialNeighbors...); err != nil {
-		timber.Fatalf("failed to open store: %s", err.Error())
+		log.Fatalf("failed to open store: %s", err.Error())
 	}
 
 	*ctx = base{
@@ -158,32 +158,32 @@ func (ctx *base) InitColony(config ColonyConfig) error {
 		attempts := 1
 	RetryJoin:
 		for i, joinAddr := range config.JoinAddresses {
-			timber.Debugf("trying to join address [%d] [%s]", i+1, joinAddr.Address)
+			log.Debugf("trying to join address [%d] [%s]", i+1, joinAddr.Address)
 			rpcDriver, err := rpcer.NewRPCDriver(id, config.Transport.Addr(), string(joinAddr.Address))
 			if err != nil {
-				timber.Warningf("could not connect to join address [%s]: %v", joinAddr.Address, err)
+				log.Warningf("could not connect to join address [%s]: %v", joinAddr.Address, err)
 				continue
 			}
 			if rpcDriver == nil {
-				timber.Warningf("failed to create frontend for address [%s]", joinAddr.Address)
+				log.Warningf("failed to create frontend for address [%s]", joinAddr.Address)
 				continue
 			}
 			if err := rpcDriver.Join(); err != nil {
-				timber.Warningf("could not join address [%s]: %v", joinAddr.Address, err)
+				log.Warningf("could not join address [%s]: %v", joinAddr.Address, err)
 				continue
 			} else {
-				timber.Infof("successfully joined at address [%s]", joinAddr)
+				log.Infof("successfully joined at address [%s]", joinAddr)
 				goto WaitForSetup
 			}
 		}
 
 		if attempts < 3 {
-			timber.Infof("was not able to join any of the nodes provided, will try again in 10 seconds; attempt: %d", attempts)
+			log.Infof("was not able to join any of the nodes provided, will try again in 10 seconds; attempt: %d", attempts)
 			time.Sleep(10 * time.Second)
 			attempts++
 			goto RetryJoin
 		} else {
-			timber.Fatalf("failed to join any of the node found after %d attempt(s)", attempts)
+			log.Fatalf("failed to join any of the node found after %d attempt(s)", attempts)
 		}
 	}
 
@@ -191,7 +191,7 @@ WaitForSetup:
 
 	openTimeout, err := time.ParseDuration("10s")
 	if err != nil {
-		timber.Fatalf("failed to parse Raft open timeout: %s", err.Error())
+		log.Fatalf("failed to parse Raft open timeout: %s", err.Error())
 	}
 	fr.WaitForLeader(openTimeout)
 	fr.WaitForApplied(openTimeout)

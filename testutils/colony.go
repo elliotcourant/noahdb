@@ -172,7 +172,8 @@ func GetCleanTestName(t *testing.T) string {
 }
 
 func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresses ...string) (core.Colony, func()) {
-	timber.SetLevel(timber.Level_Error)
+	log := timber.New()
+	timber.SetLevel(timber.Level_Verbose)
 
 	tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword := "", int32(0), "", ""
 	testNameCleaned := fmt.Sprintf("%s-%d", GetCleanTestName(t), time.Now().Unix())
@@ -195,7 +196,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	}
 
 	callbacks = append(callbacks, func() {
-		timber.Warningf("removing temporary directory at: %s", tempdir)
+		log.Warningf("removing temporary directory at: %s", tempdir)
 		if err := os.RemoveAll(tempdir); err != nil {
 			panic(err)
 		}
@@ -221,20 +222,20 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 
 	go func() {
 		if err = pgwire.NewServer(colony, trans); err != nil {
-			timber.Errorf(err.Error())
+			log.Errorf(err.Error())
 		}
 	}()
 
 	go func() {
 		if err = rpcwire.NewRpcServer(colony, trans); err != nil {
-			timber.Errorf(err.Error())
+			log.Errorf(err.Error())
 		}
 	}()
 
 	joins := make([]raft.Server, 0)
 	for _, joinAddress := range joinAddresses {
 		if addr, err := util.ResolveAddress(joinAddress); err != nil {
-			timber.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
+			log.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
 			t.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
 		} else {
 			joins = append(joins, raft.Server{
@@ -255,7 +256,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		LocalPostgresPort:     tempPostgresPort,
 	}
 
-	err = colony.InitColony(config)
+	err = colony.InitColony(config, log)
 	if err != nil {
 		panic(err)
 	}
@@ -264,7 +265,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		colony.Close()
 	})
 
-	timber.Infof("finished starting noahdb coordinator")
+	log.Infof("finished starting noahdb coordinator")
 	return colony, func() {
 		for _, callback := range callbacks {
 			callback()

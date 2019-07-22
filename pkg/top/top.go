@@ -10,7 +10,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/util"
 	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
-	"github.com/readystock/golog"
 	"net"
 	"os"
 	"os/signal"
@@ -22,7 +21,9 @@ import (
 )
 
 func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, autoJoin bool) {
-	golog.Debugf("starting noahdb")
+	log := timber.New()
+
+	log.Debugf("starting noahdb")
 	l, err := util.ResolveAddress(listenAddr)
 	if err != nil {
 		panic(err)
@@ -55,7 +56,7 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 	go func() {
 		defer tasks.Done()
 		<-ch
-		golog.Warnf("stopping coordinator[%d]", colony.CoordinatorID())
+		log.Warningf("stopping coordinator[%d]", colony.CoordinatorID())
 		colony.Close()
 		os.Exit(0)
 	}()
@@ -63,14 +64,14 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 	go func() {
 		defer tasks.Done()
 		if err = pgwire.NewServer(colony, trans); err != nil {
-			golog.Errorf(err.Error())
+			log.Errorf(err.Error())
 		}
 	}()
 
 	go func() {
 		defer tasks.Done()
 		if err = rpcwire.NewRpcServer(colony, trans); err != nil {
-			golog.Errorf(err.Error())
+			log.Errorf(err.Error())
 		}
 	}()
 
@@ -83,13 +84,13 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		for {
 			time.Sleep(30 * time.Second)
 			if colony == nil {
-				golog.Infof("still strapping my boots")
+				log.Infof("still strapping my boots")
 			} else {
 				addr, leaderId, err := colony.LeaderID()
 				if err != nil {
-					golog.Errorf("could not get leader ID: %s", err)
+					log.Errorf("could not get leader ID: %s", err)
 				} else {
-					golog.Infof("current state [%s] current leader: %s | %s", colony.State(), leaderId, addr)
+					log.Infof("current state [%s] current leader: %s | %s", colony.State(), leaderId, addr)
 				}
 			}
 		}
@@ -115,7 +116,7 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		addresses := strings.Split(joinAddresses, ",")
 		for _, addr := range addresses {
 			if parsedAddress, err := util.ResolveAddress(addr); err != nil {
-				golog.Errorf("could not parse join address [%s]: %v", addr, err)
+				log.Errorf("could not parse join address [%s]: %v", addr, err)
 				panic(err)
 			} else {
 				joins = append(joins, raft.Server{
@@ -140,19 +141,19 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 			os.Getenv("PGPORT"), os.Getenv("PGUSER"), os.Getenv("PGPASSWORD")
 
 		if strPgPort == "" || pgUser == "" {
-			timber.Infof("no auto data node could be found")
+			log.Infof("no auto data node could be found")
 			break
 		}
 
 		addr, err := util.ExternalIP()
 		if err != nil {
-			timber.Warningf("could not get external IP address for local data node")
+			log.Warningf("could not get external IP address for local data node")
 			break
 		}
 
 		pgPort, err := strconv.ParseInt(strPgPort, 10, 32)
 		if err != nil {
-			timber.Warningf("could not parse PGPORT environment variable: %s", strPgPort)
+			log.Warningf("could not parse PGPORT environment variable: %s", strPgPort)
 			break
 		}
 
@@ -164,7 +165,7 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		timber.Verbosef("not using auto data node")
 	}
 
-	err = colony.InitColony(config)
+	err = colony.InitColony(config, log)
 	if err != nil {
 		panic(fmt.Sprintf("could not setup colony: %s", err.Error()))
 	} else if colony == nil {
@@ -172,10 +173,10 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 	}
 
 	if colony.IsLeader() && autoDataNode {
-		golog.Infof("auto-detecting a local PostgreSQL instance")
+		log.Infof("auto-detecting a local PostgreSQL instance")
 	}
 
-	golog.Debugf("colony initialized, coordinator [%d]", colony.CoordinatorID())
+	log.Debugf("colony initialized, coordinator [%d]", colony.CoordinatorID())
 
 	tasks.Wait()
 }

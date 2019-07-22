@@ -41,7 +41,9 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 		timber.Verbosef("accepted connection from: %s", conn.RemoteAddr())
 
 		go func() {
-			log := timber.New()
+			log := timber.New().With(timber.Keys{
+				"client": conn.RemoteAddr(),
+			})
 			wire, err := newWire(colony, conn, conn, log)
 			if err != nil {
 				log.Errorf("failed setting up wire: %s", err.Error())

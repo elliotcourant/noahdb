@@ -68,6 +68,8 @@ github.com/elliotcourant/timber v0.0.0-20190719205250-7e69456e493a h1:T9AExVXqK+
 github.com/elliotcourant/timber v0.0.0-20190719205250-7e69456e493a/go.mod h1:Qt+GcRn3FBq5YMmfc+MtIgGyN4fq3lZaRNYDlkOeigg=
 github.com/elliotcourant/timber v0.0.0-20190719212314-d3b1214282c1 h1:IY32qaj18zYcdvEOt/wR3teCla6/pzw9f/2jQsoARZU=
 github.com/elliotcourant/timber v0.0.0-20190719212314-d3b1214282c1/go.mod h1:Qt+GcRn3FBq5YMmfc+MtIgGyN4fq3lZaRNYDlkOeigg=
+github.com/elliotcourant/timber v0.0.0-20190722211703-b4088654f8f4 h1:7sTV9t4HilKD4IT6PNInvqdop8tZDwlh/gkSjDXOiF4=
+github.com/elliotcourant/timber v0.0.0-20190722211703-b4088654f8f4/go.mod h1:Qt+GcRn3FBq5YMmfc+MtIgGyN4fq3lZaRNYDlkOeigg=
 github.com/evanphx/json-patch v0.0.0-20190203023257-5858425f7550/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/gogo/protobuf v0.0.0-20171007142547-342cbe0a0415/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
