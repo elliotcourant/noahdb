@@ -44,7 +44,7 @@ func (stmt *selectStmtPlanner) getNoahQueryPlan(s *session) (InitialPlan, bool, 
 				}
 				return nil
 			}).ToSlice(&missingTables)
-		timber.Debugf("could not resolve tables: %s", strings.Join(missingTables, ", "))
+		s.log.Debugf("could not resolve tables: %s", strings.Join(missingTables, ", "))
 		return InitialPlan{}, false, fmt.Errorf("could not resolve tables with names: %s", strings.Join(missingTables, ", "))
 	}
 

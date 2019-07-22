@@ -1,13 +1,13 @@
 package sql
 
 type NoahQueryPlanner interface {
-	getNoahQueryPlan(*session) (InitialPlan, bool, error)
+	getNoahQueryPlan(s *session) (InitialPlan, bool, error)
 }
 
 type NormalQueryPlanner interface {
-	getNormalQueryPlan(*session) (InitialPlan, bool, error)
+	getNormalQueryPlan(s *session) (InitialPlan, bool, error)
 }
 
 type StandardQueryPlanner interface {
-	getStandardQueryPlan(*session) (InitialPlan, bool, error)
+	getStandardQueryPlan(s *session) (InitialPlan, bool, error)
 }

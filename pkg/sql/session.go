@@ -8,6 +8,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
+	"github.com/elliotcourant/timber"
 )
 
 type sessionContext interface {
@@ -21,13 +22,15 @@ type session struct {
 
 	preparedStatements map[string]preparedStatementEntry
 	portals            map[string]portalEntry
+	log                timber.Logger
 }
 
-func newSession(s sessionContext) *session {
+func newSession(s sessionContext, log timber.Logger) *session {
 	return &session{
 		sessionContext:     s,
 		preparedStatements: map[string]preparedStatementEntry{},
 		portals:            map[string]portalEntry{},
+		log:                log,
 	}
 }
 

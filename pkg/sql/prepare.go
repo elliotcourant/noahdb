@@ -9,7 +9,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
-	"github.com/elliotcourant/timber"
 )
 
 const (
@@ -135,7 +134,7 @@ func (s *session) getPreparedStatementColumns(
 			col.Val = colt.Arg
 			goto WALK
 		case ast.ParamRef:
-			timber.Verbosef("found parameter reference [$%d]", colt.Number)
+			s.log.Verbosef("found parameter reference [$%d]", colt.Number)
 			if column.DataTypeOID > 0 {
 				break
 			}
@@ -178,7 +177,7 @@ func (s *session) getPreparedStatementColumns(
 			column.DataTypeOID = cl.Type.Uint32()
 			column.TableOID = uint32(cl.TableID)
 		default:
-			timber.Debugf("test %+v", colt)
+			s.log.Debugf("test %+v", colt)
 		}
 
 		if col.Name != nil {

@@ -9,11 +9,11 @@ import (
 )
 
 func Run(stx sessionContext, log timber.Logger, terminateChannel chan bool) error {
-	s := newSession(stx)
+	s := newSession(stx, log)
 	for {
 		select {
 		case <-terminateChannel:
-			log.Debugf("terminating runner")
+			s.log.Debugf("terminating runner")
 			return nil
 		default:
 			c, _, err := s.StatementBuffer().CurrentCommand()
@@ -25,7 +25,7 @@ func Run(stx sessionContext, log timber.Logger, terminateChannel chan bool) erro
 			}
 
 			if c == nil {
-				log.Debugf("found null command, advancing 1")
+				s.log.Debugf("found null command, advancing 1")
 				s.StatementBuffer().AdvanceOne()
 			}
 
@@ -68,7 +68,7 @@ func Run(stx sessionContext, log timber.Logger, terminateChannel chan bool) erro
 			case commands.Flush:
 			case commands.CopyIn:
 			default:
-				log.Warningf("received unsupported command type [%T]", cmd)
+				s.log.Warningf("received unsupported command type [%T]", cmd)
 				panic(fmt.Sprintf("unsupported command type [%T]", cmd))
 			}
 
