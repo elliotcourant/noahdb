@@ -108,6 +108,8 @@ func (b *Frontend) Receive() (BackendMessage, error) {
 		msg = &b.readyForQuery
 	case RpcDiscoveryRequest:
 		msg = &DiscoveryResponse{}
+	case RpcSequenceResponse:
+		msg = &SequenceChunkResponse{}
 	default:
 		return nil, errors.Errorf("unknown message type: %c", b.msgType)
 	}

@@ -2,10 +2,14 @@ package frunk
 
 import (
 	"fmt"
+	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
+	"github.com/elliotcourant/noahdb/pkg/util"
+	"github.com/elliotcourant/timber"
 	"github.com/readystock/golog"
 	"net"
 	"sync"
+	"time"
 )
 
 type SequenceChunkResponse struct {
@@ -40,14 +44,25 @@ func (s *Store) getNextChunkInSequence(sequenceName string) error {
 	return nil
 }
 
-func (s *Store) getSequenceChunk(sequenceName string) (*SequenceChunkResponse, error) {
+func (s *Store) GetSequenceChunk(sequenceName string) (*SequenceChunkResponse, error) {
 	if !s.IsLeader() { // Only the leader can manage sequences
-		// driver, err := rpcer.NewRPCDriver(s.ID(), nil, s.LeaderAddr())
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// driver.Join()
-		// return s.clusterClient.getNextChunkInSequence(sequenceName)
+		leaderAddr, err := s.WaitForLeader(time.Second * 5)
+		if err != nil {
+			return nil, err
+		}
+		leaderAddr, _ = util.ResolveAddress(leaderAddr)
+		timber.Infof("leader address: %s", leaderAddr)
+		driver, err := rpcer.NewRPCDriver(s.ID(), nil, leaderAddr)
+		if err != nil {
+			return nil, err
+		}
+		thing, err := driver.GetSequenceChunk(sequenceName)
+		return &SequenceChunkResponse{
+			Start:  thing.Start,
+			End:    thing.End,
+			Offset: thing.Offset,
+			Count:  thing.Count,
+		}, err
 	}
 	s.sequenceCacheSync.Lock()
 	defer s.sequenceCacheSync.Unlock()
@@ -59,14 +74,14 @@ func (s *Store) getSequenceChunk(sequenceName string) (*SequenceChunkResponse, e
 			return nil, err
 		}
 		if len(seq) == 0 {
-			sequenceCache = &pgproto.SequenceResponse{
+			sequenceCache = &pgproto.Sequence{
 				CurrentValue:       0,
 				LastPartitionIndex: 0,
 				MaxPartitionIndex:  SequencePartitions - 1,
 				Partitions:         SequencePartitions,
 			}
 		} else {
-			sequenceCache = &pgproto.SequenceResponse{}
+			sequenceCache = &pgproto.Sequence{}
 			err := sequenceCache.Decode(seq)
 			if err != nil {
 				return nil, err
@@ -81,7 +96,7 @@ func (s *Store) getSequenceChunk(sequenceName string) (*SequenceChunkResponse, e
 	}
 	index := sequenceCache.LastPartitionIndex
 	sequenceCache.LastPartitionIndex++
-	b := sequenceCache.Encode(nil)
+	b := sequenceCache.EncodeBody()
 	err := s.Set(path, b)
 	if err != nil {
 		return nil, err
@@ -147,7 +162,7 @@ func (sequence *SequenceChunk) Next() (uint64, error) {
 	sequence.sync.Lock()
 	defer sequence.sync.Unlock()
 	if sequence.current == nil {
-		chunk, err := sequence.Store.getSequenceChunk(sequence.sequenceName)
+		chunk, err := sequence.Store.GetSequenceChunk(sequence.sequenceName)
 		if err != nil {
 			return 0, err
 		}
@@ -162,7 +177,7 @@ NewId:
 		if sequence.next != nil {
 			sequence.current = sequence.next
 		} else {
-			chunk, err := sequence.Store.getSequenceChunk(sequence.sequenceName)
+			chunk, err := sequence.Store.GetSequenceChunk(sequence.sequenceName)
 			if err != nil {
 				return 0, err
 			}
@@ -174,7 +189,7 @@ NewId:
 	}
 	if sequence.next == nil && float64(sequence.index*sequence.current.Count)/float64(sequence.current.End-sequence.current.Start) > (float64(SequencePreretrieve)/100) {
 		golog.Verbosef("requesting next chunk in sequence [%s] preemptive", sequence.sequenceName)
-		chunk, err := sequence.Store.getSequenceChunk(sequence.sequenceName)
+		chunk, err := sequence.Store.GetSequenceChunk(sequence.sequenceName)
 		if err != nil {
 			return 0, err
 		}

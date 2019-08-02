@@ -90,7 +90,8 @@ const (
 	*/
 
 	// RpcSequenceResponse indicates sequence metadata.
-	RpcSequenceResponse = 'S'
+	RpcSequenceRequest  = '*'
+	RpcSequenceResponse = '`'
 	RpcJoinRequest      = 'j'
 	RpcDiscoveryRequest = 'm'
 	RpcCommandRequest   = '$'

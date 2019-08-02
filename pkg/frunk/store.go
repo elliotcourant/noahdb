@@ -219,7 +219,7 @@ type Store struct {
 	chunkMapMutex     *sync.Mutex
 	sequenceCacheSync *sync.Mutex
 	sequenceChunks    map[string]*SequenceChunk
-	sequenceCache     map[string]*pgproto.SequenceResponse
+	sequenceCache     map[string]*pgproto.Sequence
 
 	leaderClient *rpcer.RpcDriver
 }
@@ -255,7 +255,7 @@ func New(ln Listener, c *StoreConfig) *Store {
 		connPollPeriod:    connectionPollPeriod,
 		chunkMapMutex:     new(sync.Mutex),
 		sequenceCacheSync: new(sync.Mutex),
-		sequenceCache:     map[string]*pgproto.SequenceResponse{},
+		sequenceCache:     map[string]*pgproto.Sequence{},
 		sequenceChunks:    map[string]*SequenceChunk{},
 		HeartbeatTimeout:  time.Millisecond * 500,
 	}
@@ -577,6 +577,11 @@ func (s *Store) Nodes() ([]*Server, error) {
 
 // WaitForLeader blocks until a leader is detected, or the timeout expires.
 func (s *Store) WaitForLeader(timeout time.Duration) (string, error) {
+	l := s.LeaderAddr()
+	if l != "" {
+		return l, nil
+	}
+
 	tck := time.NewTicker(leaderWaitDelay)
 	defer tck.Stop()
 	tmr := time.NewTimer(timeout)
@@ -885,7 +890,11 @@ func (s *Store) execute(c *Connection, ex *ExecuteRequest) (*ExecuteResponse, er
 	start := time.Now()
 
 	if !s.IsLeader() {
-
+		leaderAddr, err := s.WaitForLeader(time.Second * 5)
+		if err != nil {
+			return nil, err
+		}
+		timber.Infof("leader address [%s]", leaderAddr)
 	}
 
 	d := &databaseSub{

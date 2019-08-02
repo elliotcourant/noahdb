@@ -22,11 +22,7 @@ func TestMultiServer_LeaderFailure(t *testing.T) {
 		followers[i] = followerColony
 	}
 
-	defer func(cleanups []func()) {
-		for _, cleanup := range cleanups {
-			cleanup()
-		}
-	}(cleanups)
+	// defer
 	time.Sleep(10 * time.Second)
 
 	initialCleanup()
@@ -42,11 +38,39 @@ func TestMultiServer_LeaderFailure(t *testing.T) {
 		}
 	}
 	assert.True(t, foundNewLeader)
+	func(cleanups []func()) {
+		for _, cleanup := range cleanups {
+			cleanup()
+		}
+	}(cleanups)
+	time.Sleep(10 * time.Second)
 }
 
 func TestMultiServerWrite(t *testing.T) {
-	t.Skip()
+	// Sequences can now be handled by non-leader nodes. Requests for new sequence chunks
+	// are sent to the leader.
+	t.Run("sequence chunks", func(t *testing.T) {
+		colony1, cleanup1 := testutils.NewTestColony(t)
+		defer cleanup1()
+
+		colony2, cleanup2 := testutils.NewTestColony(t, colony1.Addr().String())
+		defer cleanup2()
+
+		// Make sure the first colony is the leader.
+		assert.True(t, colony1.IsLeader())
+		assert.False(t, colony2.IsLeader())
+
+		chunk, err := colony2.Sequences().GetSequenceChunk("test_sequence")
+		assert.NoError(t, err)
+		assert.NotEmpty(t, chunk)
+
+		chunk, err = colony2.Sequences().GetSequenceChunk("test_sequence")
+		assert.NoError(t, err)
+		assert.NotEmpty(t, chunk)
+	})
+
 	t.Run("create a new schema", func(t *testing.T) {
+		t.Skip()
 		colony1, cleanup1 := testutils.NewTestColony(t)
 		defer cleanup1()
 

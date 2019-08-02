@@ -53,6 +53,8 @@ func (b *RpcBackend) Receive() (RpcFrontendMessage, error) {
 		msg = &DiscoveryRequest{}
 	case RpcJoinRequest:
 		msg = &b.join
+	case RpcSequenceRequest:
+		msg = &SequenceRequest{}
 	default:
 		return nil, fmt.Errorf("unknown message type: %c", b.msgType)
 	}

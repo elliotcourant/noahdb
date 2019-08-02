@@ -396,8 +396,8 @@ func (p *PgTransport) genericRPC(id raft.ServerID, target raft.ServerAddress, ar
 func (p *PgTransport) receiveResponse(conn *pgConn, response interface{}) error {
 	message, err := conn.wire.Receive()
 	if err != nil {
-		if err != io.EOF {
-
+		if err == io.EOF {
+			return nil
 		}
 		p.logger.Error("could not receive message from [%v]: %v", conn.conn.RemoteAddr(), err)
 		return err

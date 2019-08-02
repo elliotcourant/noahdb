@@ -75,6 +75,18 @@ func serveRpcConnection(colony core.Colony, conn net.Conn) error {
 			if err := wire.handleJoin(message); err != nil {
 				backend.Send(&pgproto.ErrorResponse{Message: err.Error()})
 			}
+		case *pgproto.SequenceRequest:
+			chunk, err := colony.Sequences().GetSequenceChunk(message.SequenceName)
+			if err != nil {
+				backend.Send(&pgproto.ErrorResponse{Message: err.Error()})
+				continue
+			}
+			backend.Send(&pgproto.SequenceChunkResponse{
+				Start:  chunk.Start,
+				End:    chunk.End,
+				Offset: chunk.Offset,
+				Count:  chunk.Offset,
+			})
 		case *pgproto.Terminate:
 			return nil
 		default:

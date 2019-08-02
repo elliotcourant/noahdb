@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 )
@@ -49,7 +50,8 @@ func ResolveAddress(input string) (string, error) {
 		return "", err
 	}
 	// If they have specified an IP address to do the things, then prefer that
-	if inputParsed.IP != nil {
+	// But if there is no IP address then default to our primary external IP.
+	if inputParsed.IP != nil && !bytes.Equal(inputParsed.IP, make([]byte, 16)) {
 		return inputParsed.String(), nil
 	}
 

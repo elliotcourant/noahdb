@@ -98,3 +98,25 @@ func (rpc *RpcDriver) Discover() (string, error) {
 		return "", fmt.Errorf("could not handle response message when discovering: %v", msg)
 	}
 }
+
+func (rpc *RpcDriver) GetSequenceChunk(name string) (*pgproto.SequenceChunkResponse, error) {
+	if err := rpc.front.Send(&pgproto.SequenceRequest{
+		SequenceName: name,
+	}); err != nil {
+		return nil, err
+	}
+
+	response, err := rpc.front.Receive()
+	if err != nil {
+		return nil, err
+	}
+
+	switch msg := response.(type) {
+	case *pgproto.SequenceChunkResponse:
+		return msg, nil
+	case *pgproto.ErrorResponse:
+		return nil, fmt.Errorf("could not discover: %s", msg.Message)
+	default:
+		return nil, fmt.Errorf("could not handle response message when discovering: %v", msg)
+	}
+}

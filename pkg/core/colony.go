@@ -36,6 +36,7 @@ type Colony interface {
 	Types() TypeContext
 	Users() UserContext
 	Pool() PoolContext
+	Sequences() SequenceContext
 	Query(string) (*frunk.QueryResponse, error)
 	// Shards()
 	// Nodes()
