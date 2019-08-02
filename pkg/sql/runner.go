@@ -32,8 +32,13 @@ func Run(stx sessionContext, log timber.Logger, terminateChannel chan bool) erro
 			result := &commands.CommandResult{}
 			switch cmd := c.(type) {
 			case commands.ExecuteStatement:
+				s.SetQueryMode(QueryModeStandard)
 				result = commands.CreateExecuteCommandResult(s.Backend(), cmd.Statement)
-				err = s.executeStatement(cmd.Statement, result, nil)
+				err = s.executeStatement(
+					cmd.Statement,
+					result,
+					nil,
+					nil)
 			case commands.ExecutePortal:
 				// Make sure the portal exists, if it doesn't then we want to break early.
 				portal, ok := s.portals[cmd.Name]
@@ -50,11 +55,16 @@ func Run(stx sessionContext, log timber.Logger, terminateChannel chan bool) erro
 				}
 
 				result = commands.CreateExecutePortalResult(s.Backend(), portal.Stmt.Statement)
-				err = s.executeStatement(portal.Stmt.Statement, result, nil)
+				err = s.executeStatement(
+					portal.Stmt.Statement,
+					result,
+					portal.Qargs,
+					portal.OutFormats)
 			case commands.PrepareStatement:
 				result = commands.CreatePreparedStatementResult(s.Backend(), cmd.Statement)
 				err = s.executePrepare(cmd, result)
 			case commands.DescribeStatement:
+				s.SetQueryMode(QueryModeExtended)
 				result = commands.CreateDescribeStatementResult(s.Backend())
 				err = s.executeDescribe(cmd, result)
 			case commands.BindStatement:

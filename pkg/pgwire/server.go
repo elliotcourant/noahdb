@@ -175,7 +175,10 @@ func (wire *wireServer) Serve(startupMsg pgproto.StartupMessage) error {
 				}
 				return wire.StatementBuffer().Push(commands.Sync{})
 			case *pgproto.Execute:
-				return nil
+				return wire.StatementBuffer().Push(commands.ExecutePortal{
+					Name:  msg.Portal,
+					Limit: int(msg.MaxRows),
+				})
 			case *pgproto.Parse:
 				return wire.handleParse(msg)
 			case *pgproto.Describe:

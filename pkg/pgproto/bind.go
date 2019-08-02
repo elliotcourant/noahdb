@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 
 	"github.com/readystock/pgx/pgio"
 )
@@ -14,7 +15,7 @@ type Bind struct {
 	PreparedStatement    string
 	ParameterFormatCodes []int16
 	Parameters           [][]byte
-	ResultFormatCodes    []int16
+	ResultFormatCodes    []pgwirebase.FormatCode
 }
 
 func (*Bind) Frontend() {}
@@ -91,12 +92,12 @@ func (dst *Bind) Decode(src []byte) error {
 	resultFormatCodeCount := int(binary.BigEndian.Uint16(src[rp:]))
 	rp += 2
 
-	dst.ResultFormatCodes = make([]int16, resultFormatCodeCount)
+	dst.ResultFormatCodes = make([]pgwirebase.FormatCode, resultFormatCodeCount)
 	if len(src[rp:]) < len(dst.ResultFormatCodes)*2 {
 		return &invalidMessageFormatErr{messageType: "Bind"}
 	}
 	for i := 0; i < resultFormatCodeCount; i++ {
-		dst.ResultFormatCodes[i] = int16(binary.BigEndian.Uint16(src[rp:]))
+		dst.ResultFormatCodes[i] = pgwirebase.FormatCode(binary.BigEndian.Uint16(src[rp:]))
 		rp += 2
 	}
 
@@ -131,7 +132,7 @@ func (src *Bind) Encode(dst []byte) []byte {
 
 	dst = pgio.AppendUint16(dst, uint16(len(src.ResultFormatCodes)))
 	for _, fc := range src.ResultFormatCodes {
-		dst = pgio.AppendInt16(dst, fc)
+		dst = pgio.AppendInt16(dst, int16(fc))
 	}
 
 	pgio.SetInt32(dst[sp:], int32(len(dst[sp:])))
@@ -159,7 +160,7 @@ func (src *Bind) MarshalJSON() ([]byte, error) {
 		PreparedStatement    string
 		ParameterFormatCodes []int16
 		Parameters           []map[string]string
-		ResultFormatCodes    []int16
+		ResultFormatCodes    []pgwirebase.FormatCode
 	}{
 		Type:                 "Bind",
 		DestinationPortal:    src.DestinationPortal,

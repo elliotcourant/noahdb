@@ -3,6 +3,7 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"time"
 )
 
@@ -33,8 +34,9 @@ type InitialPlan struct {
 }
 
 type ExpandedPlan struct {
-	Tasks  []ExpandedPlanTask
-	Target PlanTarget
+	Tasks      []ExpandedPlanTask
+	Target     PlanTarget
+	OutFormats []pgwirebase.FormatCode
 }
 
 type ExpandedPlanTask struct {

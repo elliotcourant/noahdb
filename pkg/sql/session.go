@@ -9,6 +9,14 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
 	"github.com/elliotcourant/timber"
+	"sync"
+)
+
+type QueryMode int
+
+const (
+	QueryModeStandard QueryMode = 0
+	QueryModeExtended           = 1
 )
 
 type sessionContext interface {
@@ -23,6 +31,20 @@ type session struct {
 	preparedStatements map[string]preparedStatementEntry
 	portals            map[string]portalEntry
 	log                timber.Logger
+	queryMode          QueryMode
+	queryModeSync      sync.RWMutex
+}
+
+func (s *session) SetQueryMode(mode QueryMode) {
+	s.queryModeSync.Lock()
+	defer s.queryModeSync.Unlock()
+	s.queryMode = mode
+}
+
+func (s *session) GetQueryMode() QueryMode {
+	s.queryModeSync.RLock()
+	defer s.queryModeSync.RUnlock()
+	return s.queryMode
 }
 
 func newSession(s sessionContext, log timber.Logger) *session {

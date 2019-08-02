@@ -120,6 +120,17 @@ func replaceArguments(value interface{}, depth int, args QueryArguments) interfa
 		arg := args[param.Number-1]
 		return func() ast.Node {
 			switch argValue := arg.Get().(type) {
+			case *types.Text:
+				if argValue.Status == types.Null {
+					return &ast.A_Const{
+						Val: ast.Null{},
+					}
+				}
+				return ast.A_Const{
+					Val: ast.String{
+						Str: argValue.String,
+					},
+				}
 			case string:
 				return ast.A_Const{
 					Val: ast.String{

@@ -2,6 +2,8 @@ package sql
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 )
 
 type execResult interface {
@@ -12,7 +14,8 @@ type execResult interface {
 func (s *session) executeStatement(
 	stmt ast.Stmt,
 	result execResult,
-	placeholders interface{}) error {
-	result.SetError(s.stageQueryToResult(stmt, placeholders))
+	placeholders queryutil.QueryArguments,
+	outFormats []pgwirebase.FormatCode) error {
+	result.SetError(s.stageQueryToResult(stmt, placeholders, outFormats))
 	return nil
 }

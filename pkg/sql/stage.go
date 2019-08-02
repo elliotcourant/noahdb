@@ -3,15 +3,20 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
+	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"time"
 )
 
-func (s *session) stageQueryToResult(statement ast.Stmt, placeholders interface{}) error {
+func (s *session) stageQueryToResult(
+	statement ast.Stmt,
+	placeholders queryutil.QueryArguments,
+	outFormats []pgwirebase.FormatCode) error {
 	// If there are placeholders present then we need to walk the syntax tree and add the
 	// placeholders into the query manually, this is a bit weird and kind of expensive. But it's
 	// the best solution I have at the moment for the query planner.
 	if placeholders != nil {
-
+		statement = queryutil.ReplaceArguments(statement, placeholders).(ast.Stmt)
 	}
 
 	planAndExpandTimestamp := time.Now()
@@ -62,6 +67,8 @@ func (s *session) stageQueryToResult(statement ast.Stmt, placeholders interface{
 	if err != nil {
 		return err
 	}
+
+	expandedPlan.OutFormats = outFormats
 
 	return s.executeExpandedPlan(expandedPlan)
 }

@@ -15,6 +15,11 @@ type responsePipe struct {
 }
 
 func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
+	if len(plan.OutFormats) == 0 {
+		plan.OutFormats = []pgwirebase.FormatCode{
+			pgwirebase.FormatText,
+		}
+	}
 	startTimestamp := time.Now()
 	defer func() {
 		s.log.Verbosef("[%s] execution of statement", time.Since(startTimestamp))
@@ -40,21 +45,83 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					return
 				}
 				s.log.Verbosef("{%d} executing: %s", task.DataNodeShardID, task.Query)
-				if err := frontend.Send(&pgproto.Query{
-					String: task.Query,
-				}); err != nil {
-					s.log.Errorf(
-						"could not send query to data node shard [%d]: %s",
-						task.DataNodeShardID, err.Error())
-					response.err = err
-					return
+
+				switch s.GetQueryMode() {
+				case QueryModeStandard:
+					// In the standard query mode we don't need to care about the output format
+					// Since we will be writing a row description header anyway.
+					if err := frontend.Send(&pgproto.Query{
+						String: task.Query,
+					}); err != nil {
+						s.log.Errorf(
+							"could not send query to data node shard [%d]: %s",
+							task.DataNodeShardID, err.Error())
+						response.err = err
+						return
+					}
+				case QueryModeExtended:
+					// When we are in extended query mode we want to send the query in the same
+					// extended query mode.
+					if err := frontend.Send(&pgproto.Parse{
+						Name:  "1",
+						Query: task.Query,
+					}); err != nil {
+						s.log.Errorf(
+							"could not send query to data node shard [%d]: %s",
+							task.DataNodeShardID, err.Error())
+						response.err = err
+						return
+					}
+
+					if err := frontend.Send(&pgproto.Describe{
+						ObjectType: 'S',
+						Name:       "1",
+					}); err != nil {
+						s.log.Errorf(
+							"could not describe query on data node shard [%d]: %s",
+							task.DataNodeShardID, err.Error())
+						response.err = err
+						return
+					}
+
+					if err := frontend.Send(&pgproto.Bind{
+						DestinationPortal: "",
+						PreparedStatement: "1",
+						ResultFormatCodes: plan.OutFormats,
+					}); err != nil {
+						s.log.Errorf(
+							"could not bind on data node shard [%d]: %s",
+							task.DataNodeShardID, err.Error())
+						response.err = err
+						return
+					}
+
+					if err := frontend.Send(&pgproto.Execute{
+						Portal:  "",
+						MaxRows: 0,
+					}); err != nil {
+						s.log.Errorf(
+							"could not bind on data node shard [%d]: %s",
+							task.DataNodeShardID, err.Error())
+						response.err = err
+						return
+					}
+
+					if err := frontend.Send(&pgproto.Sync{}); err != nil {
+						s.log.Errorf(
+							"could not sync on data node shard [%d]: %s",
+							task.DataNodeShardID, err.Error())
+						response.err = err
+						return
+					}
 				}
+
 				response.conn = frontend
 			}(i, task)
 		}
 
 		for i := 0; i < len(plan.Tasks); i++ {
-			sentRowDescription := false
+			sentRowDescription := s.GetQueryMode() == QueryModeExtended
 			err := func(response *responsePipe) error {
 				if response.err != nil {
 					return response.err
@@ -98,6 +165,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 							return nil
 						}
 					default:
+						s.log.Tracef("received default message [%T]", message)
 						// Do nothing
 					}
 				}
