@@ -285,7 +285,13 @@ func ConnectionString(address net.Addr) string {
 	if err != nil {
 		panic(err)
 	}
+
+	host := addr.IP.String()
+	if host == "::" {
+		host, _ = util.ExternalIP()
+	}
+
 	return fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		addr.IP.String(), addr.Port, "noah", "password", "postgres")
+		host, addr.Port, "noah", "password", "postgres")
 }

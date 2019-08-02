@@ -35,8 +35,7 @@ func Test_Local_Prepared(t *testing.T) {
 }
 
 func Test_HandleParse_Prepared(t *testing.T) {
-	t.Skip()
-	colony, cleanup := testutils.NewTestColony(t)
+	colony, cleanup := testutils.NewPgTestColony(t)
 	defer cleanup()
 	time.Sleep(1 * time.Second)
 	func() {
