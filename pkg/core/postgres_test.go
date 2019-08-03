@@ -110,4 +110,43 @@ func TestPostgres(t *testing.T) {
 		err = rows.Err()
 		assert.NoError(t, err)
 	})
+
+	t.Run("access method operators", func(t *testing.T) {
+		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+
+		rows, err := db.Query(`SELECT * FROM pg_catalog.pg_amop;`)
+		assert.NoError(t, err)
+
+		for rows.Next() {
+			item := struct {
+				amopfamily     oid
+				ampolefttype   oid
+				amoprighttype  oid
+				amopstrategy   int
+				amoppurpose    string
+				amopopr        oid
+				amopmethod     oid
+				amopsortfamily oid
+			}{}
+			err := rows.Scan(
+				&item.amopfamily,
+				&item.ampolefttype,
+				&item.amoprighttype,
+				&item.amopstrategy,
+				&item.amoppurpose,
+				&item.amopopr,
+				&item.amopmethod,
+				&item.amopsortfamily,
+			)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, item)
+		}
+
+		err = rows.Err()
+		assert.NoError(t, err)
+	})
 }

@@ -138,6 +138,50 @@ var (
 				},
 			},
 		},
+		{
+			Table: Table{
+				TableName: "pg_amop",
+				TableType: TableType_Postgres,
+			},
+			Columns: []Column{
+				{
+					ColumnName: "oid",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amopfamily",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "ampolefttype",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amoprighttype",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amopstrategy",
+					Type:       types.Type_int2,
+				},
+				{
+					ColumnName: "amoppurpose",
+					Type:       types.Type_char,
+				},
+				{
+					ColumnName: "amopopr",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amopmethod",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amopsortfamily",
+					Type:       types.Type_oid,
+				},
+			},
+		},
 	}
 )
 
