@@ -88,6 +88,7 @@ func (ctx *base) Setup(config ColonyConfig) {
 		panic(err)
 	}
 
+	ctx.setupPostgresSystem()
 }
 
 func (ctx *base) Query(query string) (*frunk.QueryResponse, error) {
