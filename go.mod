@@ -16,7 +16,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901
 	github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb
-	github.com/elliotcourant/timber v0.0.0-20190722215549-948c7b1e3876
+	github.com/elliotcourant/timber v0.0.0-20190803221907-bbe1936d9b11
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.3.1
 	github.com/google/gofuzz v1.0.0 // indirect

@@ -19,6 +19,13 @@ const (
 	QueryModeExtended           = 1
 )
 
+type TransactionState int
+
+const (
+	TransactionState_None   TransactionState = 0
+	TransactionState_Active                  = 1
+)
+
 type sessionContext interface {
 	Backend() *pgproto.Backend
 	Colony() core.Colony
@@ -28,11 +35,16 @@ type sessionContext interface {
 type session struct {
 	sessionContext
 
-	preparedStatements map[string]preparedStatementEntry
-	portals            map[string]portalEntry
-	log                timber.Logger
-	queryMode          QueryMode
-	queryModeSync      sync.RWMutex
+	preparedStatements   map[string]preparedStatementEntry
+	portals              map[string]portalEntry
+	log                  timber.Logger
+	queryMode            QueryMode
+	queryModeSync        sync.RWMutex
+	transactionState     TransactionState
+	transactionStateSync sync.RWMutex
+
+	pool     map[uint64]core.PoolConnection
+	poolSync sync.Mutex
 }
 
 func (s *session) SetQueryMode(mode QueryMode) {
@@ -47,12 +59,49 @@ func (s *session) GetQueryMode() QueryMode {
 	return s.queryMode
 }
 
+func (s *session) SetTransactionState(state TransactionState) {
+	s.transactionStateSync.Lock()
+	defer s.transactionStateSync.Unlock()
+	s.transactionState = state
+}
+
+func (s *session) GetTransactionState() TransactionState {
+	s.transactionStateSync.RLock()
+	defer s.transactionStateSync.RUnlock()
+	return s.transactionState
+}
+
+func (s *session) GetConnectionForDataNodeShard(id uint64) (core.PoolConnection, error) {
+	s.transactionStateSync.Lock()
+	defer s.transactionStateSync.Unlock()
+	if pool, ok := s.pool[id]; ok {
+		return pool, nil
+	}
+	pc, err := s.Colony().Pool().GetConnectionForDataNodeShard(id)
+	if err != nil {
+		return nil, err
+	}
+	s.pool[id] = pc
+
+	return pc, nil
+}
+
+func (s *session) ReleaseConnectionForDataNodeShard(conn core.PoolConnection) {
+	s.transactionStateSync.Lock()
+	defer s.transactionStateSync.Unlock()
+	if _, ok := s.pool[conn.ID()]; ok {
+		delete(s.pool, conn.ID())
+	}
+	conn.Release()
+}
+
 func newSession(s sessionContext, log timber.Logger) *session {
 	return &session{
 		sessionContext:     s,
 		preparedStatements: map[string]preparedStatementEntry{},
 		portals:            map[string]portalEntry{},
 		log:                log,
+		pool:               map[uint64]core.PoolConnection{},
 	}
 }
 

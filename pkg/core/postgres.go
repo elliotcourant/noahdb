@@ -21,6 +21,7 @@ var (
 		{
 			Table: Table{
 				TableName: "pg_aggregate",
+				TableType: TableType_Postgres,
 			},
 			Columns: []Column{
 				{
@@ -42,6 +43,74 @@ var (
 				{
 					ColumnName: "aggfinalfn",
 					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "aggcombinefn",
+					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "aggserialfn",
+					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "aggdeserialfn",
+					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "aggmtransfn",
+					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "aggminvtransfn",
+					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "aggmfinalfn",
+					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "aggfinalextra",
+					Type:       types.Type_bool,
+				},
+				{
+					ColumnName: "aggmfinalextra",
+					Type:       types.Type_bool,
+				},
+				{
+					ColumnName: "aggfinalmodify",
+					Type:       types.Type_char,
+				},
+				{
+					ColumnName: "aggmfinalmodify",
+					Type:       types.Type_char,
+				},
+				{
+					ColumnName: "aggsortop",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "aggtranstype",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "aggtransspace",
+					Type:       types.Type_int4,
+				},
+				{
+					ColumnName: "aggmtranstype",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "aggmtransspace",
+					Type:       types.Type_int4,
+				},
+				{
+					ColumnName: "agginitval",
+					Type:       types.Type_text,
+				},
+				{
+					ColumnName: "aggminitval",
+					Type:       types.Type_text,
 				},
 			},
 		},

@@ -10,6 +10,7 @@ enum TableType {
     Sharded = 2;
     Global = 3;
     Noah = 4;
+    Postgres = 5;
 }
 
 message Table {

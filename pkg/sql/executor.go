@@ -36,7 +36,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					responses <- response
 				}()
 
-				frontend, err := s.Colony().Pool().GetConnectionForDataNodeShard(task.DataNodeShardID)
+				frontend, err := s.GetConnectionForDataNodeShard(task.DataNodeShardID)
 				if err != nil {
 					s.log.Errorf(
 						"could not retrieve connection from pool for data node shard [%d]: %s",
@@ -127,7 +127,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					return response.err
 				}
 				frontend := response.conn
-				defer frontend.Release()
+				defer s.ReleaseConnectionForDataNodeShard(frontend)
 				canExit := false
 				for {
 					message, err := frontend.Receive()

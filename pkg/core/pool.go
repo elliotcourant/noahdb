@@ -64,6 +64,10 @@ type frontendConnection struct {
 	pool *poolItem
 }
 
+func (f *frontendConnection) ID() uint64 {
+	return f.pool.id
+}
+
 func (f *frontendConnection) Release() {
 	if f.Frontend == nil {
 		return
@@ -80,6 +84,7 @@ func (f *frontendConnection) Close() {
 type PoolConnection interface {
 	frontendInterface
 	Release()
+	ID() uint64
 }
 
 type PoolContext interface {
