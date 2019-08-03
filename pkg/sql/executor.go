@@ -63,7 +63,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					// When we are in extended query mode we want to send the query in the same
 					// extended query mode.
 					if err := frontend.Send(&pgproto.Parse{
-						Name:  "1",
+						Name:  "",
 						Query: task.Query,
 					}); err != nil {
 						s.log.Errorf(
@@ -75,7 +75,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 
 					if err := frontend.Send(&pgproto.Describe{
 						ObjectType: 'S',
-						Name:       "1",
+						Name:       "",
 					}); err != nil {
 						s.log.Errorf(
 							"could not describe query on data node shard [%d]: %s",
@@ -86,7 +86,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 
 					if err := frontend.Send(&pgproto.Bind{
 						DestinationPortal: "",
-						PreparedStatement: "1",
+						PreparedStatement: "",
 						ResultFormatCodes: plan.OutFormats,
 					}); err != nil {
 						s.log.Errorf(

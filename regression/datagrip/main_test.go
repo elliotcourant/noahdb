@@ -3,13 +3,11 @@ package datagrip
 import (
 	"database/sql"
 	"github.com/elliotcourant/noahdb/testutils"
-	"github.com/jackc/pgx"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestDataGripRegression(t *testing.T) {
-	t.Skip("this isnt working yet.")
 	colony, cleanup := testutils.NewPgTestColony(t)
 	defer cleanup()
 
@@ -49,19 +47,15 @@ func TestDataGripRegression(t *testing.T) {
 	})
 
 	t.Run("current database and schemas", func(t *testing.T) {
-		t.Skip("this is using pgx which isnt yet supported")
-		str := testutils.ConnectionString(colony.Addr())
-		config, err := pgx.ParseConnectionString(str)
-		if !assert.NoError(t, err) {
-			panic(err)
-		}
-		db, err := pgx.Connect(config)
+		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
 		if err != nil {
 			panic(err)
 		}
 		defer db.Close()
 
-		row := db.QueryRow(`select current_database() as a, current_schemas(false) as b`)
+		stmt, err := db.Prepare(`select current_database() as a, current_schemas(false) as b`)
+		assert.NoError(t, err)
+		row := stmt.QueryRow()
 		currentDatabase, currentSchemas := "", ""
 		if err := row.Scan(&currentDatabase, &currentSchemas); !assert.NoError(t, err) {
 			panic(err)

@@ -277,7 +277,7 @@ func NewTestColony(t *testing.T, joinAddresses ...string) (core.Colony, func()) 
 }
 
 func NewPgTestColony(t *testing.T, joinAddresses ...string) (core.Colony, func()) {
-	return NewTestColonyEx(t, ":", true, joinAddresses...)
+	return NewTestColonyEx(t, ":5433", true, joinAddresses...)
 }
 
 func ConnectionString(address net.Addr) string {

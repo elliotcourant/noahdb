@@ -3,6 +3,7 @@ package pgproto
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/elliotcourant/timber"
 	"io"
 
 	"github.com/jackc/pgx/chunkreader"
@@ -38,6 +39,7 @@ func NewBackend(r io.Reader, w io.Writer) (*Backend, error) {
 }
 
 func (b *Backend) Send(msg BackendMessage) error {
+	timber.Verbosef("sending [%T]", msg)
 	_, err := b.w.Write(msg.Encode(nil))
 	return err
 }

@@ -40,7 +40,7 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 		}
 		timber.Verbosef("accepted connection from: %s", conn.RemoteAddr())
 
-		go func() {
+		go func(conn net.Conn) {
 			log := timber.New().Prefix(conn.RemoteAddr().String())
 			wire, err := newWire(colony, conn, conn, log)
 			if err != nil {
@@ -82,7 +82,7 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 					log.Errorf("failed serving connection: %s", err.Error())
 				}
 			}
-		}()
+		}(conn)
 	}
 }
 
