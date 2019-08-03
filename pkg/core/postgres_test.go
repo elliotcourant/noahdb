@@ -15,7 +15,7 @@ type (
 func TestPostgres(t *testing.T) {
 	colony, cleanup := testutils.NewPgTestColony(t)
 	defer cleanup()
-	t.Run("aggregate", func(t *testing.T) {
+	t.Run("aggregates", func(t *testing.T) {
 		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
 		if err != nil {
 			panic(err)
@@ -26,7 +26,7 @@ func TestPostgres(t *testing.T) {
 		assert.NoError(t, err)
 
 		for rows.Next() {
-			aggregate := struct {
+			item := struct {
 				aggfnoid         string
 				aggkind          string
 				aggnumdirectargs int
@@ -51,31 +51,60 @@ func TestPostgres(t *testing.T) {
 				aggminitval      *string
 			}{}
 			err := rows.Scan(
-				&aggregate.aggfnoid,
-				&aggregate.aggkind,
-				&aggregate.aggnumdirectargs,
-				&aggregate.aggtransfn,
-				&aggregate.aggfinalfn,
-				&aggregate.aggcombinefn,
-				&aggregate.aggserialfn,
-				&aggregate.aggdeserialfn,
-				&aggregate.aggmtransfn,
-				&aggregate.aggminvtransfn,
-				&aggregate.aggmfinalfn,
-				&aggregate.aggfinalextra,
-				&aggregate.aggmfinalextra,
-				&aggregate.aggfinalmodify,
-				&aggregate.aggmfinalmodify,
-				&aggregate.aggsortop,
-				&aggregate.aggtranstype,
-				&aggregate.aggtransspace,
-				&aggregate.aggmtranstype,
-				&aggregate.aggmtransspace,
-				&aggregate.agginitval,
-				&aggregate.aggminitval,
+				&item.aggfnoid,
+				&item.aggkind,
+				&item.aggnumdirectargs,
+				&item.aggtransfn,
+				&item.aggfinalfn,
+				&item.aggcombinefn,
+				&item.aggserialfn,
+				&item.aggdeserialfn,
+				&item.aggmtransfn,
+				&item.aggminvtransfn,
+				&item.aggmfinalfn,
+				&item.aggfinalextra,
+				&item.aggmfinalextra,
+				&item.aggfinalmodify,
+				&item.aggmfinalmodify,
+				&item.aggsortop,
+				&item.aggtranstype,
+				&item.aggtransspace,
+				&item.aggmtranstype,
+				&item.aggmtransspace,
+				&item.agginitval,
+				&item.aggminitval,
 			)
 			assert.NoError(t, err)
-			assert.NotEmpty(t, aggregate)
+			assert.NotEmpty(t, item)
+		}
+
+		err = rows.Err()
+		assert.NoError(t, err)
+	})
+
+	t.Run("access methods", func(t *testing.T) {
+		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+
+		rows, err := db.Query(`SELECT * FROM pg_catalog.pg_am;`)
+		assert.NoError(t, err)
+
+		for rows.Next() {
+			item := struct {
+				amname    string
+				amhandler regproc
+				amtype    string
+			}{}
+			err := rows.Scan(
+				&item.amname,
+				&item.amhandler,
+				&item.amtype,
+			)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, item)
 		}
 
 		err = rows.Err()

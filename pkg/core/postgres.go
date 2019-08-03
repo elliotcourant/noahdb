@@ -114,6 +114,30 @@ var (
 				},
 			},
 		},
+		{
+			Table: Table{
+				TableName: "pg_am",
+				TableType: TableType_Postgres,
+			},
+			Columns: []Column{
+				{
+					ColumnName: "oid",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amname",
+					Type:       types.Type_text,
+				},
+				{
+					ColumnName: "amhandler",
+					Type:       types.Type_regproc,
+				},
+				{
+					ColumnName: "amtype",
+					Type:       types.Type_char,
+				},
+			},
+		},
 	}
 )
 
