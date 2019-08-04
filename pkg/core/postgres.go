@@ -182,6 +182,38 @@ var (
 				},
 			},
 		},
+		{
+			Table: Table{
+				TableName: "pg_amproc",
+				TableType: TableType_Postgres,
+			},
+			Columns: []Column{
+				{
+					ColumnName: "oid",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amprocfamily",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amproclefttype",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amprocrighttype",
+					Type:       types.Type_oid,
+				},
+				{
+					ColumnName: "amprocnum",
+					Type:       types.Type_int2,
+				},
+				{
+					ColumnName: "amproc",
+					Type:       types.Type_regproc,
+				},
+			},
+		},
 	}
 )
 

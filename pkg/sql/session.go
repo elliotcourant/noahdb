@@ -10,6 +10,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
 	"github.com/elliotcourant/timber"
 	"sync"
+	"time"
 )
 
 type QueryMode int
@@ -72,6 +73,10 @@ func (s *session) GetTransactionState() TransactionState {
 }
 
 func (s *session) GetConnectionForDataNodeShard(id uint64) (core.PoolConnection, error) {
+	startTimestamp := time.Now()
+	defer func() {
+		s.log.Verbosef("[%s] acquisition of connection to data node shard [%d]", time.Since(startTimestamp), id)
+	}()
 	s.transactionStateSync.Lock()
 	defer s.transactionStateSync.Unlock()
 	if pool, ok := s.pool[id]; ok {

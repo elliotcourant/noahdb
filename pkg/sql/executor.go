@@ -33,6 +33,7 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 			go func(index int, task ExpandedPlanTask) {
 				var response = &responsePipe{}
 				defer func() {
+					s.log.Verbosef("[%s] dispatch of query to data node shard [%d]", time.Since(startTimestamp), task.DataNodeShardID)
 					responses <- response
 				}()
 

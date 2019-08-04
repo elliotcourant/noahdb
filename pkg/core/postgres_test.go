@@ -15,17 +15,28 @@ type (
 func TestPostgres(t *testing.T) {
 	colony, cleanup := testutils.NewPgTestColony(t)
 	defer cleanup()
-	t.Run("aggregates", func(t *testing.T) {
-		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
-		if err != nil {
-			panic(err)
-		}
-		defer db.Close()
 
-		rows, err := db.Query(`SELECT * FROM pg_catalog.pg_aggregate;`)
+	db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	tryCatalogQuery := func(t *testing.T, query string, scan func(rows *sql.Rows) error) {
+		rows, err := db.Query(query)
 		assert.NoError(t, err)
 
 		for rows.Next() {
+			err := scan(rows)
+			assert.NoError(t, err)
+		}
+
+		err = rows.Err()
+		assert.NoError(t, err)
+	}
+
+	t.Run("aggregates", func(t *testing.T) {
+		tryCatalogQuery(t, `SELECT * FROM pg_catalog.pg_aggregate;`, func(rows *sql.Rows) error {
 			item := struct {
 				aggfnoid         string
 				aggkind          string
@@ -50,6 +61,7 @@ func TestPostgres(t *testing.T) {
 				agginitval       *string
 				aggminitval      *string
 			}{}
+
 			err := rows.Scan(
 				&item.aggfnoid,
 				&item.aggkind,
@@ -74,25 +86,15 @@ func TestPostgres(t *testing.T) {
 				&item.agginitval,
 				&item.aggminitval,
 			)
+
 			assert.NoError(t, err)
 			assert.NotEmpty(t, item)
-		}
-
-		err = rows.Err()
-		assert.NoError(t, err)
+			return err
+		})
 	})
 
 	t.Run("access methods", func(t *testing.T) {
-		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
-		if err != nil {
-			panic(err)
-		}
-		defer db.Close()
-
-		rows, err := db.Query(`SELECT * FROM pg_catalog.pg_am;`)
-		assert.NoError(t, err)
-
-		for rows.Next() {
+		tryCatalogQuery(t, `SELECT * FROM pg_catalog.pg_am;`, func(rows *sql.Rows) error {
 			item := struct {
 				amname    string
 				amhandler regproc
@@ -105,23 +107,12 @@ func TestPostgres(t *testing.T) {
 			)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, item)
-		}
-
-		err = rows.Err()
-		assert.NoError(t, err)
+			return err
+		})
 	})
 
 	t.Run("access method operators", func(t *testing.T) {
-		db, err := sql.Open("postgres", testutils.ConnectionString(colony.Addr()))
-		if err != nil {
-			panic(err)
-		}
-		defer db.Close()
-
-		rows, err := db.Query(`SELECT * FROM pg_catalog.pg_amop;`)
-		assert.NoError(t, err)
-
-		for rows.Next() {
+		tryCatalogQuery(t, `SELECT * FROM pg_catalog.pg_amop;`, func(rows *sql.Rows) error {
 			item := struct {
 				amopfamily     oid
 				ampolefttype   oid
@@ -144,9 +135,29 @@ func TestPostgres(t *testing.T) {
 			)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, item)
-		}
+			return err
+		})
+	})
 
-		err = rows.Err()
-		assert.NoError(t, err)
+	t.Run("access method operator support functions", func(t *testing.T) {
+		tryCatalogQuery(t, `SELECT * FROM pg_catalog.pg_amproc;`, func(rows *sql.Rows) error {
+			item := struct {
+				amprocfamily    oid
+				amproclefttype  oid
+				amprocrighttype oid
+				amprocnum       int
+				amproc          regproc
+			}{}
+			err := rows.Scan(
+				&item.amprocfamily,
+				&item.amproclefttype,
+				&item.amprocrighttype,
+				&item.amprocnum,
+				&item.amproc,
+			)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, item)
+			return err
+		})
 	})
 }
