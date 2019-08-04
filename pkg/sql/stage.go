@@ -24,42 +24,54 @@ func (s *session) stageQueryToResult(
 		s.log.Verbosef("[%s] planning and execution of statement", time.Since(planAndExpandTimestamp))
 	}()
 
-	plan, err := func() (InitialPlan, error) {
+	plan, sendToNodes, err := func() (InitialPlan, bool, error) {
 		startTimestamp := time.Now()
 		defer func() {
 			s.log.Verbosef("[%s] initial planning of statement", time.Since(startTimestamp))
 		}()
 		planner, err := getStatementHandler(statement)
 		if err != nil {
-			return InitialPlan{}, err
+			return InitialPlan{}, false, err
 		}
 
 		plan := InitialPlan{}
+
+		if transactionPlanner, ok := planner.(TransactionQueryPlanner); ok {
+			transactionPlan, sendToNodes, err := transactionPlanner.getTransactionQueryPlan(s)
+			if err != nil {
+				return transactionPlan, false, err
+			}
+			return transactionPlan, sendToNodes, nil
+		}
 
 		// Check to see if the provided statement can target noah's internal query interface.
 		if noahPlanner, ok := planner.(NoahQueryPlanner); ok {
 			// Try to build a noah query plan, if the query that was provided does actually use noah
 			// tables then this will skip the standard planner and jump to expand the initial query plan
 			if plan, ok, err = noahPlanner.getNoahQueryPlan(s); err != nil {
-				return InitialPlan{}, err
+				return InitialPlan{}, false, err
 			} else if ok {
-				return plan, nil
+				return plan, ok, nil
 			}
 		}
 
 		if normalQueryPlanner, ok := planner.(NormalQueryPlanner); ok {
 			if plan, ok, err = normalQueryPlanner.getNormalQueryPlan(s); err != nil {
-				return InitialPlan{}, err
+				return InitialPlan{}, false, err
 			} else if ok {
-				return plan, nil
+				return plan, ok, nil
 			}
 		}
 
-		return InitialPlan{}, fmt.Errorf("could not generate plan for statement")
+		return InitialPlan{}, false, fmt.Errorf("could not generate plan for statement")
 	}()
 
 	if err != nil {
 		return err
+	}
+
+	if !sendToNodes {
+		return nil
 	}
 
 	expandedPlan, err := s.expandQueryPlan(plan)

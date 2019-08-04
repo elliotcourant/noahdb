@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
@@ -63,6 +64,7 @@ func (s *session) GetQueryMode() QueryMode {
 func (s *session) SetTransactionState(state TransactionState) {
 	s.transactionStateSync.Lock()
 	defer s.transactionStateSync.Unlock()
+	s.log.Debugf("transitioning transaction state to [%d]", state)
 	s.transactionState = state
 }
 
@@ -77,8 +79,8 @@ func (s *session) GetConnectionForDataNodeShard(id uint64) (core.PoolConnection,
 	defer func() {
 		s.log.Verbosef("[%s] acquisition of connection to data node shard [%d]", time.Since(startTimestamp), id)
 	}()
-	s.transactionStateSync.Lock()
-	defer s.transactionStateSync.Unlock()
+	s.poolSync.Lock()
+	defer s.poolSync.Unlock()
 	if pool, ok := s.pool[id]; ok {
 		return pool, nil
 	}
@@ -88,12 +90,43 @@ func (s *session) GetConnectionForDataNodeShard(id uint64) (core.PoolConnection,
 	}
 	s.pool[id] = pc
 
+	if s.GetTransactionState() == TransactionState_Active {
+		err := pc.Send(&pgproto.Query{
+			String: "BEGIN",
+		})
+		if err != nil {
+			return pc, err
+		}
+		for {
+			msg, err := pc.Receive()
+			if err != nil {
+				return pc, err
+			}
+			switch m := msg.(type) {
+			case *pgproto.ErrorResponse:
+				return pc, fmt.Errorf("received error from pool conn with begin: %v", m.Message)
+			case *pgproto.ReadyForQuery:
+				return pc, nil
+			}
+		}
+	}
+
 	return pc, nil
 }
 
+func (s *session) GetPendingDataNodeShards() []uint64 {
+	s.poolSync.Lock()
+	defer s.poolSync.Unlock()
+	ids := make([]uint64, len(s.pool))
+	for id := range s.pool {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 func (s *session) ReleaseConnectionForDataNodeShard(conn core.PoolConnection) {
-	s.transactionStateSync.Lock()
-	defer s.transactionStateSync.Unlock()
+	s.poolSync.Lock()
+	defer s.poolSync.Unlock()
 	if _, ok := s.pool[conn.ID()]; ok {
 		delete(s.pool, conn.ID())
 	}

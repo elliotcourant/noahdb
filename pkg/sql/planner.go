@@ -22,21 +22,31 @@ const (
 	PlanTarget_INTERNAL PlanTarget = "INTERNAL"
 )
 
+type DistributedPlanType int
+
+const (
+	DistributedPlanType_NONE     DistributedPlanType = 0
+	DistributedPlanType_COMMIT   DistributedPlanType = 1
+	DistributedPlanType_ROLLBACK DistributedPlanType = 2
+)
+
 type InitialPlanTask struct {
 	Query string
 	Type  ast.StmtType
 }
 
 type InitialPlan struct {
-	Types   map[PlanType]InitialPlanTask
-	ShardID uint64
-	Target  PlanTarget
+	Types        map[PlanType]InitialPlanTask
+	ShardID      uint64
+	Target       PlanTarget
+	DistPlanType DistributedPlanType
 }
 
 type ExpandedPlan struct {
-	Tasks      []ExpandedPlanTask
-	Target     PlanTarget
-	OutFormats []pgwirebase.FormatCode
+	Tasks        []ExpandedPlanTask
+	Target       PlanTarget
+	OutFormats   []pgwirebase.FormatCode
+	DistPlanType DistributedPlanType
 }
 
 type ExpandedPlanTask struct {
@@ -59,7 +69,7 @@ type StandardQueryPlanner interface {
 }
 
 type TransactionQueryPlanner interface {
-	getTransactionQueryPlan(s *session) (InitialPlan, bool, bool, error)
+	getTransactionQueryPlan(s *session) (InitialPlan, bool, error)
 }
 
 func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
@@ -67,6 +77,37 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	defer func() {
 		s.log.Verbosef("[%s] expanding of plan", time.Since(startTimestamp))
 	}()
+
+	if plan.DistPlanType != DistributedPlanType_NONE {
+		pendingDataNodeShards := s.GetPendingDataNodeShards()
+		// useTwoPhaseCommit := len(pendingDataNodeShards) > 1
+		tasks := make([]ExpandedPlanTask, len(pendingDataNodeShards))
+
+		for i, id := range pendingDataNodeShards {
+			switch plan.DistPlanType {
+			case DistributedPlanType_COMMIT:
+				tasks[i] = ExpandedPlanTask{
+					Query:           "COMMIT",
+					ReadOnly:        false,
+					DataNodeShardID: id,
+					Type:            ast.Ack,
+				}
+			case DistributedPlanType_ROLLBACK:
+				tasks[i] = ExpandedPlanTask{
+					Query:           "ROLLBACK",
+					ReadOnly:        false,
+					DataNodeShardID: id,
+					Type:            ast.Ack,
+				}
+			}
+		}
+
+		return ExpandedPlan{
+			Target:       PlanTarget_STANDARD,
+			Tasks:        tasks,
+			DistPlanType: plan.DistPlanType,
+		}, nil
+	}
 
 	if plan.Target == PlanTarget_INTERNAL {
 		// Internal query plans can go directly to the SQLite database.

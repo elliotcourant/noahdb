@@ -112,7 +112,8 @@ func getStatementHandler(tree ast.Stmt) (interface{}, error) {
 	case ast.SelectStmt:
 		return newSelectStatementPlan(stmt), nil
 	// case nodes.SetOperationStmt:
-	// case ast.TransactionStmt:
+	case ast.TransactionStmt:
+		return newTransactionStatementPlan(stmt), nil
 	// 	return CreateTransactionStatement(stmt), nil
 	// case nodes.TruncateStmt:
 	// case nodes.UnlistenStmt:

@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
@@ -47,7 +48,12 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 				}
 				s.log.Verbosef("{%d} executing: %s", task.DataNodeShardID, task.Query)
 
-				switch s.GetQueryMode() {
+				queryMode := s.GetQueryMode()
+				if task.Type != ast.Rows {
+					queryMode = QueryModeStandard
+				}
+
+				switch queryMode {
 				case QueryModeStandard:
 					// In the standard query mode we don't need to care about the output format
 					// Since we will be writing a row description header anyway.
@@ -121,6 +127,11 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 			}(i, task)
 		}
 
+		// If we are committing or rolling back a transaction then clear the transaction state.
+		if plan.DistPlanType != DistributedPlanType_NONE {
+			s.SetTransactionState(TransactionState_None)
+		}
+
 		for i := 0; i < len(plan.Tasks); i++ {
 			sentRowDescription := s.GetQueryMode() == QueryModeExtended
 			err := func(response *responsePipe) error {
@@ -128,7 +139,10 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 					return response.err
 				}
 				frontend := response.conn
-				defer s.ReleaseConnectionForDataNodeShard(frontend)
+				// If we are not in a transaction then we can throw this connection away.
+				if s.GetTransactionState() == TransactionState_None {
+					defer s.ReleaseConnectionForDataNodeShard(frontend)
+				}
 				canExit := false
 				for {
 					message, err := frontend.Receive()
@@ -152,13 +166,13 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 							return err
 						}
 						canExit = true
-					case *pgproto.CommandComplete:
-						canExit = true
-						return nil
 					case *pgproto.ErrorResponse:
 						if err := s.Backend().Send(message); err != nil {
 							return err
 						}
+						canExit = true
+						return nil
+					case *pgproto.CommandComplete:
 						canExit = true
 						return nil
 					case *pgproto.ReadyForQuery:
