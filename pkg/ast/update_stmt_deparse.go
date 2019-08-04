@@ -36,12 +36,23 @@ func (node UpdateStmt) Deparse(ctx Context) (string, error) {
 
 	if node.TargetList.Items != nil && len(node.TargetList.Items) > 0 {
 		out = append(out, "SET")
-		for _, target := range node.TargetList.Items {
+		sets := make([]string, len(node.TargetList.Items))
+		for i, target := range node.TargetList.Items {
 			if str, err := target.Deparse(Context_Update); err != nil {
 				return "", err
 			} else {
-				out = append(out, str)
+				sets[i] = str
 			}
+		}
+		out = append(out, strings.Join(sets, ", "))
+	}
+
+	if len(node.FromClause.Items) > 0 {
+		out = append(out, "FROM")
+		if strs, err := node.FromClause.DeparseList(Context_Update); err != nil {
+			return "", err
+		} else {
+			out = append(out, strings.Join(strs, ", "))
 		}
 	}
 
