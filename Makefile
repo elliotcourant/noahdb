@@ -54,6 +54,8 @@ strings:
 	@stringer -type commandType -output pkg/frunk/command.string.go pkg/frunk/command.go
 	@stringer -type ClusterState,ConsistencyLevel,BackupFormat -output pkg/frunk/store.string.go pkg/frunk/store.go
 
+	@stringer -type TransactionStatus -output pkg/pgproto/transaction_status.string.go pkg/pgproto/transaction_status.go
+
 	@stringer -type Context -output pkg/ast/context.string.go pkg/ast/context.go
 	@stringer -type ConstrType -output pkg/ast/constr_type.string.go pkg/ast/constr_type.go
 	@stringer -type ObjectType -output pkg/ast/object_type.string.go pkg/ast/object_type.go
