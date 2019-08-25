@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	ListenAddr     string
+	PgListenAddr   string
+	RaftListenAddr string
 	JoinAddr       string
 	AutoDataNode   bool
 	AutoJoin       bool
@@ -30,13 +31,14 @@ var (
 	startCmd = &cobra.Command{
 		Use: "start",
 		Run: func(cmd *cobra.Command, args []string) {
-			StartDB(StoreDirectory, JoinAddr, ListenAddr, UseTmpDir, AutoDataNode, AutoJoin)
+			StartDB(StoreDirectory, JoinAddr, PgListenAddr, UseTmpDir, AutoDataNode, AutoJoin)
 		},
 	}
 )
 
 func init() {
-	startCmd.Flags().StringVarP(&ListenAddr, "listen", "L", ":5433", "address that will accept connections")
+	startCmd.Flags().StringVarP(&PgListenAddr, "pg-listen", "L", ":5433", "address that will accept connections")
+	startCmd.Flags().StringVarP(&RaftListenAddr, "raft-listen", "R", ":5434", "address that will be use for raft")
 	startCmd.Flags().StringVarP(&JoinAddr, "join", "J", "", "address of another node in the cluster to use to join")
 	startCmd.Flags().BoolVarP(&AutoDataNode, "auto-data-node", "d", false, "look for a local PostgreSQL instance")
 	startCmd.Flags().BoolVarP(&AutoJoin, "auto-join", "A", false, "try to auto-join an existing cluster")
