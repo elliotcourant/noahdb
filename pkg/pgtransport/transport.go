@@ -115,6 +115,10 @@ type PgTransport struct {
 	timeoutScale int
 }
 
+func (p *PgTransport) TimeoutNow(id raft.ServerID, target raft.ServerAddress, args *raft.TimeoutNowRequest, resp *raft.TimeoutNowResponse) error {
+	panic("implement me")
+}
+
 // PgTransportConfig exposes just a few ways to tweak the
 // internal behavior of the pg transport.
 type PgTransportConfig struct {
