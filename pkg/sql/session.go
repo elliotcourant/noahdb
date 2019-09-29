@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/executor"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/types"
@@ -47,6 +48,8 @@ type session struct {
 
 	pool     map[uint64]core.PoolConnection
 	poolSync sync.Mutex
+
+	executor executor.Executor
 }
 
 func (s *session) SetQueryMode(mode QueryMode) {
@@ -140,6 +143,7 @@ func newSession(s sessionContext, log timber.Logger) *session {
 		portals:            map[string]portalEntry{},
 		log:                log,
 		pool:               map[uint64]core.PoolConnection{},
+		executor:           executor.NewExecutor(s.Colony(), log),
 	}
 }
 
