@@ -53,7 +53,7 @@ require (
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	golang.org/x/tools v0.0.0-20190715221914-9b2cb0e5f602 // indirect
+	golang.org/x/tools v0.0.0-20190929030202-7da961ddcf1a // indirect
 	google.golang.org/appengine v1.6.0 // indirect
 	gopkg.in/doug-martin/goqu.v5 v5.0.0
 	gopkg.in/inf.v0 v0.9.1 // indirect

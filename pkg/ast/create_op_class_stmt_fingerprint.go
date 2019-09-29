@@ -31,7 +31,7 @@ func (node CreateOpClassStmt) Fingerprint(ctx FingerprintContext, parentNode Nod
 
 	if len(node.Items.Items) > 0 {
 		subCtx := FingerprintSubContext{}
-		node.Items.Fingerprint(&subCtx, node, "Items")
+		node.Items.Fingerprint(&subCtx, node, "Tasks")
 
 		if len(subCtx.parts) > 0 {
 			ctx.WriteString("items")
