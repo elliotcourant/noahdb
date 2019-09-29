@@ -1,7 +1,7 @@
 package pgproto
 
 import (
-	"github.com/elliotcourant/noahdb/pkg/buffers"
+	"github.com/elliotcourant/buffers"
 )
 
 type SequenceRequest struct {

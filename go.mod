@@ -13,6 +13,7 @@ require (
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
+	github.com/elliotcourant/buffers v0.0.0-20190811025309-24fdba97ca9b
 	github.com/elliotcourant/meles v0.0.0-20190901001842-207d3e16ca61
 	github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901
 	github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb
