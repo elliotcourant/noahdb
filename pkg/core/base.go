@@ -78,6 +78,10 @@ func (ctx *base) Setup(config ColonyConfig) {
 		return
 	}
 
+	if _, err := ctx.db.ExecEx("PRAGMA journal_mode=WAL;", false); err != nil {
+		panic(err)
+	}
+
 	setupScript, err := static.GetEmbeddedFile("/00_internal_sql.sql")
 	if err != nil {
 		panic(err)

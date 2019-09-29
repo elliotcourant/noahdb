@@ -53,6 +53,12 @@ func (s *Store) Query(query string) (*QueryResponse, error) {
 
 // Exec executes a write-only query against the database.
 func (s *Store) Exec(query string) (*ExecuteResponse, error) {
+	return s.ExecEx(query, true)
+}
+
+// ExecEx executes a write-only query against the database.
+// With the option of being atomic or not.
+func (s *Store) ExecEx(query string, atomic bool) (*ExecuteResponse, error) {
 	startTimestamp := time.Now()
 	defer func() {
 		timber.New().SetDepth(2).Tracef("[%s] %s", time.Since(startTimestamp), query)
@@ -62,7 +68,7 @@ func (s *Store) Exec(query string) (*ExecuteResponse, error) {
 			query,
 		},
 		Timings: false,
-		Atomic:  true,
+		Atomic:  atomic,
 	}
 	result, err := s.ExecuteEx(executeRequest)
 	if err != nil {
