@@ -7,10 +7,10 @@ TYPES_DIRECTORY := pkg/types
 BUILD_DIRECTORY := bin
 PACKAGE = github.com/elliotcourant/noahdb
 EXECUTABLE_NAME = noah
-DOCKER_TAG = local
+DOCKER_TAG = development
 
 postgres:
-	docker build -t noahdb/postgres:local ./k8s/postgres
+	docker build -t noahdb/postgres:development ./k8s/postgres
 
 docker:
 	docker build -t noahdb/node:$(DOCKER_TAG) -f ./k8s/node/Dockerfile .
