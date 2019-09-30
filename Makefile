@@ -51,7 +51,6 @@ strings:
 	@echo generating strings...
 	@go get -u -a golang.org/x/tools/cmd/stringer
 
-	cd pkg/executor && make strings
 	cd pkg/plan && make strings
 
 	@stringer -type commandType -output pkg/frunk/command.string.go pkg/frunk/command.go
