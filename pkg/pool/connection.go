@@ -26,21 +26,43 @@ func NewConnection(conn core.PoolConnection, pool *BasePool) Connection {
 }
 
 type BaseConnection struct {
-	log  timber.Logger
-	conn core.PoolConnection
-	pool *BasePool
+	inTransaction bool
+	log           timber.Logger
+	conn          core.PoolConnection
+	pool          *BasePool
 }
 
 func (b *BaseConnection) Begin() error {
-	return b.Exec("BEGIN")
+	if b.inTransaction {
+		return nil
+	}
+	if err := b.Exec("BEGIN"); err != nil {
+		return err
+	}
+	b.inTransaction = true
+	return nil
 }
 
 func (b *BaseConnection) Commit() error {
-	return b.Exec("COMMIT")
+	if !b.inTransaction {
+		return nil
+	}
+	if err := b.Exec("COMMIT"); err != nil {
+		return err
+	}
+	b.inTransaction = true
+	return nil
 }
 
 func (b *BaseConnection) Rollback() error {
-	return b.Exec("ROLLBACK")
+	if !b.inTransaction {
+		return nil
+	}
+	if err := b.Exec("ROLLBACK"); err != nil {
+		return err
+	}
+	b.inTransaction = true
+	return nil
 }
 
 func (b *BaseConnection) Send(msg pgproto.FrontendMessage) error {

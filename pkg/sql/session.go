@@ -143,7 +143,11 @@ func newSession(s sessionContext, log timber.Logger) *session {
 		portals:            map[string]portalEntry{},
 		log:                log,
 		pool:               map[uint64]core.PoolConnection{},
-		executor:           executor.NewExecutor(s.Colony(), log),
+		executor: executor.NewExecutor(
+			s.Colony(),
+			log,
+			// TODO (elliotcourant) make sure the query mode gets updated
+			executor.NewClientTunnel(s.Backend(), false)),
 	}
 }
 

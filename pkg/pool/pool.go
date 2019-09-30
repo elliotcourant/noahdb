@@ -9,7 +9,8 @@ import (
 
 // Pool is connection manager for the executor.
 type Pool interface {
-	GetConnection(dataNodeShardId uint64) (Connection, error)
+	Begin()
+	GetConnection(dataNodeShardId uint64, txn bool) (Connection, error)
 }
 
 func NewPool(colony core.Colony, logger timber.Logger) Pool {
@@ -30,9 +31,13 @@ type BasePool struct {
 	inTransaction bool
 }
 
+func (p *BasePool) Begin() {
+	p.inTransaction = true
+}
+
 // GetConnection returns a connection that is allocated
 // to this executor's connection pool.
-func (p *BasePool) GetConnection(dataNodeShardId uint64) (Connection, error) {
+func (p *BasePool) GetConnection(dataNodeShardId uint64, txn bool) (Connection, error) {
 	start := time.Now()
 	defer p.log.Verbosef("[%s] acquisition of connection to data node shard [%d]",
 		time.Since(start),
@@ -40,6 +45,13 @@ func (p *BasePool) GetConnection(dataNodeShardId uint64) (Connection, error) {
 	p.poolSync.Lock()
 	defer p.poolSync.Unlock()
 	if pool, ok := p.pool[dataNodeShardId]; ok {
+		// If txn is true then we need to make sure that this connection is
+		// transactional.
+		if txn {
+			if err := pool.Begin(); err != nil {
+				return nil, err
+			}
+		}
 		return pool, nil
 	}
 	var conn Connection
@@ -50,7 +62,9 @@ func (p *BasePool) GetConnection(dataNodeShardId uint64) (Connection, error) {
 	}
 
 	p.pool[dataNodeShardId] = conn
-	if p.inTransaction {
+	// If the current pool is in a transaction, or if we are executing this statement
+	// transactionally then we need to send begin.
+	if p.inTransaction || txn {
 		if err := conn.Begin(); err != nil {
 			return nil, err
 		}
