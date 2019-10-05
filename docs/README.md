@@ -11,9 +11,7 @@ noahdb is a distributed multi-tenant new-sql database.
 - Documentation
     - Coordinators
     - Data Nodes
-        - Workers
-        - Full-Replicas
-        - Analytics
+    - Analytics Nodes
     - Shards
     - Tenants
 - Query Interface
