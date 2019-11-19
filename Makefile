@@ -1,4 +1,4 @@
-a.PHONY: default strings protos embedded test coverage generated docker
+.PHONY: default strings protos embedded test coverage generated docker
 
 PKG_DIRECTORY := pkg
 CORE_DIRECTORY := pkg/core

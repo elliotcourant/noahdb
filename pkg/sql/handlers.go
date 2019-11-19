@@ -77,8 +77,8 @@ func getStatementHandler(tree ast.Stmt) (interface{}, error) {
 	// case ast.DeallocateStmt:
 	// case ast.DeclareCursorStmt:
 	// case ast.DefineStmt:
-	// case ast.DeleteStmt:
-	// 	return CreateDeleteStatement(stmt), nil
+	case ast.DeleteStmt:
+		return newDeleteStatementPlan(stmt), nil
 	// case nodes.DiscardStmt:
 	// case nodes.DoStmt:
 	// case nodes.DropOwnedStmt:
