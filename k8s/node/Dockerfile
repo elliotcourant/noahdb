@@ -1,4 +1,4 @@
-FROM ubuntu:18.04 AS builder
+FROM ubuntu:19.04 AS builder
 
 RUN apt-get update
 RUN apt-get --assume-yes install \
@@ -17,7 +17,7 @@ COPY ./ /go/src/github.com/elliotcourant/noahdb
 WORKDIR /go/src/github.com/elliotcourant/noahdb
 RUN go build -mod=vendor -o bin/noahdb
 
-FROM ubuntu:18.04 AS final
+FROM ubuntu:19.04 AS final
 RUN apt-get update
 RUN apt-get --assume-yes install \
     libc6

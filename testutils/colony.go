@@ -42,7 +42,7 @@ func NewDataNode(t *testing.T) (TestDataNode, func(), error) {
 
 	testNameCleaned := GetCleanTestName(t)
 
-	imageName := "docker.io/library/postgres:11"
+	imageName := "docker.io/library/postgres:12"
 
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
