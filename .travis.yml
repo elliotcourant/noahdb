@@ -31,9 +31,6 @@ jobs:
         - docker
         - postgresql
       before_script:
-#        - docker run --publish 5432:5434 --env POSTGRES_PASSWORD=12345 -d postgres:10
-#        - sudo service postgresql restart
-#        - sleep 10
         - psql -c 'create database travis_ci_test;' -U postgres
         - go get -v -d google.golang.org/grpc
         - go get -v -d -t github.com/golang/protobuf/...
@@ -44,31 +41,30 @@ jobs:
         - go get -u github.com/golang/protobuf/protoc-gen-go
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
-        - docker ps
         - go mod vendor
         - make generated
       script:
         - make coverage
       after_success:
         - bash <(curl -s https://codecov.io/bash)
-#    - stage: Build & Publish Docker Image
-#      if: branch = master
-#      services:
-#        - docker
-#      before_script:
-#        - go get -v -d google.golang.org/grpc
-#        - go get -v -d -t github.com/golang/protobuf/...
-#        - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
-#        - mkdir -p "$HOME"/protoc
-#        - unzip /tmp/protoc.zip -d "$HOME"/protoc
-#        - mkdir -p "$HOME"/src && ln -s "$HOME"/protoc "$HOME"/src/protobuf
-#        - go get -u github.com/golang/protobuf/protoc-gen-go
-#        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-#        - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
-#        - dep ensure
-#        - make generated
-#      script:
-#        - make docker
-#        - echo $DOCKER_PASSWORD | docker login -u=$DOCKER_USERNAME --password-stdin
-#        - docker tag noahdb/node:local noahdb/node:local
-#        - docker push noahdb/node:local
+    - stage: Build & Publish Docker Image
+      if: branch = master
+      services:
+        - docker
+      before_script:
+        - go get -v -d google.golang.org/grpc
+        - go get -v -d -t github.com/golang/protobuf/...
+        - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
+        - mkdir -p "$HOME"/protoc
+        - unzip /tmp/protoc.zip -d "$HOME"/protoc
+        - mkdir -p "$HOME"/src && ln -s "$HOME"/protoc "$HOME"/src/protobuf
+        - go get -u github.com/golang/protobuf/protoc-gen-go
+        - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+        - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
+        - go mod vendor
+        - make generated
+      script:
+        - make docker
+        - echo $GITHUB_DOCKER_PASSWORD | docker login docker.pkg.github.com -u=$GITHUB_DOCKER_USERNAME --password-stdin
+        - docker tag noahdb:latest docker.pkg.github.com/elliotcourant/noahdb/noahdb:latest
+        - docker push docker.pkg.github.com/elliotcourant/noahdb/noahdb:latest

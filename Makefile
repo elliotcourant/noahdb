@@ -13,7 +13,7 @@ postgres:
 	docker build -t noahdb/postgres:development ./k8s/postgres
 
 docker:
-	docker build -t noahdb/node:$(DOCKER_TAG) -f ./k8s/node/Dockerfile .
+	docker build -t noahdb:latest -f ./k8s/node/Dockerfile .
 
 kube_down:
 	kubectl delete -f ./k8s/node/noahdb.yaml --wait --ignore-not-found=true
