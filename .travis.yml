@@ -64,7 +64,10 @@ jobs:
         - go mod vendor
         - make generated
       script:
+        - make postgres
         - make docker
         - echo $GITHUB_DOCKER_PASSWORD | docker login docker.pkg.github.com -u=$GITHUB_DOCKER_USERNAME --password-stdin
+        - docker tag noahdb-postgres:10 docker.pkg.github.com/elliotcourant/noahdb/postgres:10
         - docker tag noahdb:latest docker.pkg.github.com/elliotcourant/noahdb/noahdb:latest
+        - docker push docker.pkg.github.com/elliotcourant/noahdb/postgres:10
         - docker push docker.pkg.github.com/elliotcourant/noahdb/noahdb:latest

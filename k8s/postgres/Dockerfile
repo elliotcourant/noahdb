@@ -1,4 +1,4 @@
-FROM ubuntu:16.04 as postgres-builder
+FROM ubuntu:16.04 as noahdb-postgres
 RUN apt-get update
 RUN apt-get --assume-yes install \
     libreadline6 \

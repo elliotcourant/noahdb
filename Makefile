@@ -10,7 +10,7 @@ EXECUTABLE_NAME = noah
 DOCKER_TAG = development
 
 postgres:
-	docker build -t noahdb/postgres:development ./k8s/postgres
+	docker build -t noahdb-postgres:latest ./k8s/postgres
 
 docker:
 	docker build -t noahdb:latest -f ./k8s/node/Dockerfile .

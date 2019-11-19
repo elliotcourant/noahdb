@@ -7,7 +7,7 @@ RUN apt-get --assume-yes install \
     gcc
 
 RUN curl -O https://storage.googleapis.com/golang/go1.12.7.linux-amd64.tar.gz
-RUN tar -xvf go1.12.7.linux-amd64.tar.gz
+RUN tar -xf go1.12.7.linux-amd64.tar.gz
 RUN mv go /usr/local
 ENV PATH=$PATH:/usr/local/go/bin
 ENV GO111MODULE=on
@@ -25,7 +25,7 @@ RUN mkdir /node
 WORKDIR /node
 RUN mkdir -p /data/db
 
-COPY --from=noahdb/postgres:local /postbuild /node
+COPY --from=noahdb-postgres:latest /postbuild /node
 ENV LD_LIBRARY_PATH=/node/lib
 ENV PGPASSWORD=""
 ENV PGPORT=5432
