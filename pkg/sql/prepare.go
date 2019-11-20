@@ -2,7 +2,7 @@ package sql
 
 import (
 	"fmt"
-	"github.com/ahmetb/go-linq"
+	"github.com/ahmetb/go-linq/v3"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/elliotcourant/noahdb/pkg/pgerror"

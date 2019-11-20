@@ -35,6 +35,11 @@ type sessionContext interface {
 	StatementBuffer() stmtbuf.StatementBuffer
 }
 
+type Session interface {
+	Colony() core.Accessors
+	Log() timber.Logger
+}
+
 type session struct {
 	sessionContext
 

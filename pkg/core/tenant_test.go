@@ -1,7 +1,7 @@
 package core_test
 
 import (
-	"github.com/ahmetb/go-linq"
+	"github.com/ahmetb/go-linq/v3"
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/testutils"
 	"github.com/stretchr/testify/assert"

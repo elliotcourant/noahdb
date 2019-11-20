@@ -25,8 +25,7 @@ type ColonyConfig struct {
 	AutoJoin              bool
 }
 
-// Colony is a wrapper for all of the core data that noahdb needs to operate.
-type Colony interface {
+type Accessors interface {
 	Shards() ShardContext
 	Tenants() TenantContext
 	DataNodes() DataNodeContext
@@ -37,15 +36,13 @@ type Colony interface {
 	Users() UserContext
 	Pool() PoolContext
 	Sequences() SequenceContext
+}
+
+// Colony is a wrapper for all of the core data that noahdb needs to operate.
+type Colony interface {
+	Accessors
+
 	Query(string) (*frunk.QueryResponse, error)
-	// Shards()
-	// Nodes()
-	// Tenants()
-	// Network()
-	// Settings()
-	// Pool()
-	// Schema()
-	// Sequences()
 
 	CoordinatorID() uint64
 	IsLeader() bool

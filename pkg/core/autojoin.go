@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmetb/go-linq"
+	"github.com/ahmetb/go-linq/v3"
 	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
 	appsV1 "k8s.io/api/apps/v1"

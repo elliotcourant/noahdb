@@ -3,6 +3,7 @@ syntax = "proto3";
 package core;
 
 message DataNode {
+    // PrimaryKey
     uint64 DataNodeID = 1;
     string Address = 2;
     int32 Port = 3;

@@ -55,8 +55,8 @@ func (s *session) stageQueryToResult(
 			}
 		}
 
-		if normalQueryPlanner, ok := planner.(NormalQueryPlanner); ok {
-			if plan, ok, err = normalQueryPlanner.getNormalQueryPlan(s); err != nil {
+		if normalQueryPlanner, ok := planner.(QueryPlanner); ok {
+			if plan, ok, err = normalQueryPlanner.GetQueryPlan(s); err != nil {
 				return InitialPlan{}, false, err
 			} else if ok {
 				return plan, ok, nil

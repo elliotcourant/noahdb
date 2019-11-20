@@ -2,7 +2,7 @@ package sql
 
 import (
 	"fmt"
-	"github.com/ahmetb/go-linq"
+	"github.com/ahmetb/go-linq/v3"
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/core"
 )
@@ -17,7 +17,7 @@ func newInsertStatementPlan(tree ast.InsertStmt) *insertStmtPlanner {
 	}
 }
 
-func (stmt *insertStmtPlanner) getNormalQueryPlan(s *session) (InitialPlan, bool, error) {
+func (stmt *insertStmtPlanner) GetQueryPlan(s *session) (InitialPlan, bool, error) {
 	tableName := *stmt.tree.Relation.Relname
 	tables, err := s.Colony().Tables().GetTables(tableName)
 	if err != nil {

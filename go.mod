@@ -5,7 +5,7 @@ go 1.12
 require (
 	cloud.google.com/go v0.39.0 // indirect
 	github.com/Microsoft/go-winio v0.4.12 // indirect
-	github.com/ahmetb/go-linq v3.0.1-0.20190607004138-9bb035d35ab0+incompatible
+	github.com/ahmetb/go-linq/v3 v3.1.0
 	github.com/c2fo/testify v0.0.0-20150827203832-fba96363964a // indirect
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.2-0.20190505045354-5843f9b6a583
