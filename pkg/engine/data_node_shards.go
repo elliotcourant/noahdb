@@ -18,6 +18,7 @@ type (
 		Position        DataNodeShardPosition
 	}
 
+	// DataNodeShardContext provides an accessor interface for data node shard models.
 	DataNodeShardContext interface {
 		// NewDataNodeShard will create a new data node/shard pair to keep track of replication flow and
 		// what shards are located on which data nodes.
