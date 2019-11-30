@@ -14,9 +14,9 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/elliotcourant/arkdb v0.0.0-20190815024416-90a1d44487d5 // indirect
-	github.com/elliotcourant/buffers v0.0.0-20191120003902-aa0973d81010
-	github.com/elliotcourant/meles v0.0.0-20191127020734-313992783418
-	github.com/elliotcourant/mellivora v0.0.0-20191130174134-266db7456b01
+	github.com/elliotcourant/buffers v1.0.0
+	github.com/elliotcourant/meles v0.0.0-20191130204911-d97ab9401c40
+	github.com/elliotcourant/mellivora v0.0.0-20191130204955-6219df40a32d
 	github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901
 	github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb
 	github.com/elliotcourant/timber v0.0.0-20190831033938-85b1f62dde82
