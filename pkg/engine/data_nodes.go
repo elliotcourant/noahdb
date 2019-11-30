@@ -1,7 +1,14 @@
 package engine
 
 import (
+	"errors"
 	"github.com/elliotcourant/mellivora"
+)
+
+var (
+	// ErrDataNodeNotFound is returned when the user requests a single
+	// specific data node by Id but one does not exist.
+	ErrDataNodeNotFound = errors.New("data node does not exist")
 )
 
 var (
@@ -18,9 +25,11 @@ type (
 		Password   string
 	}
 
+	// DataNodeContext provides an accessor interface for data node models.
 	DataNodeContext interface {
 		NewDataNode(address string, port int, user, password string) (DataNode, error)
 		GetDataNode(dataNodeId uint64) (DataNode, error)
+		GetDataNodes() ([]DataNode, error)
 	}
 
 	dataNodeContextBase struct {
@@ -54,7 +63,8 @@ func (d *dataNodeContextBase) NewDataNode(address string, port int, user, passwo
 }
 
 // GetDataNode will return a single data node struct that has the matching
-// data node Id.
+// data node Id. If no data node is found with the Id specified then
+// ErrDataNodeNotFound will be returned.
 func (d *dataNodeContextBase) GetDataNode(dataNodeId uint64) (DataNode, error) {
 	dataNode := DataNode{}
 	err := d.t.txn.
@@ -63,5 +73,18 @@ func (d *dataNodeContextBase) GetDataNode(dataNodeId uint64) (DataNode, error) {
 			"DataNodeId": dataNodeId,
 		}).
 		Select(&dataNode)
+	if dataNode.DataNodeId == 0 && err == nil {
+		return dataNode, ErrDataNodeNotFound
+	}
+
 	return dataNode, err
+}
+
+// GetDataNodes will return all of the data nodes in the entire cluster.
+func (d *dataNodeContextBase) GetDataNodes() ([]DataNode, error) {
+	dataNodes := make([]DataNode, 0)
+	err := d.t.txn.
+		Model(dataNodes).
+		Select(&dataNodes)
+	return dataNodes, err
 }
