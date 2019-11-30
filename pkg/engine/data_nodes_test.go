@@ -11,14 +11,54 @@ func TestDataNodeContextBase_NewDataNode(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		dataNode, err := txn.
 			DataNodes().
 			NewDataNode("postgres", 5432, "user", "password")
 		assert.NoError(t, err)
 		assert.NotZero(t, dataNode)
+	})
+
+	t.Run("unique constraint", func(t *testing.T) {
+		cluster, cleanup := NewTestCoreCluster(t, 1)
+		defer cleanup()
+
+		txn := cluster.Begin(t)
+
+		_, err := txn.
+			DataNodes().
+			NewDataNode("postgres", 5432, "user", "password")
+		assert.NoError(t, err)
+
+		_, err = txn.
+			DataNodes().
+			NewDataNode("postgres", 5432, "user", "password")
+		assert.Error(t, err)
+	})
+
+	t.Run("distributed unique constraint", func(t *testing.T) {
+		cluster, cleanup := NewTestCoreCluster(t, 3)
+		defer cleanup()
+
+		txn1 := cluster.BeginOn(t, 0)
+		txn2 := cluster.BeginOn(t, 1)
+
+		_, err := txn1.
+			DataNodes().
+			NewDataNode("postgres", 5432, "user", "password")
+		assert.NoError(t, err)
+
+		_, err = txn2.
+			DataNodes().
+			NewDataNode("postgres", 5432, "user", "password")
+		assert.NoError(t, err)
+
+		err = txn1.Commit()
+		assert.NoError(t, err)
+
+		err = txn2.Commit()
+		assert.Error(t, err)
 	})
 }
 
@@ -27,8 +67,7 @@ func TestDataNodeContextBase_GetDataNode(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		dataNode, err := txn.
 			DataNodes().
@@ -46,8 +85,7 @@ func TestDataNodeContextBase_GetDataNode(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		retrievedDataNode, err := txn.DataNodes().GetDataNode(1)
 		assert.Equal(t, engine.ErrDataNodeNotFound, err)
@@ -62,8 +100,7 @@ func TestDataNodeContextBase_GetDataNodes(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		for i := 0; i < numberOfDataNodes; i++ {
 			dataNode, err := txn.
@@ -85,8 +122,7 @@ func TestDataNodeContextBase_GetDataNodesForShard(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		dataNode1, err := txn.
 			DataNodes().
@@ -123,8 +159,7 @@ func TestDataNodeContextBase_GetDataNodesForShard(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		dataNode1, err := txn.
 			DataNodes().

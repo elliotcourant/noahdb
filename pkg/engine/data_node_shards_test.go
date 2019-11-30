@@ -11,8 +11,7 @@ func TestDataNodeContextBase_NewDataNodeShard(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		dataNode, err := txn.
 			DataNodeShards().
@@ -25,8 +24,7 @@ func TestDataNodeContextBase_NewDataNodeShard(t *testing.T) {
 		cluster, cleanup := NewTestCoreCluster(t, 1)
 		defer cleanup()
 
-		txn, err := cluster[0].Begin()
-		assert.NoError(t, err)
+		txn := cluster.Begin(t)
 
 		dataNode, err := txn.
 			DataNodeShards().

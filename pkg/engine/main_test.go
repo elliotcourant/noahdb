@@ -7,6 +7,7 @@ import (
 	"github.com/elliotcourant/timber"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"sync"
@@ -19,6 +20,19 @@ func TestMain(m *testing.M) {
 }
 
 type TestCluster []engine.Core
+
+func (tc TestCluster) Begin(t *testing.T) engine.Transaction {
+	return tc.BeginOn(t, rand.Int())
+}
+
+func (tc TestCluster) BeginOn(t *testing.T, node int) engine.Transaction {
+	txn, err := tc[node%len(tc)].Begin()
+	if !assert.NoError(t, err) {
+		panic(err)
+	}
+
+	return txn
+}
 
 func NewTestCoreCluster(t *testing.T, numberOfPeers int) (TestCluster, func()) {
 	peers := make([]string, numberOfPeers)
