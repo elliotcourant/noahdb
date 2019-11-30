@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
 	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/engine"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/sql"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
@@ -25,6 +26,12 @@ type TransportWrapper interface {
 type ServerConfig interface {
 	Address() string
 	Port() int
+}
+
+func NewServerEx(core engine.Core, transport TransportWrapper) error {
+	defer transport.Close()
+
+	return nil
 }
 
 func NewServer(colony core.Colony, transport TransportWrapper) error {
