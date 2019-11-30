@@ -27,9 +27,20 @@ type (
 
 	// DataNodeContext provides an accessor interface for data node models.
 	DataNodeContext interface {
+		// NewDataNode will create a data node object to allow shards to be placed on this node.
+		// An error can be returned if there is a unique constraint violation.
 		NewDataNode(address string, port int, user, password string) (DataNode, error)
+
+		// GetDataNode will return a single data node struct that has the matching
+		// data node Id. If no data node is found with the Id specified then
+		// ErrDataNodeNotFound will be returned.
 		GetDataNode(dataNodeId uint64) (DataNode, error)
+
+		// GetDataNodes will return all of the data nodes in the entire cluster.
 		GetDataNodes() ([]DataNode, error)
+
+		// GetDataNodesForShard will return all of the data nodes that host a given shardId.
+		GetDataNodesForShard(shardId uint64, positions ...DataNodeShardPosition) ([]DataNode, error)
 	}
 
 	dataNodeContextBase struct {
@@ -85,6 +96,43 @@ func (d *dataNodeContextBase) GetDataNodes() ([]DataNode, error) {
 	dataNodes := make([]DataNode, 0)
 	err := d.t.txn.
 		Model(dataNodes).
+		Select(&dataNodes)
+	return dataNodes, err
+}
+
+// GetDataNodesForShard will return all of the data nodes that host a given shardId.
+func (d *dataNodeContextBase) GetDataNodesForShard(shardId uint64, positions ...DataNodeShardPosition) ([]DataNode, error) {
+	dataNodeShards := make([]DataNodeShard, 0)
+
+	dataNodeShardQuery := d.t.txn.
+		Model(dataNodeShards).
+		Where(mellivora.Ex{
+			"ShardId": shardId,
+		})
+
+	// If we do want to filter by a position then add the filter, otherwise don't
+	if len(positions) > 0 {
+		dataNodeShardQuery = dataNodeShardQuery.AndWhere(mellivora.Ex{
+			"Position": positions,
+		})
+	}
+
+	if err := dataNodeShardQuery.
+		Select(&dataNodeShards); err != nil {
+		return nil, err
+	}
+
+	dataNodeIds := make([]uint64, 0)
+	for _, dataNodeShard := range dataNodeShards {
+		dataNodeIds = append(dataNodeIds, dataNodeShard.DataNodeId)
+	}
+
+	dataNodes := make([]DataNode, 0)
+	err := d.t.txn.
+		Model(dataNodes).
+		Where(mellivora.Ex{
+			"DataNodeId": dataNodeIds,
+		}).
 		Select(&dataNodes)
 	return dataNodes, err
 }

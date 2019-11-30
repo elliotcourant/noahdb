@@ -79,3 +79,79 @@ func TestDataNodeContextBase_GetDataNodes(t *testing.T) {
 		assert.Len(t, dataNodes, numberOfDataNodes)
 	})
 }
+
+func TestDataNodeContextBase_GetDataNodesForShard(t *testing.T) {
+	t.Run("simple", func(t *testing.T) {
+		cluster, cleanup := NewTestCoreCluster(t, 1)
+		defer cleanup()
+
+		txn, err := cluster[0].Begin()
+		assert.NoError(t, err)
+
+		dataNode1, err := txn.
+			DataNodes().
+			NewDataNode("127.0.0.1", 5432, "postgres", "password")
+		assert.NoError(t, err)
+
+		dataNode2, err := txn.
+			DataNodes().
+			NewDataNode("127.0.0.1", 5433, "postgres", "password")
+		assert.NoError(t, err)
+
+		_, err = txn.
+			DataNodeShards().
+			NewDataNodeShard(dataNode1.DataNodeId, 1, engine.DataNodeShardPosition_Leader)
+		assert.NoError(t, err)
+
+		_, err = txn.
+			DataNodeShards().
+			NewDataNodeShard(dataNode2.DataNodeId, 2, engine.DataNodeShardPosition_Leader)
+		assert.NoError(t, err)
+
+		dataNodes1, err := txn.DataNodes().GetDataNodesForShard(1)
+		assert.NoError(t, err)
+		assert.Equal(t, []engine.DataNode{dataNode1}, dataNodes1)
+
+		dataNodes2, err := txn.DataNodes().GetDataNodesForShard(2)
+		assert.NoError(t, err)
+		assert.Equal(t, []engine.DataNode{dataNode2}, dataNodes2)
+	})
+
+	// Make sure that we can pass a position to the data node shard getter so we can get data nodes
+	// for targeted queries.
+	t.Run("filter by position", func(t *testing.T) {
+		cluster, cleanup := NewTestCoreCluster(t, 1)
+		defer cleanup()
+
+		txn, err := cluster[0].Begin()
+		assert.NoError(t, err)
+
+		dataNode1, err := txn.
+			DataNodes().
+			NewDataNode("127.0.0.1", 5432, "postgres", "password")
+		assert.NoError(t, err)
+
+		dataNode2, err := txn.
+			DataNodes().
+			NewDataNode("127.0.0.1", 5433, "postgres", "password")
+		assert.NoError(t, err)
+
+		_, err = txn.
+			DataNodeShards().
+			NewDataNodeShard(dataNode1.DataNodeId, 1, engine.DataNodeShardPosition_Leader)
+		assert.NoError(t, err)
+
+		_, err = txn.
+			DataNodeShards().
+			NewDataNodeShard(dataNode2.DataNodeId, 1, engine.DataNodeShardPosition_Follower)
+		assert.NoError(t, err)
+
+		dataNodes1, err := txn.DataNodes().GetDataNodesForShard(1, engine.DataNodeShardPosition_Leader)
+		assert.NoError(t, err)
+		assert.Equal(t, []engine.DataNode{dataNode1}, dataNodes1)
+
+		dataNodes2, err := txn.DataNodes().GetDataNodesForShard(1, engine.DataNodeShardPosition_Follower)
+		assert.NoError(t, err)
+		assert.Equal(t, []engine.DataNode{dataNode2}, dataNodes2)
+	})
+}

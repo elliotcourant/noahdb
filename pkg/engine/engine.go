@@ -24,6 +24,7 @@ type (
 		Rollback() error
 
 		DataNodes() DataNodeContext
+		DataNodeShards() DataNodeShardContext
 	}
 
 	coreBase struct {
