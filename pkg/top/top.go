@@ -7,6 +7,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
+	"github.com/elliotcourant/noahdb/pkg/transport"
 	"github.com/elliotcourant/noahdb/pkg/util"
 	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
@@ -41,7 +42,7 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		panic(err)
 	}
 
-	trans := core.NewTransportWrapper(tn)
+	trans := transport.NewTransportWrapper(tn)
 
 	colony := core.NewColony()
 

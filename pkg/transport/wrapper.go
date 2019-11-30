@@ -1,4 +1,4 @@
-package core
+package transport
 
 import (
 	"github.com/elliotcourant/timber"

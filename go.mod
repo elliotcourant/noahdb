@@ -13,12 +13,14 @@ require (
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/elliotcourant/buffers v0.0.0-20190811025309-24fdba97ca9b
-	github.com/elliotcourant/meles v0.0.0-20190901001842-207d3e16ca61
+	github.com/elliotcourant/arkdb v0.0.0-20190815024416-90a1d44487d5 // indirect
+	github.com/elliotcourant/buffers v0.0.0-20191120003902-aa0973d81010
+	github.com/elliotcourant/meles v0.0.0-20191127020734-313992783418
+	github.com/elliotcourant/mellivora v0.0.0-20191130174134-266db7456b01
 	github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901
 	github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb
 	github.com/elliotcourant/timber v0.0.0-20190831033938-85b1f62dde82
-	github.com/gogo/protobuf v1.2.1
+	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.3.1
 	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect

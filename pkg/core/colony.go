@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/drivers/rpcer"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
+	"github.com/elliotcourant/noahdb/pkg/transport"
 	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
 	"net"
@@ -16,7 +17,7 @@ import (
 type ColonyConfig struct {
 	DataDirectory         string
 	JoinAddresses         []raft.Server
-	Transport             TransportWrapper
+	Transport             transport.TransportWrapper
 	LocalPostgresAddress  string
 	LocalPostgresPort     int32
 	LocalPostgresUser     string

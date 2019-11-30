@@ -3,10 +3,8 @@ package sql
 import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
 	"github.com/elliotcourant/noahdb/pkg/core"
-	"github.com/elliotcourant/noahdb/pkg/drivers/rqliter"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
-	"github.com/elliotcourant/noahdb/pkg/types"
 	"time"
 )
 
@@ -188,96 +186,6 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 			if err != nil {
 				return err
 			}
-		}
-	case PlanTarget_INTERNAL:
-		for i, task := range plan.Tasks {
-			return func() error {
-				s.log.Verbosef("executing task %d on internal data store", i)
-				response, err := s.Colony().Query(task.Query)
-				rows := rqliter.NewRqlRows(response)
-				if err != nil {
-					s.log.Errorf("could not execute internal query: %s", err.Error())
-					return err
-				}
-				result := make([][]interface{}, 0)
-				columns := rows.Columns()
-				for rows.Next() {
-					row := make([]interface{}, len(columns))
-					for i := 0; i < len(columns); i++ {
-						row[i] = new(interface{})
-					}
-					if err := rows.Scan(row...); err != nil {
-						s.log.Errorf("could not scan row: %s", err.Error())
-						return err
-					}
-					result = append(result, row)
-				}
-				if err := rows.Err(); err != nil {
-					s.log.Errorf("could not query internal store: %s", err.Error())
-					return err
-				}
-
-				rowDescription := pgproto.RowDescription{
-					Fields: make([]pgproto.FieldDescription, len(columns)),
-				}
-
-				typs := make([]interface{}, len(columns))
-
-				for i := 0; i < len(columns); i++ {
-					func() {
-						field := pgproto.FieldDescription{
-							Name:   columns[i],
-							Format: int16(pgwirebase.FormatText),
-						}
-						defer func() {
-							rowDescription.Fields[i] = field
-						}()
-						if len(result) > 0 {
-							if len(result[0])-1 >= i {
-								// This is some weird pointer magic to determine the type of the cell
-								// basically without the *interface{} cast T would be 3 types at once?
-								// which shouldn't be possible to my knowledge but it would show
-								// as interface{} | *interface{} | int64 with a select 1 query.
-								// So none of the types in the switch case would evaluate properly.
-								// This weird magic fixes that.
-								t := result[0][i].(*interface{})
-								typs[i] = *t
-								switch (*t).(type) {
-								case int64:
-									field.DataTypeOID = uint32(types.Type_int8)
-								}
-							}
-						}
-					}()
-				}
-
-				if err := s.Backend().Send(&rowDescription); err != nil {
-					return err
-				}
-
-				for _, row := range result {
-					dataRow := pgproto.DataRow{
-						Values: make([][]byte, len(columns)),
-					}
-					for x, col := range row {
-						switch typs[x].(type) {
-						case int64:
-							val := types.Int8{}
-							if err := val.Set(col); err != nil {
-								return err
-							}
-							dataRow.Values[x], err = val.EncodeText(nil, nil)
-							if err != nil {
-								return err
-							}
-						}
-					}
-					if err := s.Backend().Send(&dataRow); err != nil {
-						return err
-					}
-				}
-				return nil
-			}()
 		}
 	}
 

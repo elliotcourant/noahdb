@@ -11,6 +11,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
+	"github.com/elliotcourant/noahdb/pkg/transport"
 	"github.com/elliotcourant/noahdb/pkg/util"
 	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
@@ -215,7 +216,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 		panic(err)
 	}
 
-	trans := core.NewTransportWrapper(tn)
+	trans := transport.NewTransportWrapper(tn)
 
 	colony := core.NewColony()
 

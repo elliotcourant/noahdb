@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/elliotcourant/noahdb/pkg/core/static"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
+	"github.com/elliotcourant/noahdb/pkg/transport"
 	"github.com/elliotcourant/timber"
 	"net"
 	"sync"
@@ -11,7 +12,7 @@ import (
 type base struct {
 	db *frunk.Store
 
-	trans    TransportWrapper
+	trans    transport.TransportWrapper
 	poolSync sync.RWMutex
 	pool     map[uint64]*poolItem
 

@@ -5,6 +5,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/frunk"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
+	"github.com/elliotcourant/noahdb/pkg/transport"
 	"github.com/readystock/golog"
 	"io"
 	"net"
@@ -15,7 +16,7 @@ type rpcWire struct {
 	backend *pgproto.RpcBackend
 }
 
-func NewRpcServer(colony core.Colony, transport core.TransportWrapper) error {
+func NewRpcServer(colony core.Colony, transport transport.TransportWrapper) error {
 	ln := transport.RpcTransport()
 
 	for {
