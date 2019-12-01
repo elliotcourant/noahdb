@@ -32,6 +32,19 @@ type (
 		IsSerial        bool
 		ForeignColumnId uint64
 	}
+
+	TableContext interface {
+		// NewTable will create a new table and the associated columns. If a table with the same
+		// name already exists in the specified schema then an error will be returned.
+		NewTable(table Table, columns []Column) (Table, []Column, error)
+
+		// GetTableByName will return a table with the specified schema and name. If the schema is
+		// not provided then it will assume "public". The name should be provided in parts. If you
+		// only have the name of the table and not the schema then it will use that and sort by the
+		// schema rank -> TODO (elliotcourant) add schema rank.
+		// If you include the schema it should be called as GetTableByName("schema", "table").
+		GetTableByName(name ...string) (Table, error)
+	}
 )
 
 const (
