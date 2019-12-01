@@ -86,7 +86,7 @@ protos:
 
 embedded:
 	@echo generating embedded files...
-	@GO111MODULE=off go get -u -a github.com/elliotcourant/statik@master
+	@GO111MODULE=off go get -u -a github.com/elliotcourant/statik
 	@statik -src=$(CORE_DIRECTORY)/static/files -dest $(CORE_DIRECTORY) -f -p static
 
 generated: strings protos embedded
