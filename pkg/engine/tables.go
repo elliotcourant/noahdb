@@ -1,5 +1,9 @@
 package engine
 
+import (
+	"github.com/elliotcourant/noahdb/pkg/types"
+)
+
 type (
 	// TableType is used to indicate how NoahDb should handle queries directed to the table.
 	TableType int
@@ -17,9 +21,9 @@ type (
 	// Column represents a PostgreSQL column, this model contains all of the data needed for NoahDb
 	// to keep track of how data needs to be queried and returned.
 	Column struct {
-		ColumnId uint64 `m:"pk"`
-		TableId  uint64 `m:"uq:uq_table_id_column_name"`
-		// TODO (elliotcourant) Add Type field.
+		ColumnId        uint64 `m:"pk"`
+		TableId         uint64 `m:"uq:uq_table_id_column_name"`
+		Type            types.Type
 		Index           int
 		Name            string `m:"uq:uq_table_id_column_name"`
 		IsPrimaryKey    bool
