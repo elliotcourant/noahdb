@@ -34,6 +34,36 @@ func (tc TestCluster) BeginOn(t *testing.T, node int) engine.Transaction {
 	return txn
 }
 
+func (tc TestCluster) SeedDataNodes(t *testing.T, numberOfDataNodes int) {
+	txn := tc.Begin(t)
+	for i := 0; i < numberOfDataNodes; i++ {
+		dataNode, err := txn.DataNodes().
+			NewDataNode("127.0.0.1", 5432+i, "postgres", "password")
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+		assert.NotZero(t, dataNode.DataNodeId)
+	}
+	if err := txn.Commit(); !assert.NoError(t, err) {
+		panic(err)
+	}
+}
+
+func (tc TestCluster) SeedShards(t *testing.T, numberOfShards int) {
+	txn := tc.Begin(t)
+	for i := 0; i < numberOfShards; i++ {
+		shard, dataNodeShards, err := txn.Shards().NewShard()
+		if !assert.NoError(t, err) {
+			panic(err)
+		}
+		assert.NotEmpty(t, dataNodeShards)
+		assert.NotZero(t, shard.ShardId)
+	}
+	if err := txn.Commit(); !assert.NoError(t, err) {
+		panic(err)
+	}
+}
+
 func NewTestCoreCluster(t *testing.T, numberOfPeers int) (TestCluster, func()) {
 	peers := make([]string, numberOfPeers)
 	listeners := make([]net.Listener, numberOfPeers)

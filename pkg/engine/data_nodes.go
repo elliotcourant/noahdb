@@ -41,6 +41,10 @@ type (
 
 		// GetDataNodesForShard will return all of the data nodes that host a given shardId.
 		GetDataNodesForShard(shardId uint64, positions ...DataNodeShardPosition) ([]DataNode, error)
+
+		// GetDataNodeShardDistribution will return a map of data node Id's with counts of how many
+		// shards are located on each data node.
+		GetDataNodeShardDistribution() (map[uint64]int, error)
 	}
 
 	dataNodeContextBase struct {
@@ -135,4 +139,30 @@ func (d *dataNodeContextBase) GetDataNodesForShard(shardId uint64, positions ...
 		}).
 		Select(&dataNodes)
 	return dataNodes, err
+}
+
+// GetDataNodeShardDistribution will return a map of data node Id's with counts of how many
+// shards are located on each data node.
+func (d *dataNodeContextBase) GetDataNodeShardDistribution() (map[uint64]int, error) {
+	dataNodes, err := d.GetDataNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	distribution := map[uint64]int{}
+
+	for _, dataNode := range dataNodes {
+		distribution[dataNode.DataNodeId] = 0
+	}
+
+	dataNodeShards, err := d.t.DataNodeShards().GetDataNodeShards()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dataNodeShard := range dataNodeShards {
+		distribution[dataNodeShard.DataNodeId] = distribution[dataNodeShard.DataNodeId] + 1
+	}
+
+	return distribution, nil
 }

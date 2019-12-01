@@ -20,6 +20,9 @@ type (
 
 	// DataNodeShardContext provides an accessor interface for data node shard models.
 	DataNodeShardContext interface {
+		// GetDataNodeShards will return all of the data node/shard pairs in the entire cluster.
+		GetDataNodeShards() ([]DataNodeShard, error)
+
 		// NewDataNodeShard will create a new data node/shard pair to keep track of replication flow and
 		// what shards are located on which data nodes.
 		NewDataNodeShard(dataNodeId, shardId uint64, position DataNodeShardPosition) (DataNodeShard, error)
@@ -34,7 +37,7 @@ const (
 	// DataNodeShardPosition_Unknown indicates that the value for the position
 	// is it's default. We want to have this to make sure we don't accidentally
 	// assume a data node shard's position incorrectly. Thus it's value is 0.
-	DataNodeShardPosition_Unknown DataNodeShardPosition = iota - 1
+	DataNodeShardPosition_Unknown DataNodeShardPosition = iota
 
 	// DataNodeShardPosition_Leader indicates that the current data node/shard
 	// pair is the leader for that particular shard. Other shards will receive
@@ -53,6 +56,14 @@ func (t *transactionBase) DataNodeShards() DataNodeShardContext {
 	return &dataNodeContextBase{
 		t: t,
 	}
+}
+
+// GetDataNodeShards will return all of the data node/shard pairs in the entire cluster.
+func (d *dataNodeContextBase) GetDataNodeShards() ([]DataNodeShard, error) {
+	dataNodeShards := make([]DataNodeShard, 0)
+	err := d.t.txn.Model(dataNodeShards).Select(&dataNodeShards)
+
+	return dataNodeShards, err
 }
 
 // NewDataNodeShard will create a new data node/shard pair to keep track of replication flow and

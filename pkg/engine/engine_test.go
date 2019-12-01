@@ -16,11 +16,9 @@ func TestCoreBase_Begin(t *testing.T) {
 func TestCoreBase_Rollback(t *testing.T) {
 	cluster, cleanup := NewTestCoreCluster(t, 1)
 	defer cleanup()
-	txn, err := cluster[0].Begin()
-	assert.NoError(t, err)
-	assert.NotNil(t, txn)
+	txn := cluster.Begin(t)
 
-	_, err = txn.
+	_, err := txn.
 		DataNodes().
 		NewDataNode("test", 1234, "test", "test")
 	assert.NoError(t, err)

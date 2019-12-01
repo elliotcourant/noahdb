@@ -25,6 +25,8 @@ type (
 
 		DataNodes() DataNodeContext
 		DataNodeShards() DataNodeShardContext
+		Tenants() TenantContext
+		Shards() ShardContext
 	}
 
 	coreBase struct {
