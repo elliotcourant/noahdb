@@ -83,6 +83,8 @@ github.com/elliotcourant/buffers v0.0.0-20190811025309-24fdba97ca9b h1:hnBfbE6sW
 github.com/elliotcourant/buffers v0.0.0-20190811025309-24fdba97ca9b/go.mod h1:9+oLElsEQnueTyoq0dyr6RiJwELNE+YtLXh4BNAsnKg=
 github.com/elliotcourant/buffers v0.0.0-20191120003902-aa0973d81010 h1:KuF3wfFvhyWo3MsjFvklRXfx1W+eSmcaaNxGe2lTCFU=
 github.com/elliotcourant/buffers v0.0.0-20191120003902-aa0973d81010/go.mod h1:9+oLElsEQnueTyoq0dyr6RiJwELNE+YtLXh4BNAsnKg=
+github.com/elliotcourant/buffers v0.0.0-20191201042100-3d9daf6f332b h1:35ZXu2t4bU1snDlC1BwLAZ7f425Pxz+abdRd9hhzflU=
+github.com/elliotcourant/buffers v0.0.0-20191201042100-3d9daf6f332b/go.mod h1:9+oLElsEQnueTyoq0dyr6RiJwELNE+YtLXh4BNAsnKg=
 github.com/elliotcourant/buffers v1.0.0 h1:+WuUfu55/4zPVjNppACScHtVfH8Dx7la6kyWI/bLhP8=
 github.com/elliotcourant/buffers v1.0.0/go.mod h1:9+oLElsEQnueTyoq0dyr6RiJwELNE+YtLXh4BNAsnKg=
 github.com/elliotcourant/meles v0.0.0-20190821024545-3b5676579d49 h1:doPJDyeOBQXUoWH5r4rGL6K2G+dlm2pvszHYt/IAgQs=
@@ -101,6 +103,8 @@ github.com/elliotcourant/meles v0.0.0-20191127020734-313992783418 h1:qDaay4hdA+H
 github.com/elliotcourant/meles v0.0.0-20191127020734-313992783418/go.mod h1:tUErOQsMA8i8RKaiF3lqvINTrvNygGbVXOjiSRgb5yI=
 github.com/elliotcourant/meles v0.0.0-20191130204911-d97ab9401c40 h1:4fxtfQh0Ack48aHBIhLUWpkuPt6OrJYsQ7ebWV6W8l0=
 github.com/elliotcourant/meles v0.0.0-20191130204911-d97ab9401c40/go.mod h1:KWxoIIP5kWeaNOJtTnPBahstcoRpgiwYx1KeCzoOIwY=
+github.com/elliotcourant/meles v0.1.0 h1:li+sTQ++EflOyOEi+BWAtEtimpdTx+Nwnq5tIy784u0=
+github.com/elliotcourant/meles v0.1.0/go.mod h1:T7xnzoIPQANcBmHi+z0OWiXeQdQrlq7oGq9mk0+k5hQ=
 github.com/elliotcourant/mellivora v0.0.0-20191130173503-e49a72692488 h1:S+h5NTJZzRYGpYzEH/FcXBRBMQq4Z4MIFJ5XbCb7Pc0=
 github.com/elliotcourant/mellivora v0.0.0-20191130173503-e49a72692488/go.mod h1:j5ZuaZ230QBLnjNKOcRwlHEegeUPfFsDIeYVonFtubY=
 github.com/elliotcourant/mellivora v0.0.0-20191130174134-266db7456b01 h1:RQLGkcExWbLRurjBHQ8q9OJMAwVwxVXQ+z1WK5v9/OI=
@@ -117,6 +121,8 @@ github.com/elliotcourant/mellivora v0.0.0-20191130222442-e5c2245d6d4f h1:d8igwlD
 github.com/elliotcourant/mellivora v0.0.0-20191130222442-e5c2245d6d4f/go.mod h1:p3UkLQudQXOd/mU9zB+nyEhrEdGQocn8Gfm6UGnbiq0=
 github.com/elliotcourant/mellivora v0.0.0-20191201004913-296162472b0f h1:ivt1s/njom8xLhP974SOdFh76oxOa60kxx7KUa7W7h0=
 github.com/elliotcourant/mellivora v0.0.0-20191201004913-296162472b0f/go.mod h1:p3UkLQudQXOd/mU9zB+nyEhrEdGQocn8Gfm6UGnbiq0=
+github.com/elliotcourant/mellivora v0.0.0-20191201043331-9f9d3c319e14 h1:mBSoNIKS+21Rbe1rXPhiIGf8XNCV15ld5jHhmN0n/dk=
+github.com/elliotcourant/mellivora v0.0.0-20191201043331-9f9d3c319e14/go.mod h1:eiGOUOsiSx+6Mp2nKIahMHujl6RcM3XlzQH+la3suB0=
 github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901 h1:+71emC9Y4FdcJecd+TNVt5D7kBFKS4Fq6X0n0cYfcoM=
 github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901/go.mod h1:1zKw9g9o4beuv4Hx3RrorrQCBhmchpwit1lTHfBoia8=
 github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb h1:ep89KVVvGjtNxVCt2ECFdSZ1LRIcTXWinpF4BAPdqvc=

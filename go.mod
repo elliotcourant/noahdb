@@ -14,9 +14,9 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/elliotcourant/arkdb v0.0.0-20190815024416-90a1d44487d5 // indirect
-	github.com/elliotcourant/buffers v1.0.0
-	github.com/elliotcourant/meles v0.0.0-20191130204911-d97ab9401c40
-	github.com/elliotcourant/mellivora v0.0.0-20191201004913-296162472b0f
+	github.com/elliotcourant/buffers v0.0.0-20191201042100-3d9daf6f332b
+	github.com/elliotcourant/meles v0.1.0
+	github.com/elliotcourant/mellivora v0.0.0-20191201043331-9f9d3c319e14
 	github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901
 	github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb
 	github.com/elliotcourant/timber v0.0.0-20190831033938-85b1f62dde82
@@ -60,6 +60,7 @@ require (
 	gopkg.in/doug-martin/goqu.v5 v5.0.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
+	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20190602205700-9b8cae951d65
 	k8s.io/apimachinery v0.0.0-20190602125621-c0632ccbde11
 	k8s.io/client-go v0.0.0-20190602130007-e65ca70987a6
