@@ -3,6 +3,7 @@
 *.string.go
 *.pb.go
 *.embedded.go
+*.generated.go
 noahdb
 /vendor
 /.vendor-new

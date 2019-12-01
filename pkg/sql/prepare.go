@@ -119,7 +119,7 @@ func (s *session) getPreparedStatementColumns(
 		switch colt := col.Val.(type) {
 		case ast.TypeCast:
 			typeName, _ := colt.TypeName.Deparse(ast.Context_None)
-			typ, ok, err := s.Colony().Types().GetTypeByName(typeName)
+			typ, ok, err := types.GetTypeByName(typeName)
 			if err != nil {
 				return nil, err
 			}

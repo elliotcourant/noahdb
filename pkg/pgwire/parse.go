@@ -53,7 +53,7 @@ func (wire *wireServer) handleParse(parseMessage *pgproto.Parse) error {
 			if t == 0 {
 				continue
 			}
-			v, ok := wire.Colony().Types().GetTypeByOid(t)
+			v, ok := types.GetTypeByOid(t)
 			if !ok {
 				return fmt.Errorf("unknown oid type: %v", t)
 			}

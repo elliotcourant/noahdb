@@ -67,6 +67,11 @@ strings:
 	@stringer -type SQLValueFunctionOp -output pkg/ast/sql_value_function_op.string.go pkg/ast/sql_value_function_op.go
 	@stringer -type TransactionStmtKind -output pkg/ast/transaction_stmt_kind.string.go pkg/ast/transaction_stmt_kind.go
 
+	@go build  -o ./pkg/types/names/names_gen ./pkg/types/names/names_gen.go && \
+		./pkg/types/names/names_gen > ./pkg/types/type_names.generated.go && \
+		rm -rf ./pkg/types/names/names_gen && \
+		go fmt ./pkg/types
+
 protos:
 	@echo generating protos...
 	@protoc -I=$(CORE_DIRECTORY) --go_out=$(CORE_DIRECTORY) $(CORE_DIRECTORY)/shard.proto

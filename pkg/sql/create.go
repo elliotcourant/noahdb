@@ -210,7 +210,7 @@ func (stmt *createStmtPlanner) handleColumns(s *session) error {
 
 					col.TypeName.Names.Items = []ast.Node{ast.String{Str: typeName}}
 
-					pgType, ok, err := s.Colony().Types().GetTypeByName(typeName)
+					pgType, ok, err := types.GetTypeByName(typeName)
 					if err != nil {
 						return err
 					} else if !ok {
