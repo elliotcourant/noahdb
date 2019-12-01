@@ -20,14 +20,11 @@ require (
 	github.com/elliotcourant/raft-boltdb v0.0.0-20190507000515-a46274546901
 	github.com/elliotcourant/statik v0.1.7-0.20190606011502-cc050f2e24bb
 	github.com/elliotcourant/timber v0.0.0-20190831033938-85b1f62dde82
-	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/golang/protobuf v1.3.1
-	github.com/google/gofuzz v1.0.0 // indirect
+	github.com/golang/protobuf v1.3.2
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gophercloud/gophercloud v0.1.0 // indirect
 	github.com/hashicorp/go-hclog v0.9.2
 	github.com/hashicorp/go-immutable-radix v1.1.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/hashicorp/raft v1.1.1
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jackc/pgx v3.5.1-0.20190806214632-ca9de5125695+incompatible
@@ -50,19 +47,15 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 	golang.org/x/oauth2 v0.0.0-20190523182746-aaccbc9213b0 // indirect
-	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
-	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	golang.org/x/tools v0.0.0-20190929041059-e7abfedfabcf // indirect
 	google.golang.org/appengine v1.6.0 // indirect
 	gopkg.in/doug-martin/goqu.v5 v5.0.0
-	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
-	gopkg.in/yaml.v2 v2.2.2
-	k8s.io/api v0.0.0-20190602205700-9b8cae951d65
-	k8s.io/apimachinery v0.0.0-20190602125621-c0632ccbde11
+	gopkg.in/yaml.v2 v2.2.4
+	k8s.io/api v0.0.0-20191122220107-b5267f2975e0
+	k8s.io/apimachinery v0.0.0-20191121175448-79c2a76c473a
 	k8s.io/client-go v0.0.0-20190602130007-e65ca70987a6
 	k8s.io/utils v0.0.0-20190520173318-324c5df7d3f0 // indirect
 )

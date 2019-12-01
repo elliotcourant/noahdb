@@ -32,13 +32,13 @@ jobs:
         - postgresql
       before_script:
         - psql -c 'create database travis_ci_test;' -U postgres
-        - go get -v -d google.golang.org/grpc
-        - go get -v -d -t github.com/golang/protobuf/...
+        - GO111MODULE=off go get -v -d google.golang.org/grpc
+        - GO111MODULE=off go get -v -d -t github.com/golang/protobuf/...
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
         - mkdir -p "$HOME"/protoc
         - unzip /tmp/protoc.zip -d "$HOME"/protoc
         - mkdir -p "$HOME"/src && ln -s "$HOME"/protoc "$HOME"/src/protobuf
-        - go get -u github.com/golang/protobuf/protoc-gen-go
+        - GO111MODULE=off go get -u github.com/golang/protobuf/protoc-gen-go
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
         - go mod vendor
@@ -52,13 +52,13 @@ jobs:
       services:
         - docker
       before_script:
-        - go get -v -d google.golang.org/grpc
-        - go get -v -d -t github.com/golang/protobuf/...
+        - GO111MODULE=off go get -v -d google.golang.org/grpc
+        - GO111MODULE=off go get -v -d -t github.com/golang/protobuf/...
         - curl -L https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip -o /tmp/protoc.zip
         - mkdir -p "$HOME"/protoc
         - unzip /tmp/protoc.zip -d "$HOME"/protoc
         - mkdir -p "$HOME"/src && ln -s "$HOME"/protoc "$HOME"/src/protobuf
-        - go get -u github.com/golang/protobuf/protoc-gen-go
+        - GO111MODULE=off go get -u github.com/golang/protobuf/protoc-gen-go
         - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         - export PATH=$HOME/protoc/bin:$GOPATH/bin:$PATH
         - go mod vendor

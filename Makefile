@@ -49,7 +49,7 @@ clean:
 
 strings:
 	@echo generating strings...
-	@go get -u -a golang.org/x/tools/cmd/stringer
+	@GO111MODULE=off go get -u -a golang.org/x/tools/cmd/stringer
 
 	cd pkg/plan && make strings
 
@@ -86,7 +86,7 @@ protos:
 
 embedded:
 	@echo generating embedded files...
-	@go get -u -a github.com/elliotcourant/statik@master
+	@GO111MODULE=off go get -u -a github.com/elliotcourant/statik@master
 	@statik -src=$(CORE_DIRECTORY)/static/files -dest $(CORE_DIRECTORY) -f -p static
 
 generated: strings protos embedded
