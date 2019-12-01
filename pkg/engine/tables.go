@@ -4,6 +4,10 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/types"
 )
 
+var (
+	_ TableContext = &tableContextBase{}
+)
+
 type (
 	// TableType is used to indicate how NoahDb should handle queries directed to the table.
 	TableType int
@@ -33,6 +37,7 @@ type (
 		ForeignColumnId uint64
 	}
 
+	// TableContext provides an accessor interface for tables within the cluster.
 	TableContext interface {
 		// NewTable will create a new table and the associated columns. If a table with the same
 		// name already exists in the specified schema then an error will be returned.
@@ -44,6 +49,10 @@ type (
 		// schema rank -> TODO (elliotcourant) add schema rank.
 		// If you include the schema it should be called as GetTableByName("schema", "table").
 		GetTableByName(name ...string) (Table, error)
+	}
+
+	tableContextBase struct {
+		t *transactionBase
 	}
 )
 
@@ -71,3 +80,43 @@ const (
 	// built-in table of the underlying PostgreSQL database.
 	TableType_Postgres
 )
+
+// Tables will return the accessor interface for the table model.
+func (t *transactionBase) Tables() TableContext {
+	return &tableContextBase{
+		t: t,
+	}
+}
+
+// NewTable will create a new table and the associated columns. If a table with the same
+// name already exists in the specified schema then an error will be returned.
+func (t *tableContextBase) NewTable(table Table, columns []Column) (Table, []Column, error) {
+	id, err := t.t.core.store.NextSequenceId("tables")
+	if err != nil {
+		return table, columns, err
+	}
+	table.TableId = id
+
+	for i := range columns {
+		columnId, err := t.t.core.store.NextSequenceId("columns")
+		if err != nil {
+			return table, columns, err
+		}
+		columns[i].TableId = id
+		columns[i].ColumnId = columnId
+	}
+
+	if err := t.t.txn.Insert(table); err != nil {
+		return table, columns, err
+	}
+
+	if err := t.t.txn.Insert(columns); err != nil {
+		return table, columns, err
+	}
+
+	return table, columns, nil
+}
+
+func (t tableContextBase) GetTableByName(name ...string) (Table, error) {
+	panic("implement me")
+}

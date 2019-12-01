@@ -25,6 +25,7 @@ type (
 
 		DataNodes() DataNodeContext
 		DataNodeShards() DataNodeShardContext
+		Tables() TableContext
 		Tenants() TenantContext
 		Shards() ShardContext
 	}
