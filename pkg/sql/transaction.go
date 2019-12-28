@@ -42,6 +42,9 @@ func (stmt *transactionStmtPlanner) getTransactionQueryPlan(s *session) (Initial
 				},
 				ShardID:      0,
 				DistPlanType: DistributedPlanType_COMMIT,
+				After: func() {
+					s.Commit()
+				},
 			}, true, nil
 		default:
 			// No transaction
@@ -59,6 +62,9 @@ func (stmt *transactionStmtPlanner) getTransactionQueryPlan(s *session) (Initial
 				},
 				ShardID:      0,
 				DistPlanType: DistributedPlanType_ROLLBACK,
+				After: func() {
+					s.Rollback()
+				},
 			}, true, nil
 		default:
 			// No transaction

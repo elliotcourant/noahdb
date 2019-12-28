@@ -24,6 +24,10 @@ func (s *session) executeExpandedPlan(plan ExpandedPlan) error {
 		s.log.Verbosef("[%s] execution of statement", time.Since(startTimestamp))
 	}()
 
+	if plan.After != nil {
+		defer plan.After()
+	}
+
 	switch plan.Target {
 	case PlanTarget_STANDARD:
 		responses := make(chan *responsePipe, len(plan.Tasks))

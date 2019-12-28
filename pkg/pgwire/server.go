@@ -29,10 +29,12 @@ type (
 	}
 
 	Server struct {
-		colony  core.Colony
-		backend *pgproto.Backend
-		stmtBuf stmtbuf.StatementBuffer
-		log     timber.Logger
+		core        engine.Core
+		transaction engine.Transaction
+		colony      core.Colony
+		backend     *pgproto.Backend
+		stmtBuf     stmtbuf.StatementBuffer
+		log         timber.Logger
 	}
 )
 
@@ -220,6 +222,32 @@ func (wire *Server) Serve(startupMsg pgproto.StartupMessage) error {
 			}
 		}
 	}
+}
+
+func (wire *Server) Commit() error {
+	if err := wire.transaction.Commit(); err != nil {
+		return err
+	}
+
+	txn, err := wire.core.Begin()
+	wire.transaction = txn
+
+	return err
+}
+
+func (wire *Server) Rollback() error {
+	if err := wire.transaction.Rollback(); err != nil {
+		return err
+	}
+
+	txn, err := wire.core.Begin()
+	wire.transaction = txn
+
+	return err
+}
+
+func (wire *Server) Transaction() engine.Transaction {
+	return wire.transaction
 }
 
 func (wire *Server) Backend() *pgproto.Backend {

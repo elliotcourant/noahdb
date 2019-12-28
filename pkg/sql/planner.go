@@ -40,6 +40,7 @@ type InitialPlan struct {
 	ShardID      uint64
 	Target       PlanTarget
 	DistPlanType DistributedPlanType
+	After        func()
 }
 
 type ExpandedPlan struct {
@@ -47,6 +48,7 @@ type ExpandedPlan struct {
 	Target       PlanTarget
 	OutFormats   []pgwirebase.FormatCode
 	DistPlanType DistributedPlanType
+	After        func()
 }
 
 type ExpandedPlanTask struct {
@@ -102,6 +104,7 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 			Target:       PlanTarget_STANDARD,
 			Tasks:        tasks,
 			DistPlanType: plan.DistPlanType,
+			After:        plan.After,
 		}, nil
 	}
 
@@ -119,6 +122,7 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 					Type:            readPlan.Type,
 				},
 			},
+			After: plan.After,
 		}, nil
 	}
 
@@ -217,5 +221,6 @@ func (s *session) expandQueryPlan(plan InitialPlan) (ExpandedPlan, error) {
 	return ExpandedPlan{
 		Target: plan.Target,
 		Tasks:  tasks,
+		After:  plan.After,
 	}, nil
 }
