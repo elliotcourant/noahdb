@@ -1,7 +1,19 @@
 package engine
 
 import (
+	"errors"
+	"github.com/elliotcourant/mellivora"
 	"github.com/elliotcourant/noahdb/pkg/types"
+)
+
+var (
+	// ErrInvalidTableName is returned when the table specified has no parts or has more than 2
+	// parts.
+	ErrInvalidTableName = errors.New("table name provided is not valid")
+
+	// ErrTableDoesNotExist is returned when a table is requested by name or by schema and name and
+	// no table matches the criteria.
+	ErrTableDoesNotExist = errors.New("table does not exist")
 )
 
 var (
@@ -117,6 +129,49 @@ func (t *tableContextBase) NewTable(table Table, columns []Column) (Table, []Col
 	return table, columns, nil
 }
 
-func (t tableContextBase) GetTableByName(name ...string) (Table, error) {
-	panic("implement me")
+// GetTableByName will return a table with the specified schema and name. If the schema is
+// not provided then it will assume "public". The name should be provided in parts. If you
+// only have the name of the table and not the schema then it will use that and sort by the
+// schema rank -> TODO (elliotcourant) add schema rank.
+// If you include the schema it should be called as GetTableByName("schema", "table").
+func (t *tableContextBase) GetTableByName(name ...string) (Table, error) {
+	getTableByNameQuery := t.t.txn.Model(Table{})
+
+	// Handle the possible lengths for the name array.
+	switch len(name) {
+	case 2:
+		// If two names were provided then we can assume that the first name is the schema and the
+		// second name is the table name. So we can grab the first item here as the schema and then
+		// fallthrough to grab the last item as the table name.
+		getTableByNameQuery = getTableByNameQuery.AndWhere(mellivora.Ex{
+			"Schema": name[0],
+		})
+		fallthrough
+	case 1:
+		// The last item of the provided names should be the table name for the query.
+		getTableByNameQuery = getTableByNameQuery.AndWhere(mellivora.Ex{
+			"Name": name[len(name)-1],
+		})
+	default:
+		return Table{}, ErrInvalidTableName
+	}
+
+	// We want to scan the results into an array to properly assert whether or not there was more
+	// than a single table that met the criteria or if there were no tables.
+	tables := make([]Table, 0)
+
+	// Run the query.
+	if err := getTableByNameQuery.Select(&tables); err != nil {
+		return Table{}, err
+	}
+
+	switch len(tables) {
+	case 0:
+		return Table{}, ErrTableDoesNotExist
+	default:
+		// TODO (elliotcourant) add schema prioritization here.
+		fallthrough
+	case 1:
+		return tables[0], nil
+	}
 }
