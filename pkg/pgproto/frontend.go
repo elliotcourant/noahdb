@@ -8,7 +8,16 @@ import (
 	"github.com/readystock/pgx/chunkreader"
 )
 
-type Frontend struct {
+var (
+	_ Frontend = &FrontendBase{}
+)
+
+type Frontend interface {
+	Send(FrontendMessage) error
+	Receive() (BackendMessage, error)
+}
+
+type FrontendBase struct {
 	cr *chunkreader.ChunkReader
 	w  io.Writer
 
@@ -40,17 +49,17 @@ type Frontend struct {
 	partialMsg bool
 }
 
-func NewFrontend(r io.Reader, w io.Writer) (*Frontend, error) {
+func NewFrontend(r io.Reader, w io.Writer) (Frontend, error) {
 	cr := chunkreader.NewChunkReader(r)
-	return &Frontend{cr: cr, w: w}, nil
+	return &FrontendBase{cr: cr, w: w}, nil
 }
 
-func (b *Frontend) Send(msg FrontendMessage) error {
+func (b *FrontendBase) Send(msg FrontendMessage) error {
 	_, err := b.w.Write(msg.Encode(nil))
 	return err
 }
 
-func (b *Frontend) Receive() (BackendMessage, error) {
+func (b *FrontendBase) Receive() (BackendMessage, error) {
 	if !b.partialMsg {
 		header, err := b.cr.Next(5)
 		if err != nil {

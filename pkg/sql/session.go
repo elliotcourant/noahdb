@@ -29,19 +29,15 @@ const (
 	TransactionState_Active                  = 1
 )
 
-type sessionContext interface {
+type Server interface {
 	Backend() *pgproto.Backend
+	// Transaction() engine.Transaction
 	Colony() core.Colony
 	StatementBuffer() stmtbuf.StatementBuffer
 }
 
-type Session interface {
-	Colony() core.Accessors
-	Log() timber.Logger
-}
-
 type session struct {
-	sessionContext
+	Server
 
 	preparedStatements   map[string]preparedStatementEntry
 	portals              map[string]portalEntry
@@ -141,15 +137,15 @@ func (s *session) ReleaseConnectionForDataNodeShard(conn core.PoolConnection) {
 	conn.Release()
 }
 
-func newSession(s sessionContext, log timber.Logger) *session {
+func newSession(s Server, log timber.Logger) *session {
 	return &session{
-		sessionContext:     s,
+		Server:             s,
 		preparedStatements: map[string]preparedStatementEntry{},
 		portals:            map[string]portalEntry{},
 		log:                log,
 		pool:               map[uint64]core.PoolConnection{},
 		executor: executor.NewExecutor(
-			s.Colony(),
+			s.Transaction(),
 			log,
 			// TODO (elliotcourant) make sure the query mode gets updated
 			executor.NewClientTunnel(s.Backend(), false)),

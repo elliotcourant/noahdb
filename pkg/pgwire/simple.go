@@ -7,7 +7,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 )
 
-func (wire *wireServer) handleSimpleQuery(parseMessage *pgproto.Query) error {
+func (wire *Server) handleSimpleQuery(parseMessage *pgproto.Query) error {
 	parseTree, err := ast.Parse(parseMessage.String)
 	if err != nil {
 		return err

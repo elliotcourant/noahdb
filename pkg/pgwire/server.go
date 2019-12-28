@@ -16,17 +16,25 @@ import (
 	"strings"
 )
 
-type TransportWrapper interface {
-	NormalTransport() net.Listener
-	ForwardToRaft(net.Conn, error)
-	ForwardToRpc(net.Conn, error)
-	Close()
-}
+var (
+	_ sql.Server = &Server{}
+)
 
-type ServerConfig interface {
-	Address() string
-	Port() int
-}
+type (
+	TransportWrapper interface {
+		NormalTransport() net.Listener
+		ForwardToRaft(net.Conn, error)
+		ForwardToRpc(net.Conn, error)
+		Close()
+	}
+
+	Server struct {
+		colony  core.Colony
+		backend *pgproto.Backend
+		stmtBuf stmtbuf.StatementBuffer
+		log     timber.Logger
+	}
+)
 
 func NewServerEx(core engine.Core, transport TransportWrapper) error {
 	defer transport.Close()
@@ -34,7 +42,7 @@ func NewServerEx(core engine.Core, transport TransportWrapper) error {
 	return nil
 }
 
-func NewServer(colony core.Colony, transport TransportWrapper) error {
+func RunServer(colony core.Colony, transport TransportWrapper) error {
 	defer transport.Close()
 
 	ln := transport.NormalTransport()
@@ -49,7 +57,7 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 
 		go func(conn net.Conn) {
 			log := timber.New().Prefix(conn.RemoteAddr().String())
-			wire, err := newWire(colony, conn, conn, log)
+			wire, err := newServer(colony, conn, conn, log)
 			if err != nil {
 				log.Errorf("failed setting up wire: %s", err.Error())
 			}
@@ -93,26 +101,19 @@ func NewServer(colony core.Colony, transport TransportWrapper) error {
 	}
 }
 
-type wireServer struct {
-	colony  core.Colony
-	backend *pgproto.Backend
-	stmtBuf stmtbuf.StatementBuffer
-	log     timber.Logger
-}
-
-func newWire(colony core.Colony, reader io.Reader, writer io.Writer, logger timber.Logger) (*wireServer, error) {
+func newServer(colony core.Colony, reader io.Reader, writer io.Writer, logger timber.Logger) (*Server, error) {
 	backend, err := pgproto.NewBackend(reader, writer)
 	if err != nil {
 		return nil, err
 	}
-	return &wireServer{
+	return &Server{
 		colony:  colony,
 		backend: backend,
 		log:     logger,
 	}, nil
 }
 
-func (wire *wireServer) Serve(startupMsg pgproto.StartupMessage) error {
+func (wire *Server) Serve(startupMsg pgproto.StartupMessage) error {
 	wire.stmtBuf = stmtbuf.NewStatementBuffer() // We only want to setup a statement buffer if there is a need
 	if user, ok := startupMsg.Parameters["user"]; !ok || strings.TrimSpace(user) == "" {
 		return wire.Errorf("user authentication required")
@@ -221,19 +222,19 @@ func (wire *wireServer) Serve(startupMsg pgproto.StartupMessage) error {
 	}
 }
 
-func (wire *wireServer) Backend() *pgproto.Backend {
+func (wire *Server) Backend() *pgproto.Backend {
 	return wire.backend
 }
 
-func (wire *wireServer) StatementBuffer() stmtbuf.StatementBuffer {
+func (wire *Server) StatementBuffer() stmtbuf.StatementBuffer {
 	return wire.stmtBuf
 }
 
-func (wire *wireServer) Colony() core.Colony {
+func (wire *Server) Colony() core.Colony {
 	return wire.colony
 }
 
-func (wire *wireServer) Errorf(message string, args ...interface{}) error {
+func (wire *Server) Errorf(message string, args ...interface{}) error {
 	errorMessage := &pgproto.ErrorResponse{
 		Severity: "FATAL",
 		Code:     "0000",

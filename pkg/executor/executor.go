@@ -2,7 +2,7 @@ package executor
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/engine"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/plan"
@@ -21,18 +21,18 @@ type Executor interface {
 	Execute(plan plan.ExecutionPlan) error
 }
 
-func NewExecutor(colony core.Colony, logger timber.Logger, tunnel Tunnel) Executor {
+func NewExecutor(txn engine.Transaction, logger timber.Logger, tunnel Tunnel) Executor {
 	return &executorBase{
-		colony: colony,
+		txn:    txn,
 		tunnel: tunnel,
 		log:    logger,
-		pool:   pool.NewPool(colony, logger),
+		pool:   pool.NewPool(txn, logger),
 	}
 }
 
 type executorBase struct {
 	inTransaction     bool
-	colony            core.Colony
+	txn               engine.Transaction
 	tunnel            Tunnel
 	log               timber.Logger
 	pool              pool.Pool

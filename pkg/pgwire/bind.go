@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-func (wire *wireServer) handleBind(bindMessage *pgproto.Bind) error {
+func (wire *Server) handleBind(bindMessage *pgproto.Bind) error {
 	qArgFormatCodes := make([]pgwirebase.FormatCode, int(math.Max(float64(len(bindMessage.ParameterFormatCodes)), 1)))
 	switch len(bindMessage.ParameterFormatCodes) {
 	case 0:

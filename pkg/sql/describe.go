@@ -21,7 +21,7 @@ func (s *session) executeDescribe(describe commands.DescribeStatement, result *c
 			for _, param := range ps.InferredTypes {
 				paramDesc.ParameterOIDs = append(paramDesc.ParameterOIDs, param.Uint32())
 			}
-			if err := s.sessionContext.Backend().Send(&paramDesc); err != nil {
+			if err := s.Server.Backend().Send(&paramDesc); err != nil {
 				return err
 			}
 		}
@@ -30,7 +30,7 @@ func (s *session) executeDescribe(describe commands.DescribeStatement, result *c
 			// The statement has no data to be returned.
 			result.SetNoDataMessage(true)
 		} else {
-			return s.sessionContext.Backend().Send(&pgproto.RowDescription{
+			return s.Server.Backend().Send(&pgproto.RowDescription{
 				Fields: ps.Columns,
 			})
 		}

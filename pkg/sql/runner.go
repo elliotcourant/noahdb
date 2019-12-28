@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-func Run(stx sessionContext, log timber.Logger, terminateChannel chan bool) error {
+func Run(stx Server, log timber.Logger, terminateChannel chan bool) error {
 	s := newSession(stx, log)
 	for {
 		select {

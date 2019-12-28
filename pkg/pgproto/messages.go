@@ -46,7 +46,7 @@ const (
 	PgRowDescription                  = 'T'
 
 	/*
-		PostgreSQL Frontend Messages
+		PostgreSQL FrontendBase Messages
 	*/
 
 	// PgBind is the byte prefix for bind messages from the client.
@@ -67,7 +67,7 @@ const (
 	PgTerminate           = 'X'
 
 	/*
-		Raft Frontend Messages
+		Raft FrontendBase Messages
 	*/
 
 	// RaftAppendEntriesRequest is the byte prefix for append entries from the leader.

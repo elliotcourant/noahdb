@@ -64,7 +64,7 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 
 	go func() {
 		defer tasks.Done()
-		if err = pgwire.NewServer(colony, trans); err != nil {
+		if err = pgwire.RunServer(colony, trans); err != nil {
 			log.Errorf(err.Error())
 		}
 	}()

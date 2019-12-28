@@ -21,10 +21,10 @@ type poolItem struct {
 	pool  []*frontendConnection
 }
 
-func (p *poolItem) addConnection(frontend *pgproto.Frontend) {
+func (p *poolItem) addConnection(frontend *pgproto.FrontendBase) {
 	p.releaseConnection(&frontendConnection{
-		Frontend: frontend,
-		pool:     p,
+		FrontendBase: frontend,
+		pool:         p,
 	})
 }
 
@@ -59,7 +59,7 @@ type frontendInterface interface {
 
 type frontendConnection struct {
 	conn net.Conn
-	*pgproto.Frontend
+	*pgproto.FrontendBase
 
 	pool *poolItem
 }
@@ -69,7 +69,7 @@ func (f *frontendConnection) ID() uint64 {
 }
 
 func (f *frontendConnection) Release() {
-	if f.Frontend == nil {
+	if f.FrontendBase == nil {
 		return
 	}
 	timber.Verbosef("releasing connection from data node shard [%d], pool size: %d", f.pool.id, len(f.pool.pool))
@@ -78,7 +78,7 @@ func (f *frontendConnection) Release() {
 
 func (f *frontendConnection) Close() {
 	f.conn.Close()
-	f.Frontend = nil
+	f.FrontendBase = nil
 }
 
 type PoolConnection interface {
@@ -268,8 +268,8 @@ func (ctx *poolContext) newConnection(id uint64, pool *poolItem) (*frontendConne
 	}
 
 	return &frontendConnection{
-		Frontend: frontend,
-		pool:     pool,
-		conn:     conn,
+		FrontendBase: frontend,
+		pool:         pool,
+		conn:         conn,
 	}, nil
 }

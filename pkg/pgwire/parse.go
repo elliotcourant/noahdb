@@ -11,7 +11,7 @@ import (
 	"github.com/readystock/golog"
 )
 
-func (wire *wireServer) handleParse(parseMessage *pgproto.Parse) error {
+func (wire *Server) handleParse(parseMessage *pgproto.Parse) error {
 	parseTree, err := ast.Parse(parseMessage.Query)
 	if err != nil {
 		return err

@@ -14,7 +14,7 @@ type Backend struct {
 	w  io.Writer
 	b  *bytes.Buffer
 
-	// Frontend message flyweights
+	// FrontendBase message flyweights
 	bind            Bind
 	_close          Close
 	describe        Describe

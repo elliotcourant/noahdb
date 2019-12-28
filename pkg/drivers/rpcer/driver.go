@@ -11,7 +11,7 @@ type RpcDriver struct {
 	localAddr  net.Addr
 	remoteAddr net.Addr
 	conn       net.Conn
-	front      *pgproto.Frontend
+	front      pgproto.Frontend
 }
 
 func NewRPCDriver(id string, localAddr net.Addr, remoteAddr string) (*RpcDriver, error) {

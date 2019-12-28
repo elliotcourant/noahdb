@@ -1,7 +1,7 @@
 package pool
 
 import (
-	"github.com/elliotcourant/noahdb/pkg/core"
+	"github.com/elliotcourant/noahdb/pkg/engine"
 	"github.com/elliotcourant/timber"
 	"sync"
 	"time"
@@ -13,9 +13,9 @@ type Pool interface {
 	GetConnection(dataNodeShardId uint64, txn bool) (Connection, error)
 }
 
-func NewPool(colony core.Colony, logger timber.Logger) Pool {
+func NewPool(txn engine.Transaction, logger timber.Logger) Pool {
 	return &BasePool{
-		colony:   colony,
+		txn:      txn,
 		poolSync: sync.Mutex{},
 		pool:     map[uint64]Connection{},
 		log:      logger,
@@ -25,7 +25,7 @@ func NewPool(colony core.Colony, logger timber.Logger) Pool {
 // BasePool implements the Pool interface.
 type BasePool struct {
 	log           timber.Logger
-	colony        core.Colony
+	txn           engine.Transaction
 	poolSync      sync.Mutex
 	pool          map[uint64]Connection
 	inTransaction bool
@@ -55,7 +55,7 @@ func (p *BasePool) GetConnection(dataNodeShardId uint64, txn bool) (Connection, 
 		return pool, nil
 	}
 	var conn Connection
-	if pc, err := p.colony.Pool().GetConnectionForDataNodeShard(dataNodeShardId); err != nil {
+	if pc, err := p.txn.Pool().GetConnectionForDataNodeShard(dataNodeShardId); err != nil {
 		return nil, err
 	} else {
 		conn = NewConnection(pc, p)

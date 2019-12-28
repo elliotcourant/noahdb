@@ -221,7 +221,7 @@ func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresse
 	colony := core.NewColony()
 
 	go func() {
-		if err = pgwire.NewServer(colony, trans); err != nil {
+		if err = pgwire.RunServer(colony, trans); err != nil {
 			log.Errorf(err.Error())
 		}
 	}()
