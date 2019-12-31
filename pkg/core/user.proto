@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package core;
-
-message User {
-    uint64 UserID = 1;
-    string UserName = 2;
-}

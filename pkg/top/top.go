@@ -2,12 +2,12 @@ package top
 
 import (
 	"fmt"
-	"github.com/elliotcourant/noahdb/pkg/core"
-	"github.com/elliotcourant/noahdb/pkg/kube"
+	"github.com/elliotcourant/meles"
+	"github.com/elliotcourant/mellivora"
+	"github.com/elliotcourant/noahdb/pkg/engine"
 	"github.com/elliotcourant/noahdb/pkg/pgwire"
 	"github.com/elliotcourant/noahdb/pkg/rpcwire"
 	"github.com/elliotcourant/noahdb/pkg/tcp"
-	"github.com/elliotcourant/noahdb/pkg/transport"
 	"github.com/elliotcourant/noahdb/pkg/util"
 	"github.com/elliotcourant/timber"
 	"github.com/hashicorp/raft"
@@ -21,30 +21,69 @@ import (
 	"time"
 )
 
-func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, autoJoin bool) {
+type (
+	Options struct {
+		DataDirectory     string
+		JoinAddresses     []string
+		PgListenAddress   string
+		RaftListenAddress string
+		AutoDataNode      bool
+		AutoJoinCluster   bool
+	}
+)
+
+func NoahMain(options Options) {
 	log := timber.New()
 
-	log.Debugf("starting noahdb")
-	l, err := util.ResolveAddress(listenAddr)
+	log.Verbosef("starting noahdb")
+
+	pgTransport, raftTransport := tcp.NewTransport(), tcp.NewTransport()
+
+	// Parse and prepare the provided addresses.
+	{
+		var pgListenAddress, raftListenAddress *net.TCPAddr
+
+		if p, err := util.ResolveAddress(options.PgListenAddress); err != nil {
+			panic(err)
+		} else if pgAddr, err := net.ResolveTCPAddr("tcp", p); err != nil {
+			panic(err)
+		} else {
+			pgListenAddress = pgAddr
+		}
+
+		if r, err := util.ResolveAddress(options.RaftListenAddress); err != nil {
+			panic(err)
+		} else if raftAddr, err := net.ResolveTCPAddr("tcp", r); err != nil {
+			panic(err)
+		} else {
+			raftListenAddress = raftAddr
+		}
+
+		if err := pgTransport.Open(pgListenAddress.String()); err != nil {
+			panic(err)
+		}
+
+		if err := raftTransport.Open(raftListenAddress.String()); err != nil {
+			panic(err)
+		}
+	}
+
+	store, err := meles.NewStore(raftTransport, log, meles.Options{
+		Directory: options.DataDirectory,
+		Peers:     options.JoinAddresses,
+	})
 	if err != nil {
 		panic(err)
 	}
-	listenAddr = l
-	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
-	if err != nil {
-		panic(err)
-		// return nil, nil, err
-	}
 
-	tn := tcp.NewTransport()
-
-	if err := tn.Open(parsedRaftAddr.String()); err != nil {
+	// Start the meles store.
+	if err := store.Start(); err != nil {
 		panic(err)
 	}
 
-	trans := transport.NewTransportWrapper(tn)
+	db := mellivora.NewDatabase(store, log)
 
-	colony := core.NewColony()
+	core := engine.NewCore(store, db)
 
 	tasks := new(sync.WaitGroup)
 	ch := make(chan os.Signal)
@@ -57,13 +96,15 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 	go func() {
 		defer tasks.Done()
 		<-ch
-		log.Warningf("stopping coordinator[%d]", colony.CoordinatorID())
-		colony.Close()
+		log.Warningf("stopping coordinator [%d]", store.NodeID())
 		os.Exit(0)
 	}()
 
 	go func() {
 		defer tasks.Done()
+		if err = pgwire.RunServer(core, pgTransport); err != nil {
+			panic(err)
+		}
 		if err = pgwire.RunServer(colony, trans); err != nil {
 			log.Errorf(err.Error())
 		}
@@ -76,10 +117,10 @@ func NoahMain(dataDirectory, joinAddresses, listenAddr string, autoDataNode, aut
 		}
 	}()
 
-	go func() {
-		defer tasks.Done()
-		kube.RunEyeholes(colony)
-	}()
+	// go func() {
+	// 	defer tasks.Done()
+	// 	kube.RunEyeholes(colony)
+	// }()
 
 	go func() {
 		for {

@@ -3,7 +3,6 @@ package sql
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/engine"
 	"github.com/elliotcourant/noahdb/pkg/executor"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
@@ -33,7 +32,6 @@ const (
 type Server interface {
 	Backend() *pgproto.Backend
 	Transaction() engine.Transaction
-	Colony() core.Colony
 	StatementBuffer() stmtbuf.StatementBuffer
 	Commit() error
 	Rollback() error

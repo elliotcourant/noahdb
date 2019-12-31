@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package core;
-
-message Schema {
-    uint64 SchemaID = 1;
-    string SchemaName = 2;
-}

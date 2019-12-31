@@ -3,7 +3,6 @@ package pgwire
 import (
 	"fmt"
 	"github.com/elliotcourant/noahdb/pkg/commands"
-	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/engine"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/sql"
@@ -31,27 +30,18 @@ type (
 	Server struct {
 		core        engine.Core
 		transaction engine.Transaction
-		colony      core.Colony
 		backend     *pgproto.Backend
 		stmtBuf     stmtbuf.StatementBuffer
 		log         timber.Logger
 	}
 )
 
-func NewServerEx(core engine.Core, transport TransportWrapper) error {
-	defer transport.Close()
-
-	return nil
-}
-
-func RunServer(colony core.Colony, transport TransportWrapper) error {
-	defer transport.Close()
-
-	ln := transport.NormalTransport()
+func RunServer(colony engine.Core, listener net.Listener) error {
+	defer listener.Close()
 
 	for {
-		timber.Verbosef("accepting connection at: %s", ln.Addr())
-		conn, err := ln.Accept()
+		timber.Verbosef("accepting connection at: %s", listener.Addr())
+		conn, err := listener.Accept()
 		if err != nil {
 			return err
 		}
@@ -59,6 +49,11 @@ func RunServer(colony core.Colony, transport TransportWrapper) error {
 
 		go func(conn net.Conn) {
 			log := timber.New().Prefix(conn.RemoteAddr().String())
+			defer func() {
+				if err := conn.Close(); err != nil {
+					log.Warningf("error returned when closing connection: %v", err)
+				}
+			}()
 			wire, err := newServer(colony, conn, conn, log)
 			if err != nil {
 				log.Errorf("failed setting up wire: %s", err.Error())
@@ -72,44 +67,23 @@ func RunServer(colony core.Colony, transport TransportWrapper) error {
 			// Receive startup messages.
 			startupMsg, err := wire.backend.ReceiveStartupMessage()
 			if err != nil {
-				switch err {
-				case pgproto.RaftStartupMessageError:
-					log.Verbosef("forwarding connection to raft")
-					transport.ForwardToRaft(conn, nil)
-					return
-				case pgproto.RpcStartupMessageError:
-					transport.ForwardToRpc(conn, nil)
-					return
-				default:
-					defer func() {
-						if err := conn.Close(); err != nil {
-							log.Warningf("error returned when closing connection: %v", err)
-						}
-					}()
-					log.Errorf("error from startup message: %v", err)
-					return
-				}
-			} else {
-				defer func() {
-					if err := conn.Close(); err != nil {
-						log.Warningf("error returned when closing connection: %v", err)
-					}
-				}()
-				if err := wire.Serve(*startupMsg); err != nil {
-					log.Errorf("failed serving connection: %s", err.Error())
-				}
+				log.Errorf("error receiving startup message: %v", err)
+				return
+			}
+			if err := wire.Serve(*startupMsg); err != nil {
+				log.Errorf("failed serving connection: %s", err.Error())
 			}
 		}(conn)
 	}
 }
 
-func newServer(colony core.Colony, reader io.Reader, writer io.Writer, logger timber.Logger) (*Server, error) {
+func newServer(core engine.Core, reader io.Reader, writer io.Writer, logger timber.Logger) (*Server, error) {
 	backend, err := pgproto.NewBackend(reader, writer)
 	if err != nil {
 		return nil, err
 	}
 	return &Server{
-		colony:  colony,
+		core:    core,
 		backend: backend,
 		log:     logger,
 	}, nil
@@ -256,10 +230,6 @@ func (wire *Server) Backend() *pgproto.Backend {
 
 func (wire *Server) StatementBuffer() stmtbuf.StatementBuffer {
 	return wire.stmtBuf
-}
-
-func (wire *Server) Colony() core.Colony {
-	return wire.colony
 }
 
 func (wire *Server) Errorf(message string, args ...interface{}) error {
