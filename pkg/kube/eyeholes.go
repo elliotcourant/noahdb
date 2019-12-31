@@ -2,7 +2,6 @@ package kube
 
 import (
 	"github.com/ahmetb/go-linq/v3"
-	"github.com/elliotcourant/noahdb/pkg/core"
 	"k8s.io/api/core/v1"
 	"os"
 	"strings"

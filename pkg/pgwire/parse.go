@@ -8,7 +8,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
-	"github.com/readystock/golog"
 )
 
 func (wire *Server) handleParse(parseMessage *pgproto.Parse) error {
@@ -35,7 +34,7 @@ func (wire *Server) handleParse(parseMessage *pgproto.Parse) error {
 	}
 
 	j, _ := json.Marshal(parseTree)
-	golog.Verbosef("received query: %s | %s", parseMessage.Query, string(j))
+	wire.log.Verbosef("received query: %s | %s", parseMessage.Query, string(j))
 
 	placeholders := queryutil.GetArguments(stmt)
 

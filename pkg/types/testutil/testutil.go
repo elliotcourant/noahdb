@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/elliotcourant/timber"
 	"github.com/jackc/pgx"
-	"github.com/readystock/golog"
 	"os"
 	"reflect"
 	"testing"
@@ -138,7 +138,7 @@ func TestPgxSuccessfulTranscodeEqFunc(t testing.TB, typesName string, values []i
 			err := conn.QueryRow("test", ForceEncoder(v, fc.formatCode)).Scan(result.Interface())
 			if err != nil {
 				t.Errorf("%v %d: %v", fc.name, i, err)
-				golog.Errorf("%v %d: %v", fc.name, i, err)
+				timber.Errorf("%v %d: %v", fc.name, i, err)
 			}
 
 			if !eqFunc(result.Elem().Interface(), derefV) {
