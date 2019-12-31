@@ -6,7 +6,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/plan"
-	"github.com/elliotcourant/noahdb/pkg/pool_old"
 	"github.com/elliotcourant/timber"
 	"time"
 )

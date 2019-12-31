@@ -3,24 +3,24 @@ package sql
 import (
 	"fmt"
 	"github.com/ahmetb/go-linq/v3"
+	"github.com/elliotcourant/noahdb/pkg/engine"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/timber"
 	"strings"
 
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/core"
 )
 
 type createStmtPlanner struct {
-	table   core.Table
-	columns []core.Column
+	table   engine.Table
+	columns []engine.Column
 	tree    ast.CreateStmt
 }
 
 // NewCreateStatementPlan creates a new planner for create statements.
 func newCreateStatementPlan(tree ast.CreateStmt) *createStmtPlanner {
 	return &createStmtPlanner{
-		table: core.Table{},
+		table: engine.Table{},
 		tree:  tree,
 	}
 }
@@ -28,7 +28,7 @@ func newCreateStatementPlan(tree ast.CreateStmt) *createStmtPlanner {
 func (stmt *createStmtPlanner) GetQueryPlan(s *session) (InitialPlan, bool, error) {
 	// schemaName := *stmt.tree.Relation.Schemaname
 	tableName := *stmt.tree.Relation.Relname
-	tables, err := s.Colony().Tables().GetTables(tableName)
+	table, err := s.Transaction().Tables().GetTableByName(tableName)
 	if err != nil {
 		return InitialPlan{}, false, fmt.Errorf("could not verify table doesn't exit: %v", err)
 	}
@@ -38,14 +38,14 @@ func (stmt *createStmtPlanner) GetQueryPlan(s *session) (InitialPlan, bool, erro
 		return InitialPlan{}, false, fmt.Errorf("table with name [%s] already exists", tableName)
 	}
 
-	stmt.table.TableName = tableName
+	stmt.table.Name = tableName
 
 	if err := stmt.handleTableType(); err != nil {
 		return InitialPlan{}, false, err
 	}
 
 	// We want to verify that if they are creating a tenant table that it is the only one.
-	if stmt.table.TableType == core.TableType_Tenant {
+	if stmt.table.Type == engine.TableType_Master {
 		tenantTable, ok, err := s.Colony().Tables().GetTenantTable()
 		if err != nil {
 			return InitialPlan{}, false, fmt.Errorf("could not verify tenant table: %v", err)

@@ -4,19 +4,17 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/top"
 	"github.com/elliotcourant/timber"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 	"os"
+	"strings"
 )
 
 var (
-	PgListenAddr   string
-	RaftListenAddr string
-	JoinAddr       string
-	AutoDataNode   bool
-	AutoJoin       bool
-	UseTmpDir      bool
-	StoreDirectory string
-	LogLevel       string
+	pgListenAddr    string
+	raftListenAddr  string
+	joinAddr        string
+	autoDataNode    bool
+	autoJoinCluster bool
+	storeDirectory  string
 )
 
 var (
@@ -28,23 +26,32 @@ var (
 
 		},
 	}
+
 	startCmd = &cobra.Command{
 		Use: "start",
 		Run: func(cmd *cobra.Command, args []string) {
-			StartDB(StoreDirectory, JoinAddr, PgListenAddr, UseTmpDir, AutoDataNode, AutoJoin)
+			options := top.Options{
+				DataDirectory:     storeDirectory,
+				JoinAddresses:     strings.Split(joinAddr, ","),
+				PgListenAddress:   pgListenAddr,
+				RaftListenAddress: raftListenAddr,
+				AutoDataNode:      autoDataNode,
+				AutoJoinCluster:   autoJoinCluster,
+			}
+
+			top.NoahMain(options)
+
 		},
 	}
 )
 
 func init() {
-	startCmd.Flags().StringVarP(&PgListenAddr, "pg-listen", "L", ":5433", "address that will accept connections")
-	startCmd.Flags().StringVarP(&RaftListenAddr, "raft-listen", "R", ":5434", "address that will be use for raft")
-	startCmd.Flags().StringVarP(&JoinAddr, "join", "J", "", "address of another node in the cluster to use to join")
-	startCmd.Flags().BoolVarP(&AutoDataNode, "auto-data-node", "d", false, "look for a local PostgreSQL instance")
-	startCmd.Flags().BoolVarP(&AutoJoin, "auto-join", "A", false, "try to auto-join an existing cluster")
-	startCmd.Flags().BoolVarP(&UseTmpDir, "temp", "t", false, "use temp directory each time")
-	startCmd.Flags().StringVarP(&StoreDirectory, "store", "s", "data", "directory that will be used for Noah's key value store")
-	startCmd.Flags().StringVarP(&LogLevel, "log", "l", "verbose", "log output level, valid values: trace, verbose, debug, info, warn, error, fatal")
+	startCmd.Flags().StringVarP(&pgListenAddr, "pg-listen", "L", ":5433", "address that will accept connections")
+	startCmd.Flags().StringVarP(&raftListenAddr, "raft-listen", "R", ":5434", "address that will be use for raft")
+	startCmd.Flags().StringVarP(&joinAddr, "join", "J", "", "address of another node in the cluster to use to join")
+	startCmd.Flags().BoolVarP(&autoDataNode, "auto-data-node", "d", false, "look for a local PostgreSQL instance")
+	startCmd.Flags().BoolVarP(&autoJoinCluster, "auto-join", "A", false, "try to auto-join an existing cluster")
+	startCmd.Flags().StringVarP(&storeDirectory, "dir", "s", "data", "directory that will be used for Noah's key value store")
 	rootCmd.AddCommand(startCmd)
 }
 
@@ -53,29 +60,4 @@ func Execute() {
 		timber.Fatal(err)
 		os.Exit(1)
 	}
-}
-
-func StartDB(storeDirectory, joinAddr, listenAddr string, useTempDir, autoDataNode, autoJoin bool) {
-	if useTempDir {
-		tempdir, err := ioutil.TempDir("", "noahdb")
-		if err != nil {
-			panic(err)
-		}
-		storeDirectory = tempdir
-		defer func() {
-			timber.Infof("cleaning up temp directory: %s", tempdir)
-			os.RemoveAll(tempdir)
-		}()
-	}
-
-	options := top.Options{
-		DataDirectory:     storeDirectory,
-		JoinAddresses:     nil,
-		PgListenAddress:   "",
-		RaftListenAddress: "",
-		AutoDataNode:      false,
-		AutoJoinCluster:   false,
-	}
-
-	top.NoahMain(options)
 }
