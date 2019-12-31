@@ -36,7 +36,7 @@ type (
 	}
 )
 
-func RunServer(colony engine.Core, listener net.Listener) error {
+func RunPgServer(colony engine.Core, listener net.Listener) error {
 	defer listener.Close()
 
 	for {

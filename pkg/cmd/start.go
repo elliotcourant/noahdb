@@ -67,5 +67,15 @@ func StartDB(storeDirectory, joinAddr, listenAddr string, useTempDir, autoDataNo
 			os.RemoveAll(tempdir)
 		}()
 	}
-	top.NoahMain(storeDirectory, joinAddr, listenAddr, autoDataNode, autoJoin)
+
+	options := top.Options{
+		DataDirectory:     storeDirectory,
+		JoinAddresses:     nil,
+		PgListenAddress:   "",
+		RaftListenAddress: "",
+		AutoDataNode:      false,
+		AutoJoinCluster:   false,
+	}
+
+	top.NoahMain(options)
 }

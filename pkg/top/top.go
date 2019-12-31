@@ -102,10 +102,10 @@ func NoahMain(options Options) {
 
 	go func() {
 		defer tasks.Done()
-		if err = pgwire.RunServer(core, pgTransport); err != nil {
+		if err = pgwire.RunPgServer(core, pgTransport); err != nil {
 			panic(err)
 		}
-		if err = pgwire.RunServer(colony, trans); err != nil {
+		if err = pgwire.RunPgServer(colony, trans); err != nil {
 			log.Errorf(err.Error())
 		}
 	}()
