@@ -25,7 +25,9 @@ type (
 		pgproto.Frontend
 		Close() error
 		Release()
-		ID() uint64
+		DataNodeID() uint64
+		ShardID() uint64
+		DataNodeShardID() uint64
 		IsRoot() bool
 	}
 
@@ -61,8 +63,16 @@ func (p poolContextBase) GetRootConnection(dataNodeId uint64) (PoolConnection, e
 	panic("implement me")
 }
 
-func (c *dataNodeShardConnection) ID() uint64 {
-	return 0 // TODO (elliotcourant) return the id of the data node shard.
+func (c *dataNodeShardConnection) DataNodeID() uint64 {
+	panic("implement me")
+}
+
+func (c *dataNodeShardConnection) ShardID() uint64 {
+	panic("implement me")
+}
+
+func (c *dataNodeShardConnection) DataNodeShardID() uint64 {
+	panic("implement me")
 }
 
 // Release will return the connection to the pool if the connection is still available.

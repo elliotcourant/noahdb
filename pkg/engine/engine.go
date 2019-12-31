@@ -28,6 +28,7 @@ type (
 		Tables() TableContext
 		Tenants() TenantContext
 		Shards() ShardContext
+		Pool() PoolContext
 	}
 
 	coreBase struct {

@@ -6,13 +6,13 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
 	"github.com/elliotcourant/noahdb/pkg/plan"
-	"github.com/elliotcourant/noahdb/pkg/pool"
+	"github.com/elliotcourant/noahdb/pkg/pool_old"
 	"github.com/elliotcourant/timber"
 	"time"
 )
 
 type responsePipeline struct {
-	conn pool.Connection
+	conn pool_old.Connection
 	err  error
 }
 
@@ -26,7 +26,7 @@ func NewExecutor(txn engine.Transaction, logger timber.Logger, tunnel Tunnel) Ex
 		txn:    txn,
 		tunnel: tunnel,
 		log:    logger,
-		pool:   pool.NewPool(txn, logger),
+		pool:   pool_old.NewPool(txn, logger),
 	}
 }
 
@@ -35,7 +35,7 @@ type executorBase struct {
 	txn               engine.Transaction
 	tunnel            Tunnel
 	log               timber.Logger
-	pool              pool.Pool
+	pool              pool_old.Pool
 	extendedQueryMode bool
 }
 
@@ -152,7 +152,7 @@ func (e *executorBase) Execute(executionPlan plan.ExecutionPlan) error {
 	return nil
 }
 
-func (e *executorBase) sendQuery(conn pool.Connection, query string, extendedQuery bool, outFormats []pgwirebase.FormatCode) error {
+func (e *executorBase) sendQuery(conn pool_old.Connection, query string, extendedQuery bool, outFormats []pgwirebase.FormatCode) error {
 	if extendedQuery {
 		// When we are in extended query mode we want to send the query in the same
 		// extended query mode.
