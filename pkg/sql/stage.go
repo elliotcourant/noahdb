@@ -11,7 +11,8 @@ import (
 func (s *session) stageQueryToResult(
 	statement ast.Stmt,
 	placeholders queryutil.QueryArguments,
-	outFormats []pgwirebase.FormatCode) error {
+	outFormats []pgwirebase.FormatCode,
+) error {
 	// If there are placeholders present then we need to walk the syntax tree and add the
 	// placeholders into the query manually, this is a bit weird and kind of expensive. But it's
 	// the best solution I have at the moment for the query planner.

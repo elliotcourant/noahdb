@@ -7,6 +7,7 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/executor"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/pool"
 	"github.com/elliotcourant/noahdb/pkg/types"
 	"github.com/elliotcourant/noahdb/pkg/util/queryutil"
 	"github.com/elliotcourant/noahdb/pkg/util/stmtbuf"
@@ -48,7 +49,7 @@ type session struct {
 	transactionState     TransactionState
 	transactionStateSync sync.RWMutex
 
-	pool     map[uint64]core.PoolConnection
+	pool     map[uint64]pool.Connection
 	poolSync sync.Mutex
 
 	executor executor.Executor
@@ -79,7 +80,7 @@ func (s *session) GetTransactionState() TransactionState {
 	return s.transactionState
 }
 
-func (s *session) GetConnectionForDataNodeShard(id uint64) (core.PoolConnection, error) {
+func (s *session) GetConnectionForDataNodeShard(id uint64) (pool.Connection, error) {
 	startTimestamp := time.Now()
 	defer func() {
 		s.log.Verbosef("[%s] acquisition of connection to data node shard [%d]", time.Since(startTimestamp), id)

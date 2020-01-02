@@ -2,14 +2,14 @@ package sql
 
 import (
 	"github.com/elliotcourant/noahdb/pkg/ast"
-	"github.com/elliotcourant/noahdb/pkg/core"
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/noahdb/pkg/pgwirebase"
+	"github.com/elliotcourant/noahdb/pkg/pool"
 	"time"
 )
 
 type responsePipe struct {
-	conn core.PoolConnection
+	conn pool.Connection
 	err  error
 }
 
