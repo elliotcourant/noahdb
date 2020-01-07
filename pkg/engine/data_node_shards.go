@@ -1,7 +1,13 @@
 package engine
 
+import (
+	"database/sql"
+	"fmt"
+	"github.com/elliotcourant/mellivora"
+)
+
 var (
-	_ DataNodeShardContext = &dataNodeContextBase{}
+	_ DataNodeShardContext = &dataNodeShardContextBase{}
 )
 
 type (
@@ -22,6 +28,9 @@ type (
 	DataNodeShardContext interface {
 		// GetDataNodeShards will return all of the data node/shard pairs in the entire cluster.
 		GetDataNodeShards() ([]DataNodeShard, error)
+
+		// GetDataNodeShard will return a single data node shard if one exists with that ID.
+		GetDataNodeShard(id uint64) (DataNodeShard, bool, error)
 
 		// NewDataNodeShard will create a new data node/shard pair to keep track of replication flow and
 		// what shards are located on which data nodes.
@@ -53,23 +62,40 @@ const (
 
 // DataNodeShards returns the accessors for data node shards.
 func (t *transactionBase) DataNodeShards() DataNodeShardContext {
-	return &dataNodeContextBase{
+	return &dataNodeShardContextBase{
 		t: t,
 	}
 }
 
 // GetDataNodeShards will return all of the data node/shard pairs in the entire cluster.
-func (d *dataNodeContextBase) GetDataNodeShards() ([]DataNodeShard, error) {
+func (d *dataNodeShardContextBase) GetDataNodeShards() ([]DataNodeShard, error) {
 	dataNodeShards := make([]DataNodeShard, 0)
 	err := d.t.txn.Model(dataNodeShards).Select(&dataNodeShards)
 
 	return dataNodeShards, err
 }
 
+// GetDataNodeShard will return a single data node shard if one exists with that ID.
+func (d *dataNodeShardContextBase) GetDataNodeShard(id uint64) (DataNodeShard, bool, error) {
+	var dataNodeShard DataNodeShard
+	err := d.t.txn.Model(DataNodeShard{}).
+		Where(mellivora.Ex{
+			"DataNodeShardId": id,
+		}).
+		Select(&dataNodeShard)
+	return dataNodeShard, dataNodeShard.DataNodeShardId == id, err
+}
+
 // NewDataNodeShard will create a new data node/shard pair to keep track of replication flow and
 // what shards are located on which data nodes.
-func (d *dataNodeContextBase) NewDataNodeShard(dataNodeId, shardId uint64, position DataNodeShardPosition) (DataNodeShard, error) {
-	dataNodeShard := DataNodeShard{}
+func (d *dataNodeShardContextBase) NewDataNodeShard(dataNodeId, shardId uint64, position DataNodeShardPosition) (DataNodeShard, error) {
+	var dataNodeShard DataNodeShard
+
+	dataNode, err := d.t.DataNodes().GetDataNode(dataNodeId)
+	if err != nil {
+		return dataNodeShard, err
+	}
+
 	id, err := d.t.core.store.NextSequenceId("dataNodeShards")
 	if err != nil {
 		return dataNodeShard, err
@@ -80,5 +106,28 @@ func (d *dataNodeContextBase) NewDataNodeShard(dataNodeId, shardId uint64, posit
 	dataNodeShard.ShardId = shardId
 	dataNodeShard.Position = position
 
+	if err := d.createDataNodeShardDatabase(dataNode, id); err != nil {
+		return dataNodeShard, err
+	}
+
 	return dataNodeShard, d.t.txn.Insert(dataNodeShard)
+}
+
+// createDataNodeShardDatabase simply creates the database on the data node. It will use a generic
+// sql driver to perform this operation.
+func (d *dataNodeShardContextBase) createDataNodeShardDatabase(node DataNode, dataNodeShardId uint64) error {
+	conn, err := sql.Open(
+		"postgres",
+		fmt.Sprintf("postgresql://%s:%s@%s:%d/postgres?sslmode=disable",
+			node.Username, node.Password, node.Address, node.Port),
+	)
+	if err != nil {
+		return err
+	}
+
+	if _, err := conn.Exec(fmt.Sprintf("CREATE DATABASE %s", getPgDatabaseName(dataNodeShardId))); err != nil {
+		return err
+	}
+
+	return nil
 }

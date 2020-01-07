@@ -8,21 +8,20 @@ import (
 
 func TestShardBaseContext_NewShard(t *testing.T) {
 	t.Run("simple", func(t *testing.T) {
-		cluster, cleanup := NewTestCoreCluster(t, 1)
+		cluster, cleanup := NewTestCoreClusterEx(t, 1, true)
 		defer cleanup()
 
 		txn := cluster.Begin(t)
 
-		dataNode, err := txn.DataNodes().NewDataNode("test", 1234, "test", "test")
+		dataNodes, err := txn.DataNodes().GetDataNodes()
 		assert.NoError(t, err)
-		assert.NotZero(t, dataNode.DataNodeId)
 
 		shard, dataNodeShards, err := txn.Shards().NewShard()
 		assert.NoError(t, err)
 		assert.NotZero(t, shard.ShardId)
 		assert.Equal(t, engine.ShardState_Ready, shard.State)
 		assert.NotEmpty(t, dataNodeShards)
-		assert.Equal(t, dataNode.DataNodeId, dataNodeShards[0].DataNodeId)
+		assert.Equal(t, dataNodes[0].DataNodeId, dataNodeShards[0].DataNodeId)
 	})
 
 	t.Run("no data nodes", func(t *testing.T) {
@@ -65,14 +64,10 @@ func TestShardBaseContext_NewShard(t *testing.T) {
 
 func TestShardBaseContext_GetShard(t *testing.T) {
 	t.Run("simple", func(t *testing.T) {
-		cluster, cleanup := NewTestCoreCluster(t, 1)
+		cluster, cleanup := NewTestCoreClusterEx(t, 1, true)
 		defer cleanup()
 
 		txn := cluster.Begin(t)
-
-		dataNode, err := txn.DataNodes().NewDataNode("test", 1234, "test", "test")
-		assert.NoError(t, err)
-		assert.NotZero(t, dataNode.DataNodeId)
 
 		shard, _, err := txn.Shards().NewShard()
 		assert.NoError(t, err)
@@ -99,14 +94,10 @@ func TestShardBaseContext_GetShards(t *testing.T) {
 	t.Run("simple", func(t *testing.T) {
 		numberOfShards := 10
 
-		cluster, cleanup := NewTestCoreCluster(t, 1)
+		cluster, cleanup := NewTestCoreClusterEx(t, 1, true)
 		defer cleanup()
 
 		txn := cluster.Begin(t)
-
-		dataNode, err := txn.DataNodes().NewDataNode("test", 1234, "test", "test")
-		assert.NoError(t, err)
-		assert.NotZero(t, dataNode.DataNodeId)
 
 		for i := 0; i < numberOfShards; i++ {
 			shard, _, err := txn.Shards().NewShard()

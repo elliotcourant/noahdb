@@ -4,6 +4,7 @@ import (
 	"github.com/elliotcourant/meles"
 	"github.com/elliotcourant/mellivora"
 	"github.com/elliotcourant/noahdb/pkg/engine"
+	"github.com/elliotcourant/noahdb/testutils"
 	"github.com/elliotcourant/timber"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestMain(m *testing.M) {
@@ -34,11 +36,15 @@ func (tc TestCluster) BeginOn(t *testing.T, node int) engine.Transaction {
 	return txn
 }
 
-func (tc TestCluster) SeedDataNodes(t *testing.T, numberOfDataNodes int) {
+func (tc TestCluster) SeedDataNodes(t *testing.T, numberOfDataNodes int) func() {
 	txn := tc.Begin(t)
+	cleanups := make([]func(), numberOfDataNodes)
 	for i := 0; i < numberOfDataNodes; i++ {
+		pgDataNode, pgDataNodeCleanup := testutils.NewDataNode(t)
+		cleanups[i] = pgDataNodeCleanup
+
 		dataNode, err := txn.DataNodes().
-			NewDataNode("127.0.0.1", 5432+i, "postgres", "password")
+			NewDataNode(pgDataNode.Address, pgDataNode.Port, pgDataNode.User, pgDataNode.Password)
 		if !assert.NoError(t, err) {
 			panic(err)
 		}
@@ -46,6 +52,12 @@ func (tc TestCluster) SeedDataNodes(t *testing.T, numberOfDataNodes int) {
 	}
 	if err := txn.Commit(); !assert.NoError(t, err) {
 		panic(err)
+	}
+
+	return func() {
+		for _, cleanup := range cleanups {
+			cleanup()
+		}
 	}
 }
 
@@ -64,7 +76,7 @@ func (tc TestCluster) SeedShards(t *testing.T, numberOfShards int) {
 	}
 }
 
-func NewTestCoreCluster(t *testing.T, numberOfPeers int) (TestCluster, func()) {
+func NewTestCoreClusterEx(t *testing.T, numberOfPeers int, initDataNodes bool) (TestCluster, func()) {
 	peers := make([]string, numberOfPeers)
 	listeners := make([]net.Listener, numberOfPeers)
 	dirs := make([]string, numberOfPeers)
@@ -118,7 +130,8 @@ func NewTestCoreCluster(t *testing.T, numberOfPeers int) (TestCluster, func()) {
 	}
 	wg.Wait()
 
-	return cluster, func() {
+	cleanups := make([]func(), 0)
+	cleanups = append(cleanups, func() {
 		for _, node := range cluster {
 			node.Close()
 		}
@@ -128,5 +141,22 @@ func NewTestCoreCluster(t *testing.T, numberOfPeers int) (TestCluster, func()) {
 		for _, dir := range dirs {
 			os.RemoveAll(dir)
 		}
+	})
+
+	if initDataNodes {
+		cleanups = append(cleanups, cluster.SeedDataNodes(t, numberOfPeers))
+
+		// Just a bit of time to let data nodes propagate
+		time.Sleep(time.Duration(1*numberOfPeers) * time.Second)
 	}
+
+	return cluster, func() {
+		for _, cleanup := range cleanups {
+			cleanup()
+		}
+	}
+}
+
+func NewTestCoreCluster(t *testing.T, numberOfPeers int) (TestCluster, func()) {
+	return NewTestCoreClusterEx(t, numberOfPeers, false)
 }

@@ -7,18 +7,9 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/elliotcourant/noahdb/pkg/core"
-	"github.com/elliotcourant/noahdb/pkg/pgwire"
-	"github.com/elliotcourant/noahdb/pkg/rpcwire"
-	"github.com/elliotcourant/noahdb/pkg/tcp"
-	"github.com/elliotcourant/noahdb/pkg/transport"
 	"github.com/elliotcourant/noahdb/pkg/util"
 	"github.com/elliotcourant/timber"
-	"github.com/hashicorp/raft"
-	"io"
-	"io/ioutil"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -29,12 +20,12 @@ import (
 
 type TestDataNode struct {
 	Address  string
-	Port     int32
+	Port     int
 	User     string
 	Password string
 }
 
-func NewDataNode(t *testing.T) (TestDataNode, func(), error) {
+func NewDataNode(t *testing.T) (TestDataNode, func()) {
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -45,11 +36,11 @@ func NewDataNode(t *testing.T) (TestDataNode, func(), error) {
 
 	imageName := "docker.io/library/postgres:12"
 
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	_, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		panic(err)
 	}
-	io.Copy(os.Stdout, out)
+	// io.Copy(os.Stdout, out)
 
 	containerName := strings.ReplaceAll(fmt.Sprintf("noahdb-test-db-%s-%d", testNameCleaned, time.Now().Unix()), "/", "_")
 
@@ -140,7 +131,7 @@ func NewDataNode(t *testing.T) (TestDataNode, func(), error) {
 
 	node := TestDataNode{
 		Address:  "0.0.0.0",
-		Port:     int32(port),
+		Port:     int(port),
 		User:     "postgres",
 		Password: testNameCleaned,
 	}
@@ -165,121 +156,121 @@ func NewDataNode(t *testing.T) (TestDataNode, func(), error) {
 		for _, callback := range callbacks {
 			callback()
 		}
-	}, nil
+	}
 }
 
 func GetCleanTestName(t *testing.T) string {
 	return strings.ReplaceAll(strings.ToLower(t.Name()), "/", "_")
 }
 
-func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresses ...string) (core.Colony, func()) {
-	log := timber.New()
-
-	tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword := "", int32(0), "", ""
-	testNameCleaned := fmt.Sprintf("%s-%d", GetCleanTestName(t), time.Now().Unix())
-
-	callbacks := make([]func(), 0)
-
-	if spawnPg {
-		node, pgCleanup, err := NewDataNode(t)
-		if err != nil {
-			panic(err)
-		}
-		callbacks = append(callbacks, pgCleanup)
-		tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword =
-			node.Address, node.Port, node.User, node.Password
-	}
-
-	tempdir, err := ioutil.TempDir("", testNameCleaned)
-	if err != nil {
-		panic(err)
-	}
-
-	callbacks = append(callbacks, func() {
-		log.Warningf("removing temporary directory at: %s", tempdir)
-		if err := os.RemoveAll(tempdir); err != nil {
-			panic(err)
-		}
-	})
-
-	// joins := strings.Join(joinAddresses, ",")
-
-	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
-	if err != nil {
-		panic(err)
-		// return nil, nil, err
-	}
-
-	tn := tcp.NewTransport()
-
-	if err := tn.Open(parsedRaftAddr.String()); err != nil {
-		panic(err)
-	}
-
-	trans := transport.NewTransportWrapper(tn)
-
-	colony := core.NewColony()
-
-	go func() {
-		if err = pgwire.RunPgServer(colony, trans); err != nil {
-			log.Errorf(err.Error())
-		}
-	}()
-
-	go func() {
-		if err = rpcwire.NewRpcServer(colony, trans); err != nil {
-			log.Errorf(err.Error())
-		}
-	}()
-
-	joins := make([]raft.Server, 0)
-	for _, joinAddress := range joinAddresses {
-		if addr, err := util.ResolveAddress(joinAddress); err != nil {
-			log.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
-			t.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
-		} else {
-			joins = append(joins, raft.Server{
-				Suffrage: raft.Voter,
-				ID:       raft.ServerID(addr),
-				Address:  raft.ServerAddress(addr),
-			})
-		}
-	}
-
-	config := core.ColonyConfig{
-		DataDirectory:         tempdir,
-		JoinAddresses:         joins,
-		Transport:             trans,
-		LocalPostgresUser:     tempPostgresUser,
-		LocalPostgresAddress:  tempPostgresAddress,
-		LocalPostgresPassword: tempPostgresPassword,
-		LocalPostgresPort:     tempPostgresPort,
-	}
-
-	err = colony.InitColony(config, log)
-	if err != nil {
-		panic(err)
-	}
-
-	callbacks = append(callbacks, func() {
-		colony.Close()
-	})
-
-	log.Infof("finished starting noahdb coordinator")
-	return colony, func() {
-		for _, callback := range callbacks {
-			callback()
-		}
-	}
-}
-
-func NewTestColony(t *testing.T, joinAddresses ...string) (core.Colony, func()) {
-	return NewTestColonyEx(t, ":", false, joinAddresses...)
-}
-
-func NewPgTestColony(t *testing.T, joinAddresses ...string) (core.Colony, func()) {
-	return NewTestColonyEx(t, ":", true, joinAddresses...)
-}
+// func NewTestColonyEx(t *testing.T, listenAddr string, spawnPg bool, joinAddresses ...string) (core.Colony, func()) {
+// 	log := timber.New()
+//
+// 	tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword := "", int32(0), "", ""
+// 	testNameCleaned := fmt.Sprintf("%s-%d", GetCleanTestName(t), time.Now().Unix())
+//
+// 	callbacks := make([]func(), 0)
+//
+// 	if spawnPg {
+// 		node, pgCleanup, err := NewDataNode(t)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		callbacks = append(callbacks, pgCleanup)
+// 		tempPostgresAddress, tempPostgresPort, tempPostgresUser, tempPostgresPassword =
+// 			node.Address, node.Port, node.User, node.Password
+// 	}
+//
+// 	tempdir, err := ioutil.TempDir("", testNameCleaned)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	callbacks = append(callbacks, func() {
+// 		log.Warningf("removing temporary directory at: %s", tempdir)
+// 		if err := os.RemoveAll(tempdir); err != nil {
+// 			panic(err)
+// 		}
+// 	})
+//
+// 	// joins := strings.Join(joinAddresses, ",")
+//
+// 	parsedRaftAddr, err := net.ResolveTCPAddr("tcp", listenAddr)
+// 	if err != nil {
+// 		panic(err)
+// 		// return nil, nil, err
+// 	}
+//
+// 	tn := tcp.NewTransport()
+//
+// 	if err := tn.Open(parsedRaftAddr.String()); err != nil {
+// 		panic(err)
+// 	}
+//
+// 	trans := transport.NewTransportWrapper(tn)
+//
+// 	colony := core.NewColony()
+//
+// 	go func() {
+// 		if err = pgwire.RunPgServer(colony, trans); err != nil {
+// 			log.Errorf(err.Error())
+// 		}
+// 	}()
+//
+// 	go func() {
+// 		if err = rpcwire.NewRpcServer(colony, trans); err != nil {
+// 			log.Errorf(err.Error())
+// 		}
+// 	}()
+//
+// 	joins := make([]raft.Server, 0)
+// 	for _, joinAddress := range joinAddresses {
+// 		if addr, err := util.ResolveAddress(joinAddress); err != nil {
+// 			log.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
+// 			t.Errorf("failed to parse join address [%s]: %v", joinAddress, err)
+// 		} else {
+// 			joins = append(joins, raft.Server{
+// 				Suffrage: raft.Voter,
+// 				ID:       raft.ServerID(addr),
+// 				Address:  raft.ServerAddress(addr),
+// 			})
+// 		}
+// 	}
+//
+// 	config := core.ColonyConfig{
+// 		DataDirectory:         tempdir,
+// 		JoinAddresses:         joins,
+// 		Transport:             trans,
+// 		LocalPostgresUser:     tempPostgresUser,
+// 		LocalPostgresAddress:  tempPostgresAddress,
+// 		LocalPostgresPassword: tempPostgresPassword,
+// 		LocalPostgresPort:     tempPostgresPort,
+// 	}
+//
+// 	err = colony.InitColony(config, log)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	callbacks = append(callbacks, func() {
+// 		colony.Close()
+// 	})
+//
+// 	log.Infof("finished starting noahdb coordinator")
+// 	return colony, func() {
+// 		for _, callback := range callbacks {
+// 			callback()
+// 		}
+// 	}
+// }
+//
+// func NewTestColony(t *testing.T, joinAddresses ...string) (core.Colony, func()) {
+// 	return NewTestColonyEx(t, ":", false, joinAddresses...)
+// }
+//
+// func NewPgTestColony(t *testing.T, joinAddresses ...string) (core.Colony, func()) {
+// 	return NewTestColonyEx(t, ":", true, joinAddresses...)
+// }
 
 func ConnectionString(address net.Addr) string {
 	addr, err := net.ResolveTCPAddr(address.Network(), address.String())
