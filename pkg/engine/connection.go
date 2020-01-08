@@ -8,7 +8,6 @@ import (
 	"github.com/elliotcourant/noahdb/pkg/pgproto"
 	"github.com/elliotcourant/timber"
 	"net"
-	"sync"
 )
 
 var (
@@ -16,12 +15,12 @@ var (
 )
 
 var (
-	_ PoolConnection = &dataNodeShardConnection{}
-	_ PoolContext    = &poolContextBase{}
+	_ Connection        = &dataNodeShardConnection{}
+	_ ConnectionContext = &connectionContextBase{}
 )
 
 type (
-	poolContextBase struct {
+	connectionContextBase struct {
 		t *transactionBase
 	}
 
@@ -32,12 +31,8 @@ type (
 		pgproto.Frontend
 	}
 
-	dataNodeShardPool struct {
-		pool sync.Pool
-	}
-
-	// PoolConnection is an interface around a single connection to a single data node shard.
-	PoolConnection interface {
+	// Connection is an interface around a single connection to a single data node shard.
+	Connection interface {
 		pgproto.Frontend
 		Close() error
 		Release()
@@ -46,23 +41,23 @@ type (
 		DataNodeShardID() uint64
 	}
 
-	PoolContext interface {
+	ConnectionContext interface {
 		// GetConnection will return a connection to the specific database that is hosting the
 		// data node shard. Only that particular shard is accessible from this connection,
-		GetConnection(dataNodeShardId uint64) (PoolConnection, error)
+		GetConnection(dataNodeShardId uint64) (Connection, error)
 	}
 )
 
 // Pool will return the accessor interface for the coordinator's data node pool..
-func (t *transactionBase) Pool() PoolContext {
-	return &poolContextBase{
+func (t *transactionBase) Pool() ConnectionContext {
+	return &connectionContextBase{
 		t: t,
 	}
 }
 
 // GetConnection will return a connection to the specific database that is hosting the
 // data node shard. Only that particular shard is accessible from this connection,
-func (p *poolContextBase) GetConnection(dataNodeShardId uint64) (PoolConnection, error) {
+func (p *connectionContextBase) GetConnection(dataNodeShardId uint64) (Connection, error) {
 	dataNodeShard, ok, err := p.t.DataNodeShards().GetDataNodeShard(dataNodeShardId)
 	if err != nil {
 		return nil, err

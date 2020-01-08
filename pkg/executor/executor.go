@@ -11,7 +11,7 @@ import (
 )
 
 type responsePipeline struct {
-	conn pool_old.Connection
+	conn engine.Connection
 	err  error
 }
 
@@ -151,7 +151,7 @@ func (e *executorBase) Execute(executionPlan plan.ExecutionPlan) error {
 	return nil
 }
 
-func (e *executorBase) sendQuery(conn pool_old.Connection, query string, extendedQuery bool, outFormats []pgwirebase.FormatCode) error {
+func (e *executorBase) sendQuery(conn engine.Connection, query string, extendedQuery bool, outFormats []pgwirebase.FormatCode) error {
 	if extendedQuery {
 		// When we are in extended query mode we want to send the query in the same
 		// extended query mode.
@@ -161,7 +161,7 @@ func (e *executorBase) sendQuery(conn pool_old.Connection, query string, extende
 		}); err != nil {
 			e.log.Errorf(
 				"could not send query to data node shard [%d]: %s",
-				conn.ID(), err.Error())
+				conn.DataNodeShardID(), err.Error())
 			return err
 		}
 
@@ -171,7 +171,7 @@ func (e *executorBase) sendQuery(conn pool_old.Connection, query string, extende
 		}); err != nil {
 			e.log.Errorf(
 				"could not describe query on data node shard [%d]: %s",
-				conn.ID(), err.Error())
+				conn.DataNodeShardID(), err.Error())
 			return err
 		}
 
@@ -182,7 +182,7 @@ func (e *executorBase) sendQuery(conn pool_old.Connection, query string, extende
 		}); err != nil {
 			e.log.Errorf(
 				"could not bind on data node shard [%d]: %s",
-				conn.ID(), err.Error())
+				conn.DataNodeShardID(), err.Error())
 			return err
 		}
 
@@ -192,14 +192,14 @@ func (e *executorBase) sendQuery(conn pool_old.Connection, query string, extende
 		}); err != nil {
 			e.log.Errorf(
 				"could not bind on data node shard [%d]: %s",
-				conn.ID(), err.Error())
+				conn.DataNodeShardID(), err.Error())
 			return err
 		}
 
 		if err := conn.Send(&pgproto.Sync{}); err != nil {
 			e.log.Errorf(
 				"could not sync on data node shard [%d]: %s",
-				conn.ID(), err.Error())
+				conn.DataNodeShardID(), err.Error())
 			return err
 		}
 	} else {
@@ -207,7 +207,7 @@ func (e *executorBase) sendQuery(conn pool_old.Connection, query string, extende
 			String: query,
 		}); err != nil {
 			e.log.Errorf("could not send query to data node shard [%d]: %v",
-				conn.ID(), err)
+				conn.DataNodeShardID(), err)
 			return err
 		}
 	}
