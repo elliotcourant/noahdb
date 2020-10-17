@@ -35,7 +35,6 @@ type (
 	Connection interface {
 		pgproto.Frontend
 		Close() error
-		Release()
 		DataNodeID() uint64
 		ShardID() uint64
 		DataNodeShardID() uint64
@@ -48,8 +47,8 @@ type (
 	}
 )
 
-// Pool will return the accessor interface for the coordinator's data node pool..
-func (t *transactionBase) Pool() ConnectionContext {
+// Connect will return the accessor interface for the coordinator's data node pool..
+func (t *transactionBase) Connect() ConnectionContext {
 	return &connectionContextBase{
 		t: t,
 	}

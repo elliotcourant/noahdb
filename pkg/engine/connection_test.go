@@ -22,7 +22,7 @@ func TestPoolContextBase_GetConnection(t *testing.T) {
 
 		dataNodeShard := dataNodeShards[0]
 
-		conn, err := txn.Pool().GetConnection(dataNodeShard.DataNodeShardId)
+		conn, err := txn.Connect().GetConnection(dataNodeShard.DataNodeShardId)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 	})
